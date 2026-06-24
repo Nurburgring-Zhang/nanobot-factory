@@ -23,8 +23,14 @@ BPM sync:
 from __future__ import annotations
 
 import hashlib
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+
+
+def _NOW() -> float:
+    """Local time helper so tests can monkey-patch the timestamp."""
+    return time.time()
 
 MONTAGE_TYPES: Tuple[str, ...] = (
     "parallel", "cross", "sequential", "thematic", "contrast",
@@ -192,8 +198,26 @@ class MontageEngine:
                 timeline_clips[idx] = c
             timeline["clips"] = timeline_clips
         elif time_mode == "flashforward":
-            # Pre-pend (handled at render time, marker only)
-            pass
+            # Mark each clip with a flashforward tag and record them in a
+            # dedicated list on the timeline.  The renderer reads this list to
+            # splice a "preview" cut at the head of the montage.
+            timeline_clips = list(timeline.get("clips") or [])
+            preview_id = self._id(f"flashforward-preview-{type}")
+            for c in timeline_clips:
+                if c.get("id") in clips:
+                    c["flashforward"] = True
+                    c.setdefault("tags", []).append("flashforward")
+            previews: List[Dict[str, Any]] = list(
+                timeline.get("flashforward_previews") or [])
+            previews.append({
+                "id": preview_id,
+                "montage_type": type,
+                "montage_layout": layout,
+                "clip_ids": list(clips),
+                "created_at": _NOW(),
+            })
+            timeline["clips"] = timeline_clips
+            timeline["flashforward_previews"] = previews
         elif time_mode == "parallel_timeline":
             # Mark each clip with a parallel-track id
             track_id = self._id(f"track-{type}")

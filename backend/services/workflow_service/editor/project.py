@@ -18,11 +18,32 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import logging
 import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+_log = logging.getLogger(__name__)
+
+
+class TemplateFetchError(LookupError):
+    """Raised when a template cannot be located in the workflow registry.
+
+    Carries the underlying reason so callers (and tests) can distinguish
+    between ``"not_found"`` (legitimate miss) and ``"registry_unavailable"``
+    (the catalog module could not be imported, e.g. in isolated unit tests).
+    """
+
+    def __init__(self, message: str, *,
+                 reason: str = "not_found",
+                 template_id: Optional[str] = None,
+                 available: Optional[List[str]] = None) -> None:
+        super().__init__(message)
+        self.reason = reason
+        self.template_id = template_id
+        self.available = list(available or [])
 
 
 @dataclass
@@ -294,7 +315,20 @@ class ProjectStore:
             proj = self._projects.get(pid)
             if proj is None:
                 raise ValueError(f"project_not_found: {pid}")
-            tpl = self._fetch_template(template_id)
+            try:
+                tpl = self._fetch_template(template_id)
+                template_reason = "loaded"
+            except TemplateFetchError as exc:
+                if exc.reason == "not_found":
+                    # Hard miss — surface the error so the caller can fix it.
+                    raise ValueError(
+                        f"template_not_found: {template_id!r} "
+                        f"(available: {exc.available[:5]})"
+                    ) from exc
+                # registry_unavailable — fall back to a synthetic template
+                # so the editor remains usable in isolated tests.
+                tpl = self._synthetic_template(template_id)
+                template_reason = exc.reason
             # The template's "nodes" become placeholder clips
             clips: List[Dict[str, Any]] = []
             cursor = 0.0
@@ -319,6 +353,8 @@ class ProjectStore:
                     "template_id": template_id,
                     "template_name": tpl.get("name", ""),
                     "loaded_at": time.time(),
+                    "template_source": template_reason,
+                    "template_synthetic": bool(tpl.get("_synthetic")),
                 },
             }
             self._push_undo(proj, proj.timeline)
@@ -329,29 +365,77 @@ class ProjectStore:
             return proj
 
     def _fetch_template(self, template_id: str) -> Dict[str, Any]:
-        # Try the workflow template registry.  We do this in a
-        # try/except so the editor module stays importable in isolation.
+        """Look up ``template_id`` in the workflow template registry.
+
+        Raises :class:`TemplateFetchError` when the template cannot be
+        located.  Two reasons are exposed via ``exc.reason``:
+
+          * ``"registry_unavailable"`` — the catalog module could not be
+            imported (e.g. running the editor in isolation).  Callers may
+            decide to substitute a synthetic template themselves.
+          * ``"not_found"`` — the registry was importable but did not
+            contain the requested id.
+        """
         try:
             from services.workflow_service.templates import (
                 WORKFLOW_TEMPLATES, get_template,
             )
-            try:
-                return get_template(template_id)
-            except KeyError:
-                pass
-            for t in WORKFLOW_TEMPLATES:
-                if t.get("id") == template_id:
-                    return t
-        except Exception:  # noqa: BLE001
-            pass
-        # Synthetic fallback — if the template is not found, return a
-        # minimal stub with one node so the project still gets a valid
-        # timeline.  This lets the editor work even when the registry
-        # is unavailable (e.g. in isolated unit tests).
+        except Exception as exc:  # noqa: BLE001
+            _log.warning(
+                "project.load_template.registry_unavailable: "
+                "template_id=%r err=%s: %s",
+                template_id, exc.__class__.__name__, exc,
+            )
+            raise TemplateFetchError(
+                f"template registry unavailable for {template_id!r}: "
+                f"{exc.__class__.__name__}: {exc}",
+                reason="registry_unavailable",
+                template_id=template_id,
+            ) from exc
+        try:
+            return get_template(template_id)
+        except KeyError as exc:
+            _log.info(
+                "project.load_template.get_template_miss: "
+                "template_id=%r falling back to linear scan",
+                template_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            _log.warning(
+                "project.load_template.get_template_error: "
+                "template_id=%r err=%s: %s — falling back to linear scan",
+                template_id, exc.__class__.__name__, exc,
+            )
+        for t in WORKFLOW_TEMPLATES:
+            if t.get("id") == template_id:
+                return t
+        available = [t.get("id") for t in WORKFLOW_TEMPLATES
+                     if isinstance(t, dict) and t.get("id")]
+        _log.info(
+            "project.load_template.not_found: template_id=%r "
+            "available_count=%d",
+            template_id, len(available),
+        )
+        raise TemplateFetchError(
+            f"template not found: {template_id!r}",
+            reason="not_found",
+            template_id=template_id,
+            available=available[:10],
+        )
+
+    @staticmethod
+    def _synthetic_template(template_id: str) -> Dict[str, Any]:
+        """Synthetic fallback used when the registry is unavailable.
+
+        Returned with ``_synthetic=True`` so callers can distinguish from
+        real catalog entries.
+        """
         return {
             "id": template_id,
             "name": f"Stub Template {template_id}",
             "description": "synthetic template for editor isolation",
+            "_synthetic": True,
+            "_reason": "registry_unavailable",
             "nodes": [
                 {"id": "intro", "node_type": "video", "name": "Intro",
                  "default_duration": 3.0, "default_src": ""},

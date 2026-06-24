@@ -102,8 +102,21 @@ def run(items: List[Any], params: Dict[str, Any]) -> List[Dict[str, Any]]:
         try:
             cutoff = int(frame_id) - max_age
             tracks = [t for t in tracks if int(t.last_seen) >= cutoff]
-        except Exception:  # noqa: BLE001
-            pass
+        except (TypeError, ValueError) as exc:
+            # frame_id is not an int-coercible value (e.g. str / float / None).
+            # Fall back to "keep all" but record the warning so the caller can
+            # see why age-based pruning was skipped.
+            rec["age_prune_skipped"] = (
+                f"frame_id_not_int_coercible: "
+                f"{type(frame_id).__name__}={frame_id!r}: {exc.__class__.__name__}"
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Unexpected error (e.g. t.last_seen is not int-coercible).  Log the
+            # reason and keep the existing tracks rather than silently wiping
+            # them via the previous `pass`.
+            rec["age_prune_skipped"] = (
+                f"prune_error: {exc.__class__.__name__}: {exc}"
+            )
         # serialize
         out_tracks: List[Dict[str, Any]] = []
         for t in tracks:

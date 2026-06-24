@@ -85,10 +85,133 @@ def _sharpness(frames: List[Any]) -> float:
     return float(sum(vals) / max(1, len(vals)))
 
 
+def _detect_format(buf: bytes) -> str:
+    """Best-effort container detection from the leading bytes.
+
+    Returns one of: ``"mp4"``, ``"mov"``, ``"webm"``, ``"avi"``, ``"flv"``,
+    ``"mkv"``, ``"mpeg_ps"``, ``"3gp"``, ``"unknown"``.
+    """
+    if not buf or len(buf) < 12:
+        return "unknown"
+    if buf[4:8] == b"ftyp":
+        brand = buf[8:12].decode("ascii", errors="replace").lower()
+        if brand in ("qt  ", "qt"):
+            return "mov"
+        return "mp4"
+    if buf[:4] == b"\x1aE\xdf\xa3":
+        # EBML header — webm vs mkv is decided by DocType element.
+        # DocType ID = 0x4282, encoded as VINT (1 byte for IDs < 0x80).
+        # Look for the byte sequence 0x42 0x82 in the first 64 bytes.
+        head = buf[:64]
+        idx = head.find(b"\x42\x82")
+        if idx >= 0 and idx + 2 < len(head):
+            size_byte = head[idx + 2]
+            if size_byte & 0x80:
+                length = size_byte & 0x7F
+            else:
+                length = 1
+            start = idx + 3
+            doctype = head[start:start + length].decode("ascii", errors="replace").lower()
+            if doctype == "webm":
+                return "webm"
+            if doctype == "matroska":
+                return "mkv"
+        return "mkv"
+    if buf[:3] == b"FLV":
+        return "flv"
+    if buf[:4] == b"RIFF" and buf[8:12] == b"AVI ":
+        return "avi"
+    if buf[:2] == b"\x00\x00" and buf[2] in (0x01, 0x02):
+        return "mpeg_ps"
+    if buf[4:8] == b"moov":
+        return "mp4"
+    if buf[:4] == b"OggS":
+        return "ogg"
+    if buf[:3] == b"\x00\x00\x00" and buf[3] == 0x18:
+        return "3gp"
+    return "unknown"
+
+
+def _parse_mp4_mvhd_duration(buf: bytes) -> Optional[float]:
+    """Find the ``mvhd`` box in an MP4/MOV stream and return duration in seconds.
+
+    Returns ``None`` when the buffer is not a parseable MP4 or the box is
+    missing.  Lightweight — handles boxes in the first 1 MB only.
+    """
+    if len(buf) < 32 or buf[4:8] != b"ftyp":
+        return None
+    offset = 0
+    end = min(len(buf), 1 << 20)  # 1 MB cap
+    # Skip the ftyp box first
+    try:
+        size = int.from_bytes(buf[0:4], "big")
+        offset = size if size >= 8 else 8
+    except Exception:  # noqa: BLE001
+        return None
+    while offset + 8 < end:
+        try:
+            size = int.from_bytes(buf[offset:offset + 4], "big")
+            box_type = buf[offset + 4:offset + 8]
+        except Exception:  # noqa: BLE001
+            return None
+        if size < 8:
+            return None
+        if box_type == b"moov":
+            # Walk into moov to find mvhd
+            inner_end = min(offset + size, end)
+            inner = offset + 8
+            while inner + 8 < inner_end:
+                try:
+                    isize = int.from_bytes(buf[inner:inner + 4], "big")
+                    itype = buf[inner + 4:inner + 8]
+                except Exception:  # noqa: BLE001
+                    return None
+                if itype == b"mvhd":
+                    mvhd_start = inner + 8
+                    if mvhd_start + 4 >= inner + isize:
+                        return None
+                    version = buf[mvhd_start]
+                    if version == 1:
+                        if mvhd_start + 8 + 8 + 8 + 4 > inner + isize:
+                            return None
+                        timescale = int.from_bytes(
+                            buf[mvhd_start + 8 + 8 + 8:mvhd_start + 8 + 8 + 8 + 4],
+                            "big",
+                        )
+                        dur_ticks = int.from_bytes(
+                            buf[mvhd_start + 8 + 8 + 8 + 4:mvhd_start + 8 + 8 + 8 + 4 + 8],
+                            "big",
+                        )
+                    else:
+                        if mvhd_start + 4 + 4 + 4 + 4 > inner + isize:
+                            return None
+                        timescale = int.from_bytes(
+                            buf[mvhd_start + 4 + 4 + 4:mvhd_start + 4 + 4 + 4 + 4],
+                            "big",
+                        )
+                        dur_ticks = int.from_bytes(
+                            buf[mvhd_start + 4 + 4 + 4 + 4:mvhd_start + 4 + 4 + 4 + 4 + 4],
+                            "big",
+                        )
+                    if timescale <= 0:
+                        return None
+                    return float(dur_ticks) / float(timescale)
+                if isize < 8:
+                    return None
+                inner += isize
+            return None
+        if size == 0:
+            return None
+        offset += size
+    return None
+
+
 def _score_one(item: Any) -> Dict[str, Any]:
     width = height = fps = duration = bitrate_kbps = None
     frames: List[Any] = []
     codec = ""
+    source_format = ""
+    extraction_note = ""
     if isinstance(item, dict):
         width = item.get("width")
         height = item.get("height")
@@ -98,8 +221,26 @@ def _score_one(item: Any) -> Dict[str, Any]:
         frames = item.get("frames") or []
         codec = item.get("codec", "")
     elif isinstance(item, (bytes, bytearray)):
-        # can't extract without ffmpeg; return partial
-        pass
+        # Best-effort header parse — we cannot run ffmpeg in-process here, but
+        # we can identify the container and (for MP4/MOV) extract the mvhd
+        # timescale+duration to recover duration without external tools.
+        buf = bytes(item)
+        source_format = _detect_format(buf)
+        if source_format in ("mp4", "mov"):
+            duration = _parse_mp4_mvhd_duration(buf)
+            extraction_note = (
+                "extracted_from_mp4_header_only; "
+                "resolution/codec/fps require ffmpeg sidecar"
+            )
+        else:
+            extraction_note = (
+                f"format={source_format}; "
+                "duration/resolution/codec require ffmpeg sidecar"
+            )
+    elif isinstance(item, str) and item:
+        # filesystem path — cannot probe without ffmpeg either, but at least
+        # record the path so the caller can run a sidecar probe.
+        extraction_note = "path_only; run ffmpeg sidecar to fill metadata"
     # Resolution
     res_score = 0.0
     if width and height:
@@ -132,6 +273,8 @@ def _score_one(item: Any) -> Dict[str, Any]:
         "black_ratio": blk,
         "duration": duration,
         "codec": codec,
+        "source_format": source_format,
+        "extraction_note": extraction_note,
         "composite": round(composite, 3),
     }
 
