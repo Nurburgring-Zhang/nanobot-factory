@@ -1,0 +1,68 @@
+# =====================================================================
+# Nanobot Factory - Kustomize aggregation
+# =====================================================================
+# Deploy everything with:
+#   kubectl apply -k k8s/
+#
+# Override image tag / replicas per environment by passing a kustomize
+# patch:
+#   kubectl kustomize k8s/ | kubectl apply -f -
+#
+# Or use the Makefile target:
+#   make k8s-deploy
+# =====================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nanobot-factory
+
+resources:
+  - namespaces.yaml
+  - configmaps.yaml
+  - secrets.yaml
+  - postgres.yaml
+  - redis.yaml
+  - minio.yaml
+  - gateway.yaml
+  - ingress.yaml
+  - services/user-service.yaml
+  - services/asset-service.yaml
+  - services/annotation-service.yaml
+  - services/cleaning-service.yaml
+  - services/scoring-service.yaml
+  - services/dataset-service.yaml
+  - services/evaluation-service.yaml
+  - services/agent-service.yaml
+  - services/workflow-service.yaml
+  - services/notification-service.yaml
+  - services/search-service.yaml
+  - services/collection-service.yaml
+
+# ---------- Common labels applied to all resources ----------
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: nanobot-factory
+      app.kubernetes.io/managed-by: kustomize
+      environment: production
+
+# ---------- Common annotations ----------
+# (None for now - reserved for future ops tooling)
+
+# ---------- Image tag override ----------
+images:
+  - name: ghcr.io/minimax-ai/nanobot-factory
+    newName: ghcr.io/minimax-ai/nanobot-factory
+    newTag: v0.8.0
+
+# ---------- Replica override (uncomment to scale up) ----------
+# replicas:
+#   - name: gateway
+#     count: 3
+#   - name: user-service
+#     count: 3
+
+# ---------- ConfigMap/Secret generation patches ----------
+# To seal secrets, replace the literal secrets.yaml with a SealedSecret
+# and update resources accordingly.

@@ -1,0 +1,10 @@
+services:
+  imdf:
+    build: .
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - JWT_SECRET_KEY=imdf_secret_change_me
+      - DATABASE_URL=sqlite:///data/imdf.db

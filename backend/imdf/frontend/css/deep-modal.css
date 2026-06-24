@@ -1,0 +1,39 @@
+/* === 4级/5级深度模态 — 嵌套/向导/钻取/确认链 === */
+
+/* 嵌套模态(4级+) — 模态内再弹模态,自动堆叠 */
+.nested-modal { z-index:1010 !important; }
+.nested-modal .modal { transform:scale(0.95); }
+.nested-modal-2 { z-index:1020 !important; }
+.nested-modal-2 .modal { transform:scale(0.90); }
+
+/* 步骤向导(多步骤表单) */
+.wizard-body { min-height:200px; }
+.wizard-footer { display:flex; gap:8px; justify-content:space-between; }
+.step-content { display:none; }
+.step-content.active { display:block; }
+
+/* 钻取详情(可折叠展开) */
+.drill-row { cursor:pointer; transition:background 0.1s; }
+.drill-row:hover { background:var(--bg-hover); }
+.drill-expand { padding:8px 16px; background:var(--bg-primary); border-left:3px solid var(--blue); margin:4px 0; border-radius:0 4px 4px 0; font-size:11px; display:none; }
+.drill-expand.open { display:block; }
+
+/* 比较视图(左右对比) */
+.compare-view { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.compare-panel { background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; padding:12px; }
+.compare-panel.better { border-color:#10b981; box-shadow:0 0 8px rgba(16,185,129,0.15); }
+.compare-label { font-size:10px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:8px; }
+
+/* JSON/Diff视图 */
+.diff-view { font-family:monospace; font-size:11px; background:var(--bg-primary); padding:10px; border-radius:6px; max-height:300px; overflow:auto; white-space:pre-wrap; }
+.diff-add { background:rgba(16,185,129,0.15); color:#10b981; }
+.diff-remove { background:rgba(239,68,68,0.15); color:#ef4444; }
+
+/* 操作日志/时间线 */
+.log-list { max-height:300px; overflow-y:auto; }
+.log-item { display:flex; gap:10px; padding:8px 0; border-left:2px solid var(--border); margin-left:8px; padding-left:16px; position:relative; }
+.log-item::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--blue); position:absolute; left:-5px; top:12px; }
+.log-item.error::before { background:var(--red); }
+.log-item.success::before { background:var(--green); }
+.log-time { font-size:10px; color:var(--text-secondary); flex-shrink:0; min-width:55px; }
+.log-msg { font-size:11px; }

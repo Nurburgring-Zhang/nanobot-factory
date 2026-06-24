@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "nanobot-factory") | nindent 4 }}
+    name: nanobot-factory

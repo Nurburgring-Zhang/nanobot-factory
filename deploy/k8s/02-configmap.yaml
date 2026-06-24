@@ -1,0 +1,45 @@
+# =====================================================================
+# 02-configmap.yaml
+# Application configuration injected as environment variables.
+# Secrets (API keys, JWT secret) should go in 03-secret.yaml instead.
+# 1 resource: ConfigMap.
+# =====================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nanobot-factory-config
+  namespace: nanobot-factory
+  labels:
+    app.kubernetes.io/name: nanobot-factory
+    app.kubernetes.io/component: backend
+data:
+  # ---- Server ----
+  NANOBOT_HOST: "0.0.0.0"
+  NANOBOT_PORT: "8001"
+  UVICORN_WORKERS: "2"
+  LOG_LEVEL: "INFO"
+
+  # ---- CORS ----
+  ALLOWED_ORIGINS: "https://nanobot.example.com"
+  CORS_ALLOW_ALL: "false"
+
+  # ---- Rate limiting ----
+  RATE_LIMIT_REQUESTS: "200"
+  RATE_LIMIT_WINDOW: "60"
+
+  # ---- Storage paths (mounted PVCs) ----
+  IMDF_DATA_DIR: "/app/data"
+  IMDF_LOGS_DIR: "/app/logs"
+  DATABASE_PATH: "/app/data/nanobot.db"
+
+  # ---- App behaviour ----
+  DEV_MODE: "false"
+  ENABLE_ROBUSTNESS_MIDDLEWARE: "true"
+  MAX_CONCURRENT_REQUESTS: "100"
+  REQUEST_TIMEOUT_SECONDS: "30"
+  MAX_BODY_SIZE_MB: "64"
+
+  # ---- Probe endpoints used by /readyz ----
+  READYZ_DB_CHECK: "true"
+  READYZ_DISK_CHECK: "true"
+  READYZ_REDIS_CHECK: "true"

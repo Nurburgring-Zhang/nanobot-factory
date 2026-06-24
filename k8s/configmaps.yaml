@@ -1,0 +1,92 @@
+# =====================================================================
+# Nanobot Factory - ConfigMap (non-secret global configuration)
+# =====================================================================
+# All non-sensitive environment variables shared across the 12 microservices
+# and the gateway.  Sensitive values (passwords, JWT secrets) live in
+# `secrets.yaml`.
+#
+# IMPORTANT:
+#   - DO NOT put passwords, API keys, or JWT signing secrets here.
+#   - This ConfigMap is mounted as envFrom so every container picks it up.
+# =====================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nanobot-config
+  namespace: nanobot-factory
+  labels:
+    app.kubernetes.io/part-of: nanobot-factory
+    app.kubernetes.io/component: config
+data:
+  # ---------- Global service mesh ----------
+  LOG_LEVEL: "INFO"
+  DEV_MODE: "false"
+  PYTHONUNBUFFERED: "1"
+  TZ: "UTC"
+
+  # ---------- Database (PostgreSQL + pgvector) ----------
+  POSTGRES_HOST: "postgres.nanobot-factory.svc.cluster.local"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "imdf"
+  POSTGRES_USER: "postgres"
+  PG_DSN: "postgresql://postgres:postgres@postgres.nanobot-factory.svc.cluster.local:5432/imdf"
+
+  # ---------- Redis ----------
+  REDIS_HOST: "redis.nanobot-factory.svc.cluster.local"
+  REDIS_PORT: "6379"
+  REDIS_URL: "redis://redis.nanobot-factory.svc.cluster.local:6379/0"
+  CELERY_BROKER_URL: "redis://redis.nanobot-factory.svc.cluster.local:6379/0"
+  CELERY_RESULT_BACKEND: "redis://redis.nanobot-factory.svc.cluster.local:6379/1"
+
+  # ---------- MinIO (S3-compatible object storage) ----------
+  MINIO_ENDPOINT: "minio.nanobot-factory.svc.cluster.local:9000"
+  MINIO_PUBLIC_ENDPOINT: "minio.nanobot-factory.svc.cluster.local:9000"
+  S3_ENDPOINT_URL: "http://minio.nanobot-factory.svc.cluster.local:9000"
+  S3_BUCKET_ASSETS: "nanobot-assets"
+  S3_BUCKET_EXPORTS: "nanobot-exports"
+
+  # ---------- CORS / Origins ----------
+  ALLOWED_ORIGINS: "https://app.nanobot-factory.com,https://admin.nanobot-factory.com"
+  CORS_ALLOW_ALL: "false"
+
+  # ---------- Rate limit ----------
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+  RATE_LIMIT_ENABLED: "true"
+
+  # ---------- Gateway ----------
+  GATEWAY_HOST: "0.0.0.0"
+  GATEWAY_PORT: "8000"
+  GATEWAY_UPSTREAM: "http://app.nanobot-factory.svc.cluster.local:8001"
+  GATEWAY_LOG_LEVEL: "INFO"
+  GATEWAY_UPSTREAM_TIMEOUT_SECONDS: "30"
+
+  # ---------- Internal service URLs (used by gateway & inter-service calls) ----------
+  USER_SERVICE_URL: "http://user-service.nanobot-factory.svc.cluster.local:8001"
+  ASSET_SERVICE_URL: "http://asset-service.nanobot-factory.svc.cluster.local:8002"
+  ANNOTATION_SERVICE_URL: "http://annotation-service.nanobot-factory.svc.cluster.local:8003"
+  CLEANING_SERVICE_URL: "http://cleaning-service.nanobot-factory.svc.cluster.local:8004"
+  SCORING_SERVICE_URL: "http://scoring-service.nanobot-factory.svc.cluster.local:8005"
+  DATASET_SERVICE_URL: "http://dataset-service.nanobot-factory.svc.cluster.local:8006"
+  EVALUATION_SERVICE_URL: "http://evaluation-service.nanobot-factory.svc.cluster.local:8007"
+  AGENT_SERVICE_URL: "http://agent-service.nanobot-factory.svc.cluster.local:8008"
+  WORKFLOW_SERVICE_URL: "http://workflow-service.nanobot-factory.svc.cluster.local:8009"
+  NOTIFICATION_SERVICE_URL: "http://notification-service.nanobot-factory.svc.cluster.local:8010"
+  SEARCH_SERVICE_URL: "http://search-service.nanobot-factory.svc.cluster.local:8011"
+  COLLECTION_SERVICE_URL: "http://collection-service.nanobot-factory.svc.cluster.local:8012"
+
+  # ---------- Image registry ----------
+  IMAGE_REGISTRY: "ghcr.io/minimax-ai"
+  IMAGE_REPOSITORY: "nanobot-factory"
+  IMAGE_TAG: "v0.8.0"
+  IMAGE_PULL_POLICY: "IfNotPresent"
+
+  # ---------- Observability ----------
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4317"
+  OTEL_SERVICE_NAME: "nanobot-factory"
+
+  # ---------- Feature flags ----------
+  FEATURE_PGVECTOR_ENABLED: "true"
+  FEATURE_CELERY_ENABLED: "true"
+  FEATURE_S3_ENABLED: "true"

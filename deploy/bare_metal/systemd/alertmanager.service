@@ -1,0 +1,36 @@
+# ============================================================================
+# alertmanager.service — IMDF Alertmanager (de-dupe + route alerts)
+# ============================================================================
+[Unit]
+Description=IMDF Alertmanager
+After=network-online.target prometheus.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=alertmanager
+Group=alertmanager
+ExecStart=/usr/bin/alertmanager \
+    --config.file=/etc/alertmanager/alertmanager.yml \
+    --storage.path=/var/lib/alertmanager \
+    --cluster.listen-address=
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+LimitNOFILE=65536
+MemoryMax=1G
+MemoryHigh=768M
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/alertmanager
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alertmanager
+
+[Install]
+WantedBy=multi-user.target

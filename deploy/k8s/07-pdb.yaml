@@ -1,0 +1,24 @@
+# =====================================================================
+# 07-pdb.yaml
+# PodDisruptionBudget — guarantees minimum availability during voluntary
+# disruptions (node drains, rollouts, autoscaler scale-down).
+# 1 resource: PodDisruptionBudget.
+# =====================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nanobot-factory
+  namespace: nanobot-factory
+  labels:
+    app.kubernetes.io/name: nanobot-factory
+    app.kubernetes.io/component: backend
+spec:
+  # At any time, at least 1 pod must be available (with minReplicas=2 this means
+  # only one disruption can happen at a time).
+  minAvailable: 1
+  # If you prefer maxUnavailable semantics, use this instead:
+  # maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nanobot-factory
+      app.kubernetes.io/component: backend

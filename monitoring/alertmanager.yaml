@@ -1,0 +1,139 @@
+# =============================================================================
+# P3-8-W2: Alertmanager Deployment + Service + ConfigMap
+# =============================================================================
+# Receives alerts from Prometheus, groups, deduplicates, routes to receivers.
+# Receivers configured: webhook (slack-compatible) + email (smtp).
+# For dev, use webhook to a Slack/Discord/etc. URL; for prod, set up PagerDuty.
+# =============================================================================
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+  labels:
+    app: alertmanager
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: 'smtp.example.com:587'
+      smtp_from: 'alerts@nanobot-factory.example.com'
+      smtp_require_tls: true
+
+    templates:
+      - '/etc/alertmanager/templates/*.tmpl'
+
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: 'default-receiver'
+      routes:
+        - matchers:
+            - severity = "critical"
+          receiver: 'pager-receiver'
+          group_wait: 10s
+          repeat_interval: 1h
+        - matchers:
+            - severity = "warning"
+          receiver: 'slack-receiver'
+          repeat_interval: 6h
+
+    receivers:
+      - name: 'default-receiver'
+        webhook_configs:
+          - url: 'http://alertmanager-webhook.monitoring.svc.cluster.local:5001/alerts'
+            send_resolved: true
+
+      - name: 'pager-receiver'
+        pagerduty_configs:
+          - service_key: 'REPLACE-WITH-PAGERDUTY-SERVICE-KEY'
+            send_resolved: true
+        webhook_configs:
+          - url: 'http://alertmanager-webhook.monitoring.svc.cluster.local:5001/critical'
+            send_resolved: true
+
+      - name: 'slack-receiver'
+        slack_configs:
+          - api_url: 'https://hooks.slack.com/services/REPLACE/WITH/WEBHOOK'
+            channel: '#imdf-alerts'
+            send_resolved: true
+            title: '{{ .CommonAnnotations.summary }}'
+            text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}'
+
+    inhibit_rules:
+      - source_matchers: [severity="critical"]
+        target_matchers: [severity="warning"]
+        equal: [alertname, cluster, service]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args:
+            - --config.file=/etc/alertmanager/alertmanager.yml
+            - --storage.path=/alertmanager
+            - --cluster.listen-address=""
+          ports:
+            - name: http
+              containerPort: 9093
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+            - name: storage
+              mountPath: /alertmanager
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+      volumes:
+        - name: config
+          configMap:
+            name: alertmanager-config
+        - name: storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9093
+      targetPort: http
+  selector:
+    app: alertmanager

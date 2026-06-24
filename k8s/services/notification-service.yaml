@@ -1,0 +1,150 @@
+# =====================================================================
+# notification-service (port 8010) - P3-3-W2
+# =====================================================================
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: notification-service
+  namespace: nanobot-factory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: nanobot-factory
+  labels:
+    app: notification-service
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        app.kubernetes.io/component: microservice
+    spec:
+      serviceAccountName: notification-service
+      containers:
+        - name: notification-service
+          image: ghcr.io/minimax-ai/nanobot-factory:v0.8.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/venv/bin/uvicorn
+            - backend.services.notification_service.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8010"
+            - --log-level
+            - info
+          ports:
+            - name: http
+              containerPort: 8010
+              protocol: TCP
+            - name: ws
+              containerPort: 8010
+              protocol: TCP
+          env:
+            - name: NANOBOT_PORT
+              value: "8010"
+            - name: NOTIFICATION_SERVICE_URL
+              value: http://notification-service.nanobot-factory.svc.cluster.local:8010
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: nanobot-secrets
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: nanobot-secrets
+                  key: SMTP_PORT
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nanobot-secrets
+                  key: SMTP_USER
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nanobot-secrets
+                  key: SMTP_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: nanobot-config
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8010
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8010
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: nanobot-factory
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8010
+      targetPort: 8010
+      protocol: TCP
+  selector:
+    app: notification-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service
+  namespace: nanobot-factory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300

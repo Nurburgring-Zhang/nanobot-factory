@@ -1,0 +1,38 @@
+[Unit]
+Description=IMDF unified backup orchestrator
+Documentation=man:backup_cron.sh(8)
+Requires=postgresql.service redis-server.service minio.service
+After=postgresql.service redis-server.service minio.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=imdf
+Group=imdf
+WorkingDirectory=/opt/nanobot-factory
+EnvironmentFile=/etc/imdf/imdf.env
+Environment="JOB_TAG=cron"
+Environment="BACKUP_TARGETS=all"
+ExecStart=/opt/nanobot-factory/deploy/bare_metal/backup_cron.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+
+# Capture stdout/stderr to journald + logfile (backup_cron.sh tees internally)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=imdf-backup
+
+# Resource limits
+MemoryMax=2G
+TasksMax=64
+
+# Allow long-running backups (OSS can be slow on large buckets)
+TimeoutStartSec=4h
+
+[Install]
+WantedBy=multi-user.target

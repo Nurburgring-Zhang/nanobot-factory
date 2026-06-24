@@ -1,0 +1,22 @@
+# =====================================================================
+# Nanobot Factory - Namespace
+# =====================================================================
+# Single-namespace deployment.  All workloads (12 microservices + gateway +
+# postgres + redis + minio) live in `nanobot-factory`.
+#
+# Apply:
+#   kubectl apply -f k8s/namespaces.yaml
+# =====================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nanobot-factory
+  labels:
+    name: nanobot-factory
+    app.kubernetes.io/part-of: nanobot-factory
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+  annotations:
+    contact: "platform-team@nanobot-factory.com"
+    description: "Nanobot Factory production workloads"

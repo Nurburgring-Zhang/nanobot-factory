@@ -1,0 +1,1335 @@
+import type { NodeDataShape } from './types';
+import { mergeDefaultData } from './defaults';
+
+/**
+ * IMDF Migration — from penguin-canvas (T8mars)
+ * Source: /mnt/d/Hermes/imdf_vendor/penguin-canvas/src/components/nodes/
+ * Renamed: PascalCase -> snake_case
+ * This file is a physical copy; no logic has been rewritten.
+ */
+
+/**
+ * ─── R3-Worker-4 IO CONTRACT MARKER ────────────────────────────────
+ * 类型 key : output
+ * 组件     : OutputNode
+ * Data in  : NodeDataShape<'output'> (用户/上游配置 + 节点自身状态)
+ * Data out : imageUrl/videoUrl/audioUrl/prompt/outputText 写回 data
+ * 默认值   : mergeDefaultData('output', p.data) → defaults.ts
+ * IO 文档   : NODE_IO_CONTRACTS → 类型 'output'
+ * onChange : useUpdateNodeData(id).update(patch) 浅合并到 data
+ * ────────────────────────────────────────────────────────────────────
+ */
+
+
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Handle,
+  Position,
+  useNodeConnections,
+  useNodesData,
+  useReactFlow,
+  type NodeProps,
+  type Node,
+} from '@xyflow/react';
+import { Box, MonitorPlay, Type as TypeIcon, Image as ImageIcon, Video as VideoIcon, Music, Download, Pencil, Check, Edit3, GitCompare } from 'lucide-react';
+import { useUpdateNodeData } from './useUpdateNodeData';
+import { useThemeStore } from '../../stores/theme';
+import { PORT_COLOR } from '../../config/portTypes';
+import { resolveThemeTemplate } from '../../theme/defaultTemplates';
+import ImageEditModal, { type ImageEditProduceMeta } from './ImageEditModal';
+import ImageCompareModal from '../ImageCompareModal';
+import CollectionSplitButton from '../CollectionSplitButton';
+import ImageHoverPreview from '../ImageHoverPreview';
+import LoopingVideo from '../LoopingVideo';
+import SmartImage from '../SmartImage';
+import { useMaterialDropTarget } from '../../hooks/useMaterialDropTarget';
+import { useDragMaterialStore, type MaterialPayload } from '../../stores/dragMaterial';
+import ResizableCorners from './ResizableCorners';
+import { saveAssetToDisk } from '../../services/api';
+import {
+  createOutputDataFromItem,
+  fileNameFromUrl,
+  type MediaItem,
+  type MediaKind,
+} from '../../utils/mediaCollection';
+import {
+  extractImagesFromData,
+  extractInputCandidatesFromData,
+  isImageLikeUrl,
+  type ImageCompareCandidate,
+} from '../../utils/imageCompare';
+import { collectMaterialSetBucketsFromData, valueOfMaterialSetItem } from '../../utils/materialSet';
+// v1.2.10.5: 节点落点防重叠 —— 双击编辑产出 N 节点 3 列宫格整组避让
+import { placeBatchNodes, defaultSizeOf, type Rect as PlacementRect } from '../../utils/nodePlacement';
+
+/**
+ * OutputNode - 通用输出素材节点 (中继展示型)
+ *
+ * 设计:
+ *   1. 输入: 接收上游任意 文本/图像/视频/音频/3D模型 连入 (target handle, 左侧)
+ *   2. 自动遍历上游节点的 data, 抽取所有可识别的:
+ *      - 文本: prompt / reply / text / outputText
+ *      - 图像: imageUrl / imageUrls[] / urls[] / generatedImages[]
+ *      - 视频: videoUrl
+ *      - 音频: audioUrl
+ *   3. 分区显示, 图像/视频按原始宽高比 (object-contain + maxHeight) 不强制裁剪
+ *   4. 文本双击进入可编辑状态, 编辑保存到 data.outputText (覆盖上游 live 文本)
+ *      置空 outputText 时再次显示上游原文
+ *   5. 输出: 收集到的 文本/图像/视频/音频/3D模型 同时透传到本节点自身 data 的
+ *      prompt / imageUrl / imageUrls / urls / videoUrl / audioUrl / modelUrl 字段上,
+ *      下游节点能像读上游一样读到 (source handle, 右侧, any)
+ *
+ * 渲染联动机制(重要):
+ *   - 上游订阅: useNodeConnections + useNodesData (xyflow 官方 hook)
+ *   - 下游透传: useEffect 监听 collected + displayText 变化,
+ *     写不同字段避免踩 outputText (后者是「用户编辑覆盖」标记),
+ *     同时手式比较 cur/next, 一致时不调 update 以免产生循环。
+ */
+
+const isVideoUrl = (u: string) => /\.(mp4|webm|mov|m4v|mkv)(\?|$)/i.test(u);
+const isAudioUrl = (u: string) => /\.(mp3|wav|ogg|m4a|flac)(\?|$)/i.test(u);
+const isModel3DUrl = (u: string) => /\.(glb|gltf|obj|fbx|stl|usdz|zip)(\?|$)/i.test(u) || /^data:model\//i.test(u);
+
+const NODE_INPUT_LABELS: Record<string, string> = {
+  upload: '上传图',
+  output: '上游输出图',
+  image: '上游生成图',
+  'frame-pair': '抽帧图',
+  resize: '尺寸调整图',
+  combine: '合成图',
+  'grid-crop': '宫格切图',
+  'grid-editor': '宫格拼图',
+  'remove-bg': '抠图结果',
+  upscale: '放大结果',
+  relay: '中继图',
+};
+
+interface Collected {
+  texts: string[];
+  images: string[];
+  videos: string[];
+  audios: string[];
+  models: string[];
+}
+
+const OutputNode = ({ id, data, selected }: NodeProps) => {
+  const update = useUpdateNodeData(id);
+  const { theme, templateId, customTemplates } = useThemeStore();
+  const isDark = theme === 'dark';
+  const d = mergeDefaultData('output', (data as Partial<NodeDataShape<'output'>>) || undefined);
+  const rf = useReactFlow();
+  const activeTemplate = useMemo(
+    () => resolveThemeTemplate(templateId, customTemplates),
+    [templateId, customTemplates],
+  );
+  const isRhDomVisual =
+    typeof document !== 'undefined' && document.documentElement.dataset.themeVisual === 'rh';
+  const isRhVisual = activeTemplate.visuals?.style === 'rh' || isRhDomVisual;
+  const isRhDuckOutput = Boolean(isRhVisual && d.rhDuckDecoded);
+  const isYyhDomVisual =
+    typeof document !== 'undefined' && document.documentElement.dataset.themeVisual === 'yyh';
+  const isYyhVisual = activeTemplate.visuals?.style === 'yyh' || isYyhDomVisual;
+  const isYyhPortraitOutput = Boolean(isYyhVisual && d.yyhPortraitHidden);
+
+  // 节点本地尺寸 state: 默认 (320, 高度由内容撑开)
+  // 拖角后由 ResizableCorners onResize 同步具体 px — 保证节点始终有具体尺寸 → wrapper measured 准确
+  // → keepAspectRatio 生效 (同比例缩放) + handleBounds 准确 (连线稳定)
+  const [size, setSize] = useState<{ w: number; h?: number }>({ w: 320 });
+
+  // 订阅连入本节点 target handle 的连接变化
+  const connections = useNodeConnections({ id, handleType: 'target' });
+  const upstreamIds = useMemo(
+    () => Array.from(new Set(connections.map((c) => c.source))),
+    [connections]
+  );
+  // 订阅上游节点的 data, 任何上游 data 变化都会触发重渲染
+  const upstreamNodes = useNodesData(upstreamIds);
+
+  // v1.2.9.5: 检测上游是否含 LoopNode —— 用于「直接接 LoopNode 的 OutputNode」空状态下显示友好提示,
+  //         代替误导性的「连入上游...」占位 (循环器不产出素材 → OutputNode 本身也不应表现得像「坏掉」)。
+  const upstreamHasLoop = useMemo(() => {
+    const list = Array.isArray(upstreamNodes) ? upstreamNodes : [];
+    return list.some((n: any) => n?.type === 'loop');
+  }, [upstreamNodes]);
+
+  // v1.2.8.4: 收集每个上游 source 上被连接的 sourceHandle 集合,
+  //           供 FramePair 等多端口节点按 handle 区分输出 (与 useUpstreamMaterials 对齐)
+  const handleMap = useMemo(() => {
+    const m = new Map<string, Set<string | null>>();
+    for (const c of connections) {
+      let set = m.get(c.source);
+      if (!set) { set = new Set<string | null>(); m.set(c.source, set); }
+      set.add((c as any).sourceHandle ?? null);
+    }
+    return m;
+  }, [connections]);
+
+  // 细粒度字段签名: 防止 xyflow useNodesData 返回引用稳定导致 useMemo 漏重算;
+  // 纯字符串变化 React 可靠跟踪，上游任何一个被迫关心的字段变动均会重算 collected。
+  const upstreamSig = useMemo(() => {
+    const list = Array.isArray(upstreamNodes) ? upstreamNodes : [];
+    return list
+      .map((n: any) => {
+        const ud = n?.data || {};
+        const arr1 = Array.isArray(ud.imageUrls) ? ud.imageUrls.join(',') : '';
+        const arr2 = Array.isArray(ud.urls) ? ud.urls.join(',') : '';
+        const arr3 = Array.isArray(ud.generatedImages) ? ud.generatedImages.join(',') : '';
+        const arr4 = Array.isArray(ud.consumedTexts) ? ud.consumedTexts.join('\u241F') : '';
+        const arr5 = Array.isArray(ud.textSegments) ? ud.textSegments.join('\u241F') : '';
+        const arr6 = Array.isArray(ud.segments) ? ud.segments.join('\u241F') : '';
+        const arr7 = Array.isArray(ud.texts) ? ud.texts.join('\u241F') : '';
+        const arrModel1 = Array.isArray(ud.modelUrls) ? ud.modelUrls.join(',') : '';
+        const arrModel2 = Array.isArray(ud.directModelUrls) ? ud.directModelUrls.join(',') : '';
+        const arr8 = Array.isArray(ud.materialSetItems)
+          ? JSON.stringify(ud.materialSetItems.map((item: any) => [item?.kind, item?.url, item?.text, item?.name]))
+          : '';
+        return [
+          n?.id || '',
+          n?.type || '',
+          ud.materialSetKind || '',
+          ud.outputText || '',
+          ud.reply || '',
+          ud.prompt || '',
+          ud.text || '',
+          ud.imageUrl || '',
+          ud.videoUrl || '',
+          ud.audioUrl || '',
+          ud.audioUrl_1 || '', // Suno 双轨副轨; 漏写会导致只显示第 1 首
+          ud.modelUrl || '',
+          ud.directModelUrl || '',
+          ud.firstFrameUrl || '', // v1.2.8.4: FramePair 双端口字段
+          ud.lastFrameUrl || '',
+          ud.__loopAccumulate ? `LA:${ud.__loopAccumulate}` : '', // v1.2.9.1: 循环累积标记 — 进入/退出循环时需重算 collected
+          arr1,
+          arr2,
+          arr3,
+          arr4,
+          arr5,
+          arr6,
+          arr7,
+          arrModel1,
+          arrModel2,
+          arr8,
+        ].join('§');
+      })
+      .join('|');
+  }, [upstreamNodes]);
+
+  const collected = useMemo<Collected>(() => {
+    const out: Collected = { texts: [], images: [], videos: [], audios: [], models: [] };
+
+    // 「被 LLM 消化」文本跳过集: 与 useUpstreamMaterials 保持一致。
+    // 场景: TextNode 同时连 LLM 和 OutputNode 时, 避免 原始 prompt + LLM reply 同现 2 条。
+    const skipTextSet = new Set<string>();
+    {
+      const list0 = Array.isArray(upstreamNodes) ? upstreamNodes : [];
+      for (const n of list0) {
+        const ud: any = n?.data || {};
+        const hasReply = typeof ud.reply === 'string' && ud.reply.trim().length > 0;
+        if (!hasReply) continue;
+        if (Array.isArray(ud.consumedTexts)) {
+          for (const t of ud.consumedTexts) {
+            if (typeof t === 'string') {
+              const s = t.trim();
+              if (s) skipTextSet.add(s);
+            }
+          }
+        }
+      }
+    }
+
+    const pushUnique = (arr: string[], v: any) => {
+      if (typeof v !== 'string') return;
+      const s = v.trim();
+      if (!s) return;
+      if (arr.indexOf(s) === -1) arr.push(s);
+    };
+    const pushUniqueText = (arr: string[], v: any) => {
+      if (typeof v !== 'string') return;
+      const s = v.trim();
+      if (!s) return;
+      if (skipTextSet.has(s)) return; // 已被 LLM 消化
+      if (arr.indexOf(s) === -1) arr.push(s);
+    };
+    const pushTextSegment = (arr: string[], v: any) => {
+      if (typeof v !== 'string') return;
+      const s = v.trim();
+      if (!s) return;
+      if (skipTextSet.has(s)) return;
+      arr.push(s);
+    };
+    const pushClassifiedUrl = (value: any) => {
+      if (typeof value !== 'string') return;
+      const url = value.trim();
+      if (!url) return;
+      if (isModel3DUrl(url)) pushUnique(out.models, url);
+      else if (isVideoUrl(url)) pushUnique(out.videos, url);
+      else if (isAudioUrl(url)) pushUnique(out.audios, url);
+      else pushUnique(out.images, url);
+    };
+
+    const directOnlyOutput = Boolean(d.rhDuckDecoded);
+    if (!directOnlyOutput) {
+      const list = Array.isArray(upstreamNodes) ? upstreamNodes : [];
+      for (const n of list) {
+        const ud: any = n?.data || {};
+        const sid = (n as any)?.id || '';
+        const handles = handleMap.get(sid) || new Set<string | null>([null]);
+
+        // 显式素材集: 按内部顺序透传；跳过旧字段读取，避免素材集同步字段造成重复。
+        if ((n as any)?.type === 'material-set' && Array.isArray(ud.materialSetItems)) {
+          const buckets = collectMaterialSetBucketsFromData(ud);
+          buckets.text.forEach((item) => pushTextSegment(out.texts, valueOfMaterialSetItem(item)));
+          buckets.image.forEach((item) => pushUnique(out.images, item.url));
+          buckets.video.forEach((item) => pushUnique(out.videos, item.url));
+          buckets.audio.forEach((item) => pushUnique(out.audios, item.url));
+          continue;
+        }
+
+      // === v1.2.9.0: 循环累积模式 —— 上游节点被 LoopNode 标记 __loopAccumulate 时,
+      //             跳过该上游的 fresh 字段收集 (让本节点 direct*Urls / directOutputText 的累积值独占显示)。
+      //             这样跨轮产物不会被生成节点「本轮覆盖」的 fresh 担换, 循环结束后标记被 LoopNode 清除, 恢复正常透传。
+        if (ud.__loopAccumulate) continue;
+
+      // 文本: textSegments/texts 数组优先, 避免文本分割节点再把 joined prompt 当成第 N+1 项
+        const textArrayFields = ['textSegments', 'segments', 'texts'];
+        const textArrayField = textArrayFields.find((f) => Array.isArray(ud[f]) && ud[f].length > 0);
+        if (textArrayField) {
+          ud[textArrayField].forEach((item: any) => pushTextSegment(out.texts, item));
+        } else {
+          pushUniqueText(out.texts, ud.outputText);
+          pushUniqueText(out.texts, ud.reply);
+          pushUniqueText(out.texts, ud.prompt);
+          pushUniqueText(out.texts, ud.text);
+        }
+
+      // === v1.2.8.4: FramePair 双端口语义 ===
+      // 节点同时具备 firstFrameUrl + lastFrameUrl 字段时按 sourceHandle 过滤,
+      //   - 'first' 端口 → 只输出首帧
+      //   - 'last'  端口 → 只输出尾帧
+      //   - null/默认  → 同时输出两帧 (autoOutput / 手动接默认 handle 的兼容)
+      // 跳过通用 imageUrl/imageUrls 分支, 避免历史残留字段把双图都捞过来。
+        const isFramePair =
+          Object.prototype.hasOwnProperty.call(ud, 'firstFrameUrl') &&
+          Object.prototype.hasOwnProperty.call(ud, 'lastFrameUrl');
+        if (isFramePair) {
+          const wantFirst = handles.has('first') || (handles.has(null) && !handles.has('last'));
+          const wantLast = handles.has('last') || (handles.has(null) && !handles.has('first'));
+          if (wantFirst) pushUnique(out.images, ud.firstFrameUrl);
+          if (wantLast) pushUnique(out.images, ud.lastFrameUrl);
+          // 视频/音频 此节点不会有, 跳过
+          continue;
+        }
+
+      // 图像 - 单
+        pushUnique(out.images, ud.imageUrl);
+        // 图像 - 多
+        const arrFields = ['imageUrls', 'urls', 'generatedImages'];
+        for (const f of arrFields) {
+          const v = ud[f];
+          if (Array.isArray(v)) v.forEach((u) => (f === 'urls' ? pushClassifiedUrl(u) : pushUnique(out.images, u)));
+        }
+
+      // 3D 模型
+        pushUnique(out.models, ud.modelUrl);
+        pushUnique(out.models, ud.directModelUrl);
+        if (Array.isArray(ud.modelUrls)) ud.modelUrls.forEach((u: any) => pushUnique(out.models, u));
+        if (Array.isArray(ud.directModelUrls)) ud.directModelUrls.forEach((u: any) => pushUnique(out.models, u));
+
+      // 视频
+        pushUnique(out.videos, ud.videoUrl);
+
+      // === v1.2.9.14: Suno 双端口语义 (与 FramePair 同模式) ===
+      // AudioNode (Suno) 同时具备 audioUrl + audioUrl_1 字段时按 sourceHandle 过滤,
+      //   - 'audio-0' → 主轨、 'audio-1' → 副轨、 null/默认 → 两轨
+      // 跳过下面的通用 audioUrl/audioUrl_1 分支，避免重复加入。
+        const isSuno =
+          Object.prototype.hasOwnProperty.call(ud, 'audioUrl') &&
+          Object.prototype.hasOwnProperty.call(ud, 'audioUrl_1');
+        if (isSuno) {
+          const wantA0 = handles.has('audio-0') || (handles.has(null) && !handles.has('audio-1'));
+          const wantA1 = handles.has('audio-1') || (handles.has(null) && !handles.has('audio-0'));
+          if (wantA0) pushUnique(out.audios, ud.audioUrl);
+          if (wantA1) pushUnique(out.audios, ud.audioUrl_1);
+          continue;
+        }
+
+        // 音频 (audioUrl 主轨, audioUrl_1 副轨——AudioNode/SunoNode 双输出口)
+        pushUnique(out.audios, ud.audioUrl);
+        pushUnique(out.audios, ud.audioUrl_1);
+      }
+    }
+
+    // 独立模式 (双击编辑生成的产物 OutputNode):
+    //   节点本身携带 directImageUrl/directImageUrls, 未连任何上游也能独立展示。
+    //   这些产物不会被 pickKind/pickIndex 过滤干预, 在下面独立补补。
+    //   v1.5: 新增 directVideoUrl / directAudioUrl / outputText 以支持跨节点拖拽投放。
+    if (typeof d.directImageUrl === 'string' && d.directImageUrl) {
+      pushUnique(out.images, d.directImageUrl);
+    }
+    if (Array.isArray(d.directImageUrls)) {
+      d.directImageUrls.forEach((u: any) => pushUnique(out.images, u));
+    }
+    if (typeof d.directVideoUrl === 'string' && d.directVideoUrl) {
+      pushUnique(out.videos, d.directVideoUrl);
+    }
+    // v1.2.8.3: 多产物数组 (LoopNode 串联 / 并联跨轮累积)
+    if (Array.isArray(d.directVideoUrls)) {
+      d.directVideoUrls.forEach((u: any) => pushUnique(out.videos, u));
+    }
+    if (typeof d.directAudioUrl === 'string' && d.directAudioUrl) {
+      pushUnique(out.audios, d.directAudioUrl);
+    }
+    if (Array.isArray(d.directAudioUrls)) {
+      d.directAudioUrls.forEach((u: any) => pushUnique(out.audios, u));
+    }
+    if (typeof d.directModelUrl === 'string' && d.directModelUrl) {
+      pushUnique(out.models, d.directModelUrl);
+    }
+    if (Array.isArray(d.directModelUrls)) {
+      d.directModelUrls.forEach((u: any) => pushUnique(out.models, u));
+    }
+    // v1.2.8.5: 循环器跨轮累积的文本联接作为独立一项加入 (已含 —— 分隔符)
+    if (typeof d.directOutputText === 'string' && d.directOutputText) {
+      pushUniqueText(out.texts, d.directOutputText);
+    }
+    if (Array.isArray(d.directTextSegments)) {
+      d.directTextSegments.forEach((t: any) => pushUniqueText(out.texts, t));
+    }
+
+    // 兜底: 一些节点把视频/音频塞在 imageUrl, 通过扩展名识别再纠正
+    out.images = out.images.filter((u) => {
+      if (isModel3DUrl(u)) {
+        if (out.models.indexOf(u) === -1) out.models.push(u);
+        return false;
+      }
+      if (isVideoUrl(u)) {
+        if (out.videos.indexOf(u) === -1) out.videos.push(u);
+        return false;
+      }
+      if (isAudioUrl(u)) {
+        if (out.audios.indexOf(u) === -1) out.audios.push(u);
+        return false;
+      }
+      return true;
+    });
+
+    // === pickKind / pickIndex 过滤 ===
+    // Canvas 自动创建多个 OutputNode 映射上游多项输出时,
+    // 会在 data 里标记 pickKind ('image'/'video'/'audio') + pickIndex,
+    // 则本节点只保留对应 kind 的第 pickIndex 项, 避免多图场景下
+    // 所有 OutputNode 都重复显示全部输出。
+    // 手动连连的 OutputNode 不带 pickKind => 保留原语义 (显示上游全部).
+    //
+    // v1.2.9.10: 累积模式短路 ——
+    //   场景: LoopNode 跑完后下游 OutputNode 的 directImageUrls/directVideoUrls/directAudioUrls
+    //         里累积了 N 张, 但 Canvas autoOutput 早在第一轮就把它升级为 pickKind='image', pickIndex=0,
+    //         finally 清除 __loopAccumulate 后 collected.images 顺序变成 [fresh_lastRound, direct_r1, direct_r2 dedup],
+    //         pickIndex=0 把全集砍成 [fresh_lastRound] → 用户只看到最后一轮 (典型 ImageNode/VideoNode/AudioNode 覆盖症状)。
+    //   修复: 若 OutputNode 自身已有 direct*Urls / directOutputText 累积值 (>0 项),
+    //         说明它是 LoopNode 累积模式的 OutputNode, 跳过 pickKind 切割, 全量展示 fresh+direct 去重结果。
+    //         与 FramePair 行为对齐 (FramePair 走 autoOutput 专属路径不带 pickKind, 不受此 BUG 影响)。
+    const hasAnyDirectAccumulated =
+      (Array.isArray(d.directImageUrls) && d.directImageUrls.length > 0) ||
+      (Array.isArray(d.directVideoUrls) && d.directVideoUrls.length > 0) ||
+      (Array.isArray(d.directAudioUrls) && d.directAudioUrls.length > 0) ||
+      (Array.isArray(d.directModelUrls) && d.directModelUrls.length > 0) ||
+      (typeof d.directOutputText === 'string' && d.directOutputText.length > 0);
+    const pickKind: string | undefined = hasAnyDirectAccumulated ? undefined : d.pickKind;
+    const pickIndex: number | undefined =
+      typeof d.pickIndex === 'number' ? d.pickIndex : undefined;
+    if (pickKind && typeof pickIndex === 'number') {
+      if (pickKind === 'image') {
+        out.images = out.images[pickIndex] ? [out.images[pickIndex]] : [];
+        out.videos = [];
+        out.audios = [];
+        out.models = [];
+        // 图像项模式下还保留文本 (提示词) 以便下游可读
+      } else if (pickKind === 'video') {
+        out.videos = out.videos[pickIndex] ? [out.videos[pickIndex]] : [];
+        out.images = [];
+        out.audios = [];
+        out.models = [];
+      } else if (pickKind === 'audio') {
+        out.audios = out.audios[pickIndex] ? [out.audios[pickIndex]] : [];
+        out.images = [];
+        out.videos = [];
+        out.models = [];
+      } else if (pickKind === 'model3d') {
+        out.models = out.models[pickIndex] ? [out.models[pickIndex]] : [];
+        out.images = [];
+        out.videos = [];
+        out.audios = [];
+      }
+    }
+
+    return out;
+  }, [upstreamNodes, upstreamSig, handleMap, d.pickKind, d.pickIndex, d.directImageUrl, d.directImageUrls, d.directVideoUrl, d.directVideoUrls, d.directAudioUrl, d.directAudioUrls, d.directModelUrl, d.directModelUrls, d.modelUrl, d.modelUrls, d.directOutputText, d.directTextSegments, d.rhDuckDecoded]);
+
+  // 文本编辑
+  const overrideText: string = typeof d.outputText === 'string' ? d.outputText : '';
+  const liveText = collected.texts.join('\n\n──────\n\n');
+  const displayText = overrideText !== '' ? overrideText : liveText;
+  const mediaPromptByUrl = useMemo(() => {
+    const map = new Map<string, { prompt: string; negative: string }>();
+    const clean = (value: any) => (typeof value === 'string' ? value.trim() : '');
+    const readPrompt = (ud: any) => clean(ud?.lastPrompt) || clean(ud?.prompt) || clean(ud?.outputText) || clean(ud?.text) || clean(ud?.reply);
+    const readNegative = (ud: any) => clean(ud?.negativePrompt) || clean(ud?.negative) || clean(ud?.providerParams?.negativePrompt) || clean(ud?.providerParams?.negative);
+    const add = (value: any, prompt: string, negative: string) => {
+      const url = clean(value);
+      if (!url || map.has(url)) return;
+      map.set(url, { prompt, negative });
+    };
+    const addArray = (values: any, prompt: string, negative: string) => {
+      if (Array.isArray(values)) values.forEach((url) => add(url, prompt, negative));
+    };
+
+    const list = Array.isArray(upstreamNodes) ? upstreamNodes : [];
+    for (const node of list) {
+      const ud: any = (node as any)?.data || {};
+      const prompt = readPrompt(ud);
+      const negative = readNegative(ud);
+      if (!prompt) continue;
+      add(ud.imageUrl, prompt, negative);
+      addArray(ud.imageUrls, prompt, negative);
+      addArray(ud.urls, prompt, negative);
+      addArray(ud.generatedImages, prompt, negative);
+      add(ud.firstFrameUrl, prompt, negative);
+      add(ud.lastFrameUrl, prompt, negative);
+      add(ud.videoUrl, prompt, negative);
+      addArray(ud.videoUrls, prompt, negative);
+      add(ud.audioUrl, prompt, negative);
+      add(ud.audioUrl_1, prompt, negative);
+      addArray(ud.audioUrls, prompt, negative);
+      add(ud.modelUrl, prompt, negative);
+      add(ud.directModelUrl, prompt, negative);
+      addArray(ud.modelUrls, prompt, negative);
+      addArray(ud.directModelUrls, prompt, negative);
+    }
+
+    const ownPrompt = clean(d.lastPrompt) || clean(d.prompt) || clean(d.directOutputText) || displayText.trim();
+    const ownNegative = readNegative(d);
+    if (ownPrompt) {
+      add(d.directImageUrl, ownPrompt, ownNegative);
+      addArray(d.directImageUrls, ownPrompt, ownNegative);
+      add(d.directVideoUrl, ownPrompt, ownNegative);
+      addArray(d.directVideoUrls, ownPrompt, ownNegative);
+      add(d.directAudioUrl, ownPrompt, ownNegative);
+      addArray(d.directAudioUrls, ownPrompt, ownNegative);
+      add(d.directModelUrl, ownPrompt, ownNegative);
+      addArray(d.directModelUrls, ownPrompt, ownNegative);
+      add(d.modelUrl, ownPrompt, ownNegative);
+      addArray(d.modelUrls, ownPrompt, ownNegative);
+    }
+    return map;
+  }, [d.directAudioUrl, d.directAudioUrls, d.directImageUrl, d.directImageUrls, d.directModelUrl, d.directModelUrls, d.directOutputText, d.directVideoUrl, d.directVideoUrls, d.lastPrompt, d.modelUrl, d.modelUrls, d.negative, d.negativePrompt, d.prompt, d.providerParams, displayText, upstreamNodes, upstreamSig]);
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  const enterEdit = () => {
+    setDraft(displayText);
+    setEditing(true);
+    setTimeout(() => taRef.current?.focus(), 30);
+  };
+  const saveEdit = () => {
+    update({ outputText: draft });
+    setEditing(false);
+  };
+  const cancelEdit = () => {
+    setEditing(false);
+  };
+  const restoreLive = () => {
+    update({ outputText: '' });
+    setEditing(false);
+  };
+
+  const isEdited = overrideText !== '' && overrideText !== liveText;
+  const HANDLE = PORT_COLOR.any;
+  const accent = '#5eead4'; // teal-300, 与 nodeRegistry color: 'teal' 对齐
+  const effectiveAccent = isRhDuckOutput ? '#ff345f' : isYyhPortraitOutput ? '#ff4fd8' : accent;
+  const effectiveHandle = isRhDuckOutput ? '#ff345f' : isYyhPortraitOutput ? '#ff4fd8' : HANDLE;
+
+  const total = collected.texts.length + collected.images.length + collected.videos.length + collected.audios.length + collected.models.length;
+
+  // === 双击图片 → 裁剪/宫格弹窗 ===
+  // 仅针对 collected.images 中的单张图生效; 产物“不”修改本节点, 而是
+  // 以 directImageUrl 独立模式创建 N 个新 OutputNode (沉淀在本节点的右下区),
+  // 取 id 前缀 'output-auto-edit-' 以与源 output-auto-* 区分 (不受重排接管).
+  const [editingUrl, setEditingUrl] = useState<string | null>(null);
+  const [compareState, setCompareState] = useState<{
+    resultUrl: string;
+    candidates: ImageCompareCandidate[];
+  } | null>(null);
+
+  const buildCompareCandidates = (resultUrl: string): ImageCompareCandidate[] => {
+    const nodes = rf.getNodes();
+    const edges = rf.getEdges();
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const seen = new Set<string>([resultUrl]);
+    const out: ImageCompareCandidate[] = [];
+
+    const push = (url: any, label: string, sourceNodeId?: string, sourceType?: string) => {
+      if (typeof url !== 'string') return;
+      const s = url.trim();
+      if (!s || !isImageLikeUrl(s) || seen.has(s)) return;
+      seen.add(s);
+      out.push({ url: s, label, sourceNodeId, sourceType });
+    };
+
+    const directSourceIds = Array.from(new Set(connections.map((c) => c.source)));
+    for (const sourceId of directSourceIds) {
+      const sourceNode = nodeMap.get(sourceId);
+      if (!sourceNode) continue;
+      const sourceType = String(sourceNode.type || '');
+      out.push(...extractInputCandidatesFromData(sourceNode.data, sourceId, sourceType, seen));
+
+      const incoming = edges.filter((e) => e.target === sourceId);
+      for (const edge of incoming as any[]) {
+        const inputNode = nodeMap.get(edge.source);
+        if (!inputNode) continue;
+        const inputType = String(inputNode.type || '');
+        const labelBase = NODE_INPUT_LABELS[inputType] || '上游输入图';
+        const imgs = extractImagesFromData(inputNode.data, edge.sourceHandle ?? null);
+        imgs.forEach((u, i) => {
+          const label = inputType === 'frame-pair'
+            ? (edge.sourceHandle === 'last' ? '尾帧' : edge.sourceHandle === 'first' ? '首帧' : `抽帧图 ${i + 1}`)
+            : `${labelBase} ${i + 1}`;
+          push(u, label, inputNode.id, inputType);
+        });
+        out.push(...extractInputCandidatesFromData(inputNode.data, inputNode.id, inputType, seen));
+      }
+    }
+
+    collected.images.forEach((u, i) => {
+      push(u, `当前输出 ${i + 1}`, id, 'output');
+    });
+
+    return out;
+  };
+
+  const openImageCompare = (resultUrl: string) => {
+    setCompareState({
+      resultUrl,
+      candidates: buildCompareCandidates(resultUrl),
+    });
+  };
+
+  const splitOutputCollection = (kind: MediaKind, urls: string[]) => {
+    if (!urls || urls.length <= 1) return;
+    const me = rf.getNode(id);
+    const myW = (me as any)?.measured?.width || (me as any)?.width || 320;
+    const myH = (me as any)?.measured?.height || (me as any)?.height || 360;
+    const baseX = (me?.position?.x ?? 0) + myW + 80;
+    const baseY = me?.position?.y ?? 0;
+    const ts = Date.now();
+    const COLS = 3;
+    const targetType = kind === 'model3d' ? 'model-3d-preview' : 'output';
+    const targetSize = defaultSizeOf(targetType);
+    const COL_W = targetType === 'model-3d-preview' ? targetSize.w + 40 : 350;
+    const ROW_H = Math.max(300, myH);
+    const _sz = targetSize;
+    const items: MediaItem[] = urls.map((url) => ({ kind, url }));
+    const _desired: PlacementRect[] = items.map((_, i) => ({
+      x: baseX + (i % COLS) * COL_W,
+      y: baseY + Math.floor(i / COLS) * ROW_H,
+      w: _sz.w,
+      h: _sz.h,
+    }));
+    const _off = placeBatchNodes(_desired, rf.getNodes(), { source: `placement:split-output:${id}` });
+    const newNodes: Node[] = items.map((item, i) => ({
+      id: `${targetType}-split-${id}-${ts}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      type: targetType,
+      position: {
+        x: baseX + (i % COLS) * COL_W + _off.dx,
+        y: baseY + Math.floor(i / COLS) * ROW_H + _off.dy,
+      },
+      data: createOutputDataFromItem(item),
+      selected: false,
+    } as Node));
+    rf.addNodes(newNodes);
+  };
+
+  const handleProduce = (urls: string[], _meta: ImageEditProduceMeta) => {
+    if (!urls || urls.length === 0) return;
+    const me = rf.getNode(id);
+    const myW = (me as any)?.measured?.width || (me as any)?.width || 320;
+    const myH = (me as any)?.measured?.height || (me as any)?.height || 360;
+    const baseX = (me?.position?.x ?? 0) + myW + 80;
+    const baseY = me?.position?.y ?? 0;
+    const COLS = 3;
+    const COL_W = 350;
+    const ROW_H = Math.max(360, myH); // 以本节点高度为下限避免重叠
+    const ts = Date.now();
+    // v1.2.10.5: 整组防重叠 —— 先算期望 3 列宫格, 再求公共偏移
+    const _sz = defaultSizeOf('output');
+    const _desired: PlacementRect[] = urls.map((_, i) => ({
+      x: baseX + (i % COLS) * COL_W,
+      y: baseY + Math.floor(i / COLS) * ROW_H,
+      w: _sz.w, h: _sz.h,
+    }));
+    const _off = placeBatchNodes(_desired, rf.getNodes(), { source: `placement:produce:${id}` });
+    const newNodes: Node[] = urls.map((u, i) => {
+      const newId = `output-auto-edit-${id}-${ts}-${i}-${Math.random()
+        .toString(36)
+        .slice(2, 6)}`;
+      return {
+        id: newId,
+        type: 'output',
+        position: {
+          x: baseX + (i % COLS) * COL_W + _off.dx,
+          y: baseY + Math.floor(i / COLS) * ROW_H + _off.dy,
+        },
+        data: {
+          directImageUrl: u,
+          // 便于下游节点从 data 读取 (与现有 effect 透传不冲突)
+          imageUrl: u,
+        },
+      } as Node;
+    });
+    rf.addNodes(newNodes);
+  };
+
+  // === 跨节点拖拽: source (从 collected.* 拖出) ===
+  // 独立函数避开 hooks-in-loop 限制
+  const startDrag = useDragMaterialStore((s) => s.start);
+  const beginMaterialDrag = (e: React.MouseEvent, payload: MaterialPayload) => {
+    if (e.button !== 0) return;
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    startDrag(payload, e.clientX, e.clientY);
+  };
+
+  // === 跨节点拖拽: target (接收后以 direct* 独立模式补充, 不依赖上游) ===
+  const handleDrop = (payload: MaterialPayload) => {
+    if (payload.kind === 'image' && payload.url) {
+      const cur: string[] = Array.isArray(d.directImageUrls) ? d.directImageUrls : [];
+      if (!d.directImageUrl) {
+        update({ directImageUrl: payload.url });
+      } else if (cur.indexOf(payload.url) === -1) {
+        update({ directImageUrls: [...cur, payload.url] });
+      }
+    } else if (payload.kind === 'video' && payload.url) {
+      update({ directVideoUrl: payload.url });
+    } else if (payload.kind === 'audio' && payload.url) {
+      update({ directAudioUrl: payload.url });
+    } else if (payload.kind === 'text' && typeof payload.text === 'string') {
+      update({ outputText: payload.text });
+    }
+  };
+  const { dropProps, isAccepting } = useMaterialDropTarget({
+    id,
+    accepts: ['image', 'video', 'audio', 'text'],
+    onDrop: handleDrop,
+  });
+
+  // === v1.2.9.8: 彻底删除「OutputNode useEffect 自动累积 fresh」机制 (v1.2.9.2/4/7 抩废)
+  //   原因: FramePair 等节点每轮多次 update + StrictMode 双调 + 二级链路 OutputNode → OutputNode
+  //         + finally 清除 __loopAccumulate 后残留一次 fresh 被重复 push, 跨 useEffect / setNodes 的 race 无法仅由前端隔离。
+  //   新机制: 累积完全由 LoopNode 在每轮 awaitNode 后调 functional setNodes 一次性写入 direct*Urls。
+  //   OutputNode 仅保留: 上游 __loopAccumulate truthy 时 collected useMemo 跳过 fresh (避免中间闪烁干扰 OUT 展示)。
+
+  // === 下游透传: 将 collected + displayText 写到自身 data 供下游节点读取 ===
+  // 仅在生成的输出实际变化时调用 update, 避免 setNode 风暴.
+  // 不踩 outputText (保留 「用户编辑覆盖」 语义), 文本透传到 prompt/text/reply.
+  //
+  // ⚡ 过滤规则 (需求 #3):
+  //   - 若 collected 同时含有非文本素材 (图/视/音任一), 下游只需要非文本部分,
+  //     清空 prompt/text/reply (避免下游生成节点误将上下文提示词一起当参考文本)
+  //   - 若只有文本 (纯文本输出), 仍将文本透传到 prompt/text/reply
+  useEffect(() => {
+    const hasNonText =
+      collected.images.length > 0 ||
+      collected.videos.length > 0 ||
+      collected.audios.length > 0 ||
+      collected.models.length > 0;
+    const passText = hasNonText ? '' : (displayText || '');
+    const next: any = {
+      prompt: passText,
+      text: passText,
+      reply: passText,
+      imageUrl: collected.images[0] || '',
+      imageUrls: collected.images.slice(),
+      urls: collected.images.slice(),
+      videoUrl: collected.videos[0] || '',
+      audioUrl: collected.audios[0] || '',
+      audioUrl_1: collected.audios[1] || '', // 透传 Suno 双轨副轨避免串联丢失
+      modelUrl: collected.models[0] || '',
+      modelUrls: collected.models.slice(),
+      textSegments: hasNonText ? [] : collected.texts.slice(),
+      segments: hasNonText ? [] : collected.texts.slice(),
+    };
+    const cur: any = {
+      prompt: d.prompt || '',
+      text: d.text || '',
+      reply: d.reply || '',
+      imageUrl: d.imageUrl || '',
+      imageUrls: Array.isArray(d.imageUrls) ? d.imageUrls : [],
+      urls: Array.isArray(d.urls) ? d.urls : [],
+      videoUrl: d.videoUrl || '',
+      audioUrl: d.audioUrl || '',
+      audioUrl_1: d.audioUrl_1 || '',
+      modelUrl: d.modelUrl || '',
+      modelUrls: Array.isArray(d.modelUrls) ? d.modelUrls : [],
+      textSegments: Array.isArray(d.textSegments) ? d.textSegments : [],
+      segments: Array.isArray(d.segments) ? d.segments : [],
+    };
+    const changed =
+      cur.prompt !== next.prompt ||
+      cur.text !== next.text ||
+      cur.reply !== next.reply ||
+      cur.imageUrl !== next.imageUrl ||
+      cur.videoUrl !== next.videoUrl ||
+      cur.audioUrl !== next.audioUrl ||
+      cur.audioUrl_1 !== next.audioUrl_1 ||
+      cur.modelUrl !== next.modelUrl ||
+      JSON.stringify(cur.imageUrls) !== JSON.stringify(next.imageUrls) ||
+      JSON.stringify(cur.urls) !== JSON.stringify(next.urls) ||
+      JSON.stringify(cur.modelUrls) !== JSON.stringify(next.modelUrls) ||
+      JSON.stringify(cur.textSegments) !== JSON.stringify(next.textSegments) ||
+      JSON.stringify(cur.segments) !== JSON.stringify(next.segments);
+    if (changed) update(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayText, collected]);
+
+  // === v1.2.10.2: 自动保存到本地路径 ===
+  // 设计要点:
+  //   1. OutputNode 是所有可执行节点输出的统一收口 → 在这里调一次保存实现全局能力
+  //   2. 防重复保存: ref Set 记录本节点生命周期内已请求过的 url(纯前端去重, 后端还会再一道同名跳过防护)
+  //   3. 静默失败: saveAssetToDisk 不抛错, 避免干扰主生成链路
+  //   4. 远端 http(s) URL 也照位部 —— 后端会 fetch 拉取后保存, 不依赖前端报三方
+  const savedUrlsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const all: string[] = [
+      ...collected.images,
+      ...collected.videos,
+      ...collected.audios,
+      ...collected.models,
+    ].filter(Boolean);
+    if (all.length === 0) return;
+    const fresh = all.filter((u) => !savedUrlsRef.current.has(u));
+    if (fresh.length === 0) return;
+    fresh.forEach((u) => savedUrlsRef.current.add(u));
+    // 不 await: 并发发送, 静默失败
+    fresh.forEach((u) => {
+      saveAssetToDisk(u).catch(() => {/* 静默 */});
+    });
+  }, [collected]);
+
+  // === 选中节点上方浮动「Edit」按钮 ===
+  // 仅当节点被选中且至少存在一张图像时出现，等价于双击图像触发
+  // ImageEditModal（裁剪 / 宫格切分），多图时编辑第一张。
+  const canEditImage = selected && collected.images.length > 0;
+  const onClickEditTopBtn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (collected.images.length > 0) setEditingUrl(collected.images[0]);
+  };
+
+  return (
+    <div
+      data-rh-duck-output={isRhDuckOutput ? 'true' : undefined}
+      data-yyh-portrait-hidden-output={isYyhPortraitOutput ? 'true' : undefined}
+      className="relative flex flex-col"
+      style={{ width: size.w, height: size.h, minWidth: 260 }}
+      {...dropProps}
+    >
+      {/* 四角同比例缩放 (仅选中时出现) — 主题色 teal-300 */}
+      <ResizableCorners
+        selected={selected}
+        minWidth={260}
+        minHeight={160}
+        accent={effectiveAccent}
+        onResize={(_e, p) => setSize({ w: p.width, h: p.height })}
+      />
+      {/* 选中时浮动「Edit」按钮 — 仅图像类型可用，与双击预览图等价 */}
+      {canEditImage && (
+        <button
+          type="button"
+          className="nodrag nopan"
+          onClick={onClickEditTopBtn}
+          onMouseDown={(e) => e.stopPropagation()}
+          title="编辑图像（裁剪 / 宫格切分），等同双击预览图"
+          style={{
+            position: 'absolute',
+            top: -34,
+            left: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            height: 26,
+            background: isDark ? 'rgba(28,28,32,0.92)' : 'rgba(255,255,255,0.95)',
+            color: effectiveAccent,
+            border: `1px solid ${effectiveAccent}66`,
+            borderRadius: 6,
+            boxShadow: isDark ? '0 6px 24px rgba(0,0,0,0.4)' : '0 6px 24px rgba(0,0,0,0.12)',
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 600,
+            zIndex: 30,
+          }}
+        >
+          <Edit3 size={12} />
+          <span>Edit</span>
+        </button>
+      )}
+      {/* target handle (左侧) - 上游任意类型可连入 */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!border-0"
+        style={{
+          background: effectiveHandle,
+          width: 12,
+          height: 12,
+          minWidth: 12,
+          minHeight: 12,
+          top: '50%',
+          left: -6,
+          transform: 'translateY(-50%)',
+          zIndex: 12,
+          pointerEvents: 'all',
+        }}
+        title="文本 / 图像 / 视频 / 音频 / 3D模型 任意类型可连入"
+      />
+      {/* source handle (右侧) - 作为中继节点可继续向下游透传 (any) */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!border-0"
+        style={{
+          background: effectiveHandle,
+          width: 12,
+          height: 12,
+          minWidth: 12,
+          minHeight: 12,
+          top: '50%',
+          right: -6,
+          transform: 'translateY(-50%)',
+          zIndex: 12,
+          pointerEvents: 'all',
+        }}
+        title="透传 文本 / 图像 / 视频 / 音频 / 3D模型 到下游"
+      />
+
+      {/* 内层裁切容器: 圆角 + 越界裁切, 不影响外层 handle */}
+      {/* 高度逻辑: root 默认 height=auto 时 内层也 auto 跟随内容自然高;
+          root 拖角后有具体 px 时, 内层 flex-1 撑满剩余 + min-h-0 允许内容 overflow */}
+      <div
+        data-rh-duck-output-frame={isRhDuckOutput ? 'true' : undefined}
+        data-yyh-portrait-hidden-output-frame={isYyhPortraitOutput ? 'true' : undefined}
+        className={`rounded-xl border-2 transition-colors ${size.h ? 'flex-1 min-h-0' : ''}`}
+        style={{
+          background: isDark ? 'rgb(20,20,22)' : 'rgb(255,255,255)',
+          overflow: 'auto',
+          width: '100%',
+          borderColor: isAccepting
+            ? effectiveAccent
+            : selected
+              ? effectiveAccent
+              : isDark
+                ? 'rgba(255,255,255,.15)'
+                : 'rgba(0,0,0,.1)',
+          boxShadow: isAccepting ? `0 0 0 3px ${effectiveAccent}40` : undefined,
+        }}
+      >
+
+      {/* 头部 */}
+      <div
+        className={`flex items-center gap-2 px-3 py-2 border-b ${
+          isDark ? 'border-white/10' : 'border-black/10'
+        }`}
+      >
+        <div
+          className="w-6 h-6 rounded flex items-center justify-center"
+          style={{
+            background: effectiveAccent + '33',
+            color: effectiveAccent,
+            boxShadow: `inset 0 0 0 1px ${effectiveAccent}66`,
+          }}
+        >
+          <MonitorPlay size={13} />
+        </div>
+        <div className={`flex-1 text-sm font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+          输出素材
+        </div>
+        <span className={`text-[10px] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>
+          {total} 项
+        </span>
+      </div>
+
+      {/* body */}
+      <div className="p-2.5 space-y-3" onMouseDown={(e) => e.stopPropagation()}>
+        {total === 0 && (
+          <div
+            className={`rounded flex items-center justify-center text-[11px] py-3 px-2 text-center ${
+              isDark ? 'text-white/40' : 'text-zinc-400'
+            }`}
+          >
+            {upstreamHasLoop
+              ? '循环器不输出素材 · 请在「循环器 → EXEC 节点 → OutputNode」链路中查看累积结果'
+              : '连入上游 文本 / 图像 / 视频 / 音频 / 3D模型 节点'}
+          </div>
+        )}
+
+        {/* 文本区 */}
+        {(collected.texts.length > 0 || isEdited) && (
+          <div className="space-y-1">
+            <div className={`flex items-center gap-1.5 text-[10px] ${isDark ? 'text-white/50' : 'text-zinc-500'}`}>
+              <TypeIcon size={11} />
+              <span className="flex-1">文本{isEdited ? ' · 已编辑' : ''}</span>
+              {!editing && (
+                <button
+                  onClick={enterEdit}
+                  className={`p-0.5 rounded ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+                  title="双击文本或点此编辑"
+                >
+                  <Pencil size={10} />
+                </button>
+              )}
+              {isEdited && !editing && (
+                <button
+                  onClick={restoreLive}
+                  className={`text-[10px] px-1 rounded ${isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-zinc-600'}`}
+                  title="恢复为上游 live 文本"
+                >
+                  恢复
+                </button>
+              )}
+            </div>
+            {!editing ? (
+              <div
+                onDoubleClick={enterEdit}
+                onWheelCapture={(e) => e.stopPropagation()}
+                className={`nowheel whitespace-pre-wrap break-words text-[12px] leading-relaxed rounded px-2 py-1.5 cursor-text ${
+                  isDark ? 'bg-white/5 text-white/85' : 'bg-black/5 text-zinc-800'
+                }`}
+                style={{ maxHeight: 200, overflow: 'auto' }}
+                title="双击编辑"
+              >
+                {displayText || <span className="opacity-50">(空)</span>}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <textarea
+                  ref={taRef}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  spellCheck={false}
+                  rows={6}
+                  className={`w-full rounded px-2 py-1.5 text-[12px] outline-none nodrag nowheel ${
+                    isDark
+                      ? 'bg-black/40 text-white border border-teal-400/40'
+                      : 'bg-white text-zinc-900 border border-teal-500/50'
+                  }`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') cancelEdit();
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveEdit();
+                  }}
+                />
+                <div className="flex gap-1.5 justify-end">
+                  <button
+                    onClick={cancelEdit}
+                    className={`text-[10px] px-2 py-0.5 rounded ${
+                      isDark ? 'bg-white/5 hover:bg-white/10 text-white/70' : 'bg-black/5 hover:bg-black/10 text-zinc-700'
+                    }`}
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={saveEdit}
+                    className="text-[10px] px-2 py-0.5 rounded flex items-center gap-1 text-zinc-900"
+                    style={{ background: effectiveAccent }}
+                  >
+                    <Check size={10} /> 保存
+                  </button>
+                </div>
+                <div className={`text-[10px] ${isDark ? 'text-white/30' : 'text-zinc-400'}`}>
+                  Ctrl+Enter 保存 / Esc 取消
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 图像区 */}
+        {collected.images.length > 0 && (
+          <div className="group/output-images space-y-1">
+            <div className={`flex items-center gap-1.5 text-[10px] ${isDark ? 'text-white/50' : 'text-zinc-500'}`}>
+              <ImageIcon size={11} />
+              <span className="flex-1">图像 ({collected.images.length})</span>
+              <CollectionSplitButton
+                count={collected.images.length}
+                kindLabel="图像"
+                onSplit={() => splitOutputCollection('image', collected.images)}
+                className="opacity-100 transition sm:opacity-0 sm:group-hover/output-images:opacity-100 sm:focus-within:opacity-100"
+              />
+            </div>
+            {/* 单张：全宽大图预览；多张：3 列网格（一行最多 3 张，超过自动换行） */}
+            <div
+              className={
+                collected.images.length >= 2
+                  ? 'grid grid-cols-3 gap-1.5'
+                  : 'space-y-1'
+              }
+            >
+              {collected.images.map((u, i) => (
+                <div key={i} className="group group/output-image-card space-y-0.5">
+                  <div className="relative">
+                    <SmartImage
+                      src={u}
+                      alt={`图像 ${i + 1}`}
+                      className="w-full h-auto rounded block cursor-zoom-in"
+                      thumbSize={collected.images.length >= 2 ? 360 : 720}
+                      style={{
+                        background: '#0008',
+                        objectFit: 'contain',
+                        maxHeight: collected.images.length >= 2 ? 140 : 480,
+                      }}
+                      data-drag-source
+                      data-drag-kind="image"
+                      data-drag-url={u}
+                      data-drag-preview={u}
+                      data-drag-node-id={id}
+                      data-resource-title={u.split('/').pop()}
+                      data-prompt-template-kind="image"
+                      data-prompt-template-category="image-reference-edit"
+                      data-prompt-template-prompt={mediaPromptByUrl.get(u)?.prompt || displayText}
+                      data-prompt-template-negative={mediaPromptByUrl.get(u)?.negative || ''}
+                      onMouseDown={(e) =>
+                        beginMaterialDrag(e, { kind: 'image', url: u, sourceNodeId: id, previewUrl: u })
+                      }
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setEditingUrl(u);
+                      }}
+                      title="双击编辑 (裁剪 / 宫格切分) · Ctrl+拖拽可送到其他节点"
+                    />
+                    <button
+                      type="button"
+                      className="nodrag nopan t8-btn t8-mini-icon-button t8-image-compare-button absolute right-1.5 top-1.5 z-10 h-7 w-7 p-0 opacity-100 shadow-md transition sm:opacity-0 sm:group-hover/output-image-card:opacity-100 sm:focus:opacity-100"
+                      title="对比输入图与结果图"
+                      aria-label="对比输入图与结果图"
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openImageCompare(u);
+                      }}
+                    >
+                      <GitCompare size={13} />
+                    </button>
+                    <ImageHoverPreview
+                      src={u}
+                      alt={`图像 ${i + 1}`}
+                      buttonClassName="absolute right-1.5 top-10 z-10 h-7 w-7 p-0 opacity-0 shadow-md transition group-hover/output-image-card:opacity-100 focus:opacity-100"
+                    />
+                  </div>
+                  <div className={`flex items-center gap-1 text-[10px] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>
+                    <span className="truncate flex-1" title={u}>{u.split('/').pop()}</span>
+                    <a
+                      href={u}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${
+                        isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-zinc-600'
+                      }`}
+                    >
+                      <Download size={10} /> 下载
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 视频区 */}
+        {collected.videos.length > 0 && (
+          <div className="group/output-videos space-y-1">
+            <div className={`flex items-center gap-1.5 text-[10px] ${isDark ? 'text-white/50' : 'text-zinc-500'}`}>
+              <VideoIcon size={11} />
+              <span className="flex-1">视频 ({collected.videos.length})</span>
+              <CollectionSplitButton
+                count={collected.videos.length}
+                kindLabel="视频"
+                onSplit={() => splitOutputCollection('video', collected.videos)}
+                className="opacity-100 transition sm:opacity-0 sm:group-hover/output-videos:opacity-100 sm:focus-within:opacity-100"
+              />
+            </div>
+            {collected.videos.map((u, i) => (
+              <div key={i} className="space-y-0.5">
+                <LoopingVideo
+                  src={u}
+                  controls
+                  className="w-full h-auto rounded block"
+                  style={{ background: '#000', objectFit: 'contain', maxHeight: 480 }}
+                  data-drag-source
+                  data-drag-kind="video"
+                  data-drag-url={u}
+                  data-drag-preview={u}
+                  data-drag-node-id={id}
+                  data-resource-title={u.split('/').pop()}
+                  data-prompt-template-kind="video"
+                  data-prompt-template-category="video-image-to-video"
+                  data-prompt-template-prompt={mediaPromptByUrl.get(u)?.prompt || displayText}
+                  data-prompt-template-negative={mediaPromptByUrl.get(u)?.negative || ''}
+                  onMouseDown={(e) =>
+                    beginMaterialDrag(e, { kind: 'video', url: u, sourceNodeId: id, previewUrl: u })
+                  }
+                />
+                <div className={`flex items-center gap-1 text-[10px] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>
+                  <span className="truncate flex-1" title={u}>{u.split('/').pop()}</span>
+                  <a
+                    href={u}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${
+                      isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-zinc-600'
+                    }`}
+                  >
+                    <Download size={10} /> 下载
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 音频区 */}
+        {collected.audios.length > 0 && (
+          <div className="group/output-audios space-y-1">
+            <div className={`flex items-center gap-1.5 text-[10px] ${isDark ? 'text-white/50' : 'text-zinc-500'}`}>
+              <Music size={11} />
+              <span className="flex-1">音频 ({collected.audios.length})</span>
+              <CollectionSplitButton
+                count={collected.audios.length}
+                kindLabel="音频"
+                onSplit={() => splitOutputCollection('audio', collected.audios)}
+                className="opacity-100 transition sm:opacity-0 sm:group-hover/output-audios:opacity-100 sm:focus-within:opacity-100"
+              />
+            </div>
+            {collected.audios.map((u, i) => (
+              <div key={i} className="space-y-0.5">
+                <audio
+                  src={u}
+                  controls
+                  className="w-full"
+                  data-drag-source
+                  data-drag-kind="audio"
+                  data-drag-url={u}
+                  data-drag-node-id={id}
+                  data-resource-title={u.split('/').pop()}
+                  data-prompt-template-kind="video"
+                  data-prompt-template-category="video-music-audio"
+                  data-prompt-template-prompt={mediaPromptByUrl.get(u)?.prompt || displayText}
+                  data-prompt-template-negative={mediaPromptByUrl.get(u)?.negative || ''}
+                  onMouseDown={(e) =>
+                    beginMaterialDrag(e, { kind: 'audio', url: u, sourceNodeId: id })
+                  }
+                />
+                <div className={`flex items-center gap-1 text-[10px] ${isDark ? 'text-white/40' : 'text-zinc-400'}`}>
+                  <span className="truncate flex-1" title={u}>{u.split('/').pop()}</span>
+                  <a
+                    href={u}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${
+                      isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-zinc-600'
+                    }`}
+                  >
+                    <Download size={10} /> 下载
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 3D 模型区 */}
+        {collected.models.length > 0 && (
+          <div className="group/output-models space-y-1">
+            <div className={`flex items-center gap-1.5 text-[10px] ${isDark ? 'text-white/50' : 'text-zinc-500'}`}>
+              <Box size={11} />
+              <span className="flex-1">3D模型 ({collected.models.length})</span>
+              <CollectionSplitButton
+                count={collected.models.length}
+                kindLabel="3D模型"
+                onSplit={() => splitOutputCollection('model3d', collected.models)}
+                className="opacity-100 transition sm:opacity-0 sm:group-hover/output-models:opacity-100 sm:focus-within:opacity-100"
+              />
+            </div>
+            <div className="space-y-1.5">
+              {collected.models.map((u, i) => (
+                <div
+                  key={i}
+                  className={`rounded border px-2 py-2 ${
+                    isDark ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-black/[0.03]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded"
+                      style={{ color: PORT_COLOR.model3d, background: `${PORT_COLOR.model3d}22`, boxShadow: `inset 0 0 0 1px ${PORT_COLOR.model3d}66` }}
+                    >
+                      <Box size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className={`truncate text-[11px] font-semibold ${isDark ? 'text-white/80' : 'text-zinc-800'}`} title={u}>
+                        {fileNameFromUrl(u) || `3D模型 ${i + 1}`}
+                      </div>
+                      <div className={`truncate text-[10px] ${isDark ? 'text-white/40' : 'text-zinc-500'}`} title={u}>
+                        连接到 3D模型预览节点查看 · {u}
+                      </div>
+                    </div>
+                    <a
+                      href={u}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      className={`nodrag nopan inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${
+                        isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-black/10 text-zinc-600'
+                      }`}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <Download size={10} /> 下载
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      </div>
+      {editingUrl && (
+        <ImageEditModal
+          srcUrl={editingUrl}
+          onClose={() => setEditingUrl(null)}
+          onProduce={handleProduce}
+        />
+      )}
+      {compareState && (
+        <ImageCompareModal
+          resultUrl={compareState.resultUrl}
+          inputCandidates={compareState.candidates}
+          onClose={() => setCompareState(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default memo(OutputNode);

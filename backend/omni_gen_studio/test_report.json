@@ -1,0 +1,22 @@
+{
+  "模块导入": {
+    "backend_integration": true,
+    "smart_venv_manager": true,
+    "comfyui_webui_integration": true,
+    "enhanced_ui_manager": true,
+    "comprehensive_feature_manager": true,
+    "windows_compatibility": true,
+    "torch": false,
+    "diffusers": false,
+    "transformers": false,
+    "opencv": false,
+    "pillow": false,
+    "numpy": true
+  },
+  "虚拟环境检测": false,
+  "功能管理器": false,
+  "增强UI": true,
+  "ComfyUI/WebUI集成": true,
+  "GPU信息": false,
+  "主应用程序": true
+}

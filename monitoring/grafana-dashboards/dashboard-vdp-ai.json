@@ -1,0 +1,294 @@
+{
+  "title": "nanobot-factory AI 业务总览 (VDP AI Overview)",
+  "uid": "imdf-ai-business",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-6h", "to": "now"},
+  "tags": ["imdf", "ai", "business", "vdp"],
+  "templating": {
+    "list": [
+      {
+        "name": "model",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "Prometheus"},
+        "query": "label_values(imdf_model_calls_total, model)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "provider",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "Prometheus"},
+        "query": "label_values(imdf_model_calls_total, provider)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "env",
+        "type": "custom",
+        "query": "prod,staging,dev",
+        "current": {"text": "prod", "value": "prod"},
+        "options": [
+          {"text": "prod", "value": "prod", "selected": true},
+          {"text": "staging", "value": "staging"},
+          {"text": "dev", "value": "dev"}
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "Model Deployments",
+        "datasource": {"type": "prometheus", "uid": "Prometheus"},
+        "enable": true,
+        "iconColor": "purple",
+        "title": "Deploy",
+        "expr": "changes(imdf_model_version_info[5m]) > 0"
+      },
+      {
+        "name": "Incidents",
+        "datasource": {"type": "prometheus", "uid": "Prometheus"},
+        "enable": true,
+        "iconColor": "red",
+        "title": "Incident",
+        "expr": "ALERTS{alertstate=\"firing\", severity=\"critical\"}"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "模型调用概览",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "总调用次数 (24h)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
+      "targets": [
+        {"expr": "sum(increase(imdf_model_calls_total{env=~\"$env\", model=~\"$model\"}[24h]))", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "成功率 (%)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+      "targets": [
+        {"expr": "sum(rate(imdf_model_calls_total{status=\"success\", env=~\"$env\", model=~\"$model\"}[5m])) / sum(rate(imdf_model_calls_total{env=~\"$env\", model=~\"$model\"}[5m]))", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 0.95},
+              {"color": "green", "value": 0.99}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "降级次数 (5m)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+      "targets": [
+        {"expr": "sum(increase(imdf_model_fallback_total{env=~\"$env\"}[5m]))", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 5},
+              {"color": "red", "value": 50}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "成本估算 ($/h)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+      "targets": [
+        {"expr": "sum(rate(imdf_model_cost_usd_total{env=~\"$env\"}[1h])) * 3600", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "性能与稳定性",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5}
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "按模型的 QPS",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(imdf_model_calls_total{model=~\"$model\", env=~\"$env\"}[1m]))",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "reqps"}}
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "P95 延迟 (按模型)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(imdf_model_latency_seconds_bucket{model=~\"$model\", env=~\"$env\"}[5m])))",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "缓存命中率",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+      "targets": [
+        {
+          "expr": "sum(rate(imdf_model_cache_hits_total{env=~\"$env\"}[5m])) / (sum(rate(imdf_model_cache_hits_total{env=~\"$env\"}[5m])) + sum(rate(imdf_model_cache_misses_total{env=~\"$env\"}[5m])))",
+          "legendFormat": "cache_hit_ratio",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Token 用量 (input+output)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+      "targets": [
+        {
+          "expr": "sum by (direction) (rate(imdf_model_tokens_total{env=~\"$env\"}[5m])) * 60",
+          "legendFormat": "{{direction}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "short"}}
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "MemoryPalace + Skill + Agent",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22}
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "MemoryPalace 记忆写入/秒",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 23},
+      "targets": [
+        {
+          "expr": "sum by (operation) (rate(imdf_memory_palace_ops_total{env=~\"$env\"}[1m]))",
+          "legendFormat": "{{operation}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "ops"}}
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Skill Marketplace 调用 Top 10",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 23},
+      "targets": [
+        {
+          "expr": "topk(10, sum by (skill) (rate(imdf_skill_invocations_total{env=~\"$env\"}[5m])))",
+          "legendFormat": "{{skill}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "reqps"}}
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Agent 协同任务时延 (P50/P95/P99)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 23},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(imdf_agent_task_duration_seconds_bucket{env=~\"$env\"}[5m])))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(imdf_agent_task_duration_seconds_bucket{env=~\"$env\"}[5m])))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(imdf_agent_task_duration_seconds_bucket{env=~\"$env\"}[5m])))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    }
+  ]
+}

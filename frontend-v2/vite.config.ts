@@ -1,0 +1,53 @@
+import { defineConfig, loadEnv } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { fileURLToPath, URL } from 'node:url'
+
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
+
+  return {
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      }
+    },
+    server: {
+      host: '127.0.0.1',
+      port: 5173,
+      strictPort: false,
+      open: false,
+      proxy: {
+        // All /api/* requests are proxied to the backend API Gateway (default :8000)
+        '/api': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+          // Don't rewrite — keep /api prefix so backend can route correctly
+          rewrite: (path) => path
+        }
+      }
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+      chunkSizeWarningLimit: 1500,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vue-vendor': ['vue', 'vue-router', 'pinia'],
+            'naive-vendor': ['naive-ui'],
+            'echarts-vendor': ['echarts', 'vue-echarts'],
+            'vueflow-vendor': ['@vue-flow/core', '@vue-flow/controls', '@vue-flow/background', '@vue-flow/minimap']
+          }
+        }
+      }
+    },
+    optimizeDeps: {
+      include: ['vue', 'vue-router', 'pinia', 'axios', 'naive-ui', 'echarts', 'vue-echarts']
+    }
+  }
+})

@@ -1,0 +1,54 @@
+[Unit]
+Description=IMDF Infinite Multimodal Data Foundry
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=administrator
+WorkingDirectory=/mnt/d/Hermes/infinite-multimodal-data-foundry
+
+# 从 .env 文件读取环境变量
+EnvironmentFile=-/mnt/d/Hermes/infinite-multimodal-data-foundry/.env
+
+ExecStart=/usr/bin/python3 api/canvas_web.py --port 8765
+
+# 启动后健康检查 — 等待服务就绪再通知 systemd
+ExecStartPost=/bin/sh -c 'for i in 1 2 3 4 5 6 7 8 9 10; do curl -sf http://localhost:8765/api/health && exit 0; sleep 2; done; exit 1'
+
+Restart=always
+RestartSec=5
+
+# 防止无限重启循环
+StartLimitInterval=120
+StartLimitBurst=5
+
+# systemd看门狗 — 服务需定期喂狗(sd_notify)
+WatchdogSec=30
+
+StandardOutput=journal
+StandardError=journal
+
+# 内存限制
+MemoryMax=2G
+MemoryHigh=1536M
+
+# 进程环境
+Environment=PYTHONUNBUFFERED=1
+
+# 安全加固
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/mnt/d/Hermes/infinite-multimodal-data-foundry/data
+ReadWritePaths=/mnt/d/Hermes/infinite-multimodal-data-foundry/logs
+ReadWritePaths=/tmp
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+
+[Install]
+WantedBy=multi-user.target

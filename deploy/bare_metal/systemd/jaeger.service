@@ -1,0 +1,37 @@
+# ============================================================================
+# jaeger.service — IMDF Jaeger all-in-one (UI :16686, OTLP :4317)
+# ============================================================================
+[Unit]
+Description=IMDF Jaeger (tracing all-in-one)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jaeger
+Group=jaeger
+Environment="SPAN_STORAGE_TYPE=badger"
+Environment="BADGER_DIRECTORY=/var/lib/jaeger/badger"
+Environment="BADGER_EPHEMERAL=false"
+ExecStart=/usr/local/bin/jaeger \
+    --config-file=/etc/jaeger/config.yaml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+LimitNOFILE=65536
+MemoryMax=4G
+MemoryHigh=3G
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/jaeger
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jaeger
+
+[Install]
+WantedBy=multi-user.target

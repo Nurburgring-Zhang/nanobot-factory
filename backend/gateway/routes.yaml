@@ -1,0 +1,300 @@
+# =====================================================================
+# Nanobot Factory API Gateway — route configuration
+# =====================================================================
+# Each entry maps a public prefix (what the client sees) to a downstream
+# service URL (where the gateway forwards the request).
+#
+# Auth rules:
+#   - require_auth: true  →  request MUST carry a valid JWT
+#   - require_auth: false →  public route (login, register, healthz, ...)
+#
+# The upstream URL is the HOST + INTERNAL prefix only; the gateway
+# appends the original request path verbatim, so the monolith's
+# /internal/* strip-middleware can re-derive the real route.
+#
+# Rate limit: applied PER CLIENT IP via the token-bucket middleware.
+# Circuit breaker: applied PER SERVICE.
+# =====================================================================
+
+gateway:
+  host: "0.0.0.0"
+  port: 8000
+  upstream_timeout_seconds: 30
+  rate_limit:
+    capacity: 100          # max burst tokens per IP
+    refill_per_second: 50  # steady-state allowance per IP
+  circuit_breaker:
+    failure_threshold: 5   # consecutive failures before opening
+    reset_timeout_seconds: 30
+
+# ---------------------------------------------------------------------
+# 12 microservice routes
+# All upstream URLs point to the monolith's /internal namespace
+# (canvas_web.py strips the /internal prefix and routes the rest).
+# ---------------------------------------------------------------------
+services:
+
+  # ===== P3-2-W1: 3 new microservices =====
+  - name: user-service
+    prefix: /api/v1/auth
+    upstream: http://127.0.0.1:8001
+    require_auth: false
+    description: "P3-2-W1 user-service: /auth/*, /api/v1/auth/*"
+
+  - name: user-service
+    prefix: /api/v1/users
+    upstream: http://127.0.0.1:8001
+    require_auth: true
+    description: "P3-2-W1 user-service: /api/v1/users/* (list/role/disable/delete)"
+
+  - name: user-service
+    prefix: /api/v1/roles
+    upstream: http://127.0.0.1:8001
+    require_auth: true
+    description: "P3-2-W1 user-service: /api/v1/roles/* + permissions"
+
+  - name: user-service-legacy
+    prefix: /auth
+    upstream: http://127.0.0.1:8001
+    require_auth: false
+    description: "P3-2-W1: legacy /auth/* (no /api/v1 prefix) — JWT login/refresh"
+
+  - name: user-service-legacy
+    prefix: /api/admin
+    upstream: http://127.0.0.1:8001
+    require_auth: true
+    description: "P3-2-W1: legacy /api/admin/* (user mgmt)"
+
+  - name: user-service-legacy
+    prefix: /api/stats
+    upstream: http://127.0.0.1:8001
+    require_auth: true
+    description: "P3-2-W1: legacy /api/stats/personnel/* (personnel stats)"
+
+  - name: asset-service
+    prefix: /api/v1/assets
+    upstream: http://127.0.0.1:8002
+    require_auth: true
+    description: "P3-2-W1 asset-service: /api/v1/assets/*"
+
+  - name: asset-service
+    prefix: /api/v1/items
+    upstream: http://127.0.0.1:8002
+    require_auth: true
+    description: "P3-2-W1 asset-service: /api/v1/items/* (library)"
+
+  - name: asset-service-legacy
+    prefix: /api/dam
+    upstream: http://127.0.0.1:8002
+    require_auth: true
+    description: "P3-2-W1: legacy /api/dam/* (DAM files/scan/lineage)"
+
+  - name: asset-service-legacy
+    prefix: /api/v1/oss
+    upstream: http://127.0.0.1:8002
+    require_auth: true
+    description: "P3-2-W1: legacy /api/v1/oss/* (OSS upload/download)"
+
+  - name: asset-service-legacy
+    prefix: /imdf/library
+    upstream: http://127.0.0.1:8002
+    require_auth: true
+    description: "P3-2-W1: legacy /imdf/library/* (resource library)"
+
+  - name: annotation-service
+    prefix: /api/v1/annotations
+    upstream: http://127.0.0.1:8003
+    require_auth: true
+    description: "P3-2-W1 annotation-service: /api/v1/annotations/*"
+
+  - name: annotation-service
+    prefix: /api/v1/tasks
+    upstream: http://127.0.0.1:8003
+    require_auth: true
+    description: "P3-2-W1 annotation-service: /api/v1/tasks/*"
+
+  - name: annotation-service-legacy
+    prefix: /api/annotations
+    upstream: http://127.0.0.1:8003
+    require_auth: true
+    description: "P3-2-W1: legacy /api/annotations/* (save/history)"
+
+  - name: annotation-service-legacy
+    prefix: /api/prelabel
+    upstream: http://127.0.0.1:8003
+    require_auth: true
+    description: "P3-2-W1: legacy /api/prelabel (prelabel router)"
+
+  # ===== P3-2-W2: 4 new microservices =====
+  - name: cleaning-service
+    prefix: /api/v1/clean
+    upstream: http://127.0.0.1:8004
+    require_auth: true
+    description: "P3-2-W2 cleaning-service: 32 cleaning operators"
+
+  - name: cleaning-service-legacy
+    prefix: /api/clean
+    upstream: http://127.0.0.1:8004
+    require_auth: true
+    description: "P3-2-W2: legacy /api/clean/* (cleaning legacy router)"
+
+  - name: scoring-service
+    prefix: /api/v1/score
+    upstream: http://127.0.0.1:8005
+    require_auth: true
+    description: "P3-2-W2 scoring-service: 15 scoring operators + rank"
+
+  - name: scoring-service-legacy
+    prefix: /api/aesthetic
+    upstream: http://127.0.0.1:8005
+    require_auth: true
+    description: "P3-2-W2: legacy /api/aesthetic/* (aesthetic routes)"
+
+  - name: dataset-service
+    prefix: /api/v1/datasets
+    upstream: http://127.0.0.1:8006
+    require_auth: true
+    description: "P3-2-W2 dataset-service: dataset CRUD + version + sample + export"
+
+  - name: dataset-service-legacy
+    prefix: /api/datasets
+    upstream: http://127.0.0.1:8006
+    require_auth: true
+    description: "P3-2-W2: legacy /api/datasets/* (monolith dataset router)"
+
+  - name: evaluation-service
+    prefix: /api/v1/evaluations
+    upstream: http://127.0.0.1:8007
+    require_auth: true
+    description: "P3-2-W2 evaluation-service: model eval + summary + run + bad_cases/extract"
+
+  - name: evaluation-service
+    prefix: /api/v1/bad_cases
+    upstream: http://127.0.0.1:8007
+    require_auth: true
+    description: "P3-2-W2 evaluation-service: bad cases list/detail/status"
+
+  - name: evaluation-service-legacy
+    prefix: /api/eval
+    upstream: http://127.0.0.1:8007
+    require_auth: true
+    description: "P3-2-W2: legacy /api/eval/* (monolith eval router)"
+
+  # ===== P3-3-W1: agent-service (port 8008) =====
+  - name: agent-service
+    prefix: /api/v1/agents
+    upstream: http://127.0.0.1:8008
+    require_auth: true
+    description: "P3-3-W1 agent-service: 15 agent types + dispatch + memory"
+
+  - name: agent-service
+    prefix: /api/v1/agent_tasks
+    upstream: http://127.0.0.1:8008
+    require_auth: true
+    description: "P3-3-W1 agent-service: task CRUD + status + retry/cancel"
+
+  - name: agent-service
+    prefix: /api/v1/agent_memory
+    upstream: http://127.0.0.1:8008
+    require_auth: true
+    description: "P3-3-W1 agent-service: long-term agent memory (scope/key)"
+
+  - name: agent-service
+    prefix: /api/v1/scheduler
+    upstream: http://127.0.0.1:8008
+    require_auth: true
+    description: "P3-3-W1 agent-service: scheduler bucket state (diagnostic)"
+
+  - name: dataset-service
+    prefix: /api/v1/datasets
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Dataset CRUD + sample listing
+
+  - name: annotation-misc
+    prefix: /api/v1/annotation
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Misc annotation endpoints (singleton)
+
+  - name: crowd-service
+    prefix: /api/v1/crowd
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Crowdsource worker mgmt / settlement
+
+  - name: model-service
+    prefix: /api/v1/models
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Model registry / routing / capability lookup
+
+  - name: billing-service
+    prefix: /api/v1/billing
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Quota / billing / usage
+
+  - name: export-service
+    prefix: /api/v1/export
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Export jobs / S3 transfer
+
+  - name: audit-service
+    prefix: /api/v1/audit
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Audit log query / GDPR export
+
+  - name: tenant-service
+    prefix: /api/v1/tenant
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: true
+    description: Multi-tenant admin
+
+  - name: queue-service
+    prefix: /api/queue
+    upstream: http://127.0.0.1:8765/internal
+    require_auth: false
+    description: Task queue submit / status (Celery proxy)
+
+  # ===== P3-3-W1: agent-service (port 8008) =====
+  - name: agent-service
+    prefix: /api/v1/agents
+    upstream: http://127.0.0.1:8008
+    require_auth: true
+    description: "P3-3-W1 agent-service: /api/v1/agents/* (list/types/run/status)"
+
+  - name: agent-service
+    prefix: /api/v1/agent_tasks
+    upstream: http://127.0.0.1:8008
+    require_auth: true
+    description: "P3-3-W1 agent-service: /api/v1/agent_tasks/* (run lifecycle)"
+
+  # ===== P3-3-W2: workflow / notification / search services (8009-8011) =====
+  - name: workflow-service
+    prefix: /api/v1/workflows
+    upstream: http://127.0.0.1:8009
+    require_auth: true
+    description: "P3-3-W2 workflow-service: /api/v1/workflows/* (DAG def/exec/monitor + 50+ templates)"
+
+  - name: notification-service
+    prefix: /api/v1/notifications
+    upstream: http://127.0.0.1:8010
+    require_auth: true
+    description: "P3-3-W2 notification-service: /api/v1/notifications/* (inbox + WS /ws)"
+
+  - name: search-service
+    prefix: /api/v1/search
+    upstream: http://127.0.0.1:8011
+    require_auth: true
+    description: "P3-3-W2 search-service: /api/v1/search/* (text + semantic + vector + pgvector)"
+
+# ---------------------------------------------------------------------
+# Catch-all
+# ---------------------------------------------------------------------
+default:
+  upstream: http://127.0.0.1:8765/internal
+  require_auth: true
+  description: Anything not matched above — proxied to the monolith

@@ -1,0 +1,233 @@
+# ============================================================================
+# IMDF Prometheus Alert Rules
+# ============================================================================
+# Load this file in prometheus.yml:
+#   rule_files:
+#     - "deploy/prometheus-alerts.yml"
+#
+# All alerts use the imdf_* metric family from engines/metrics.py
+# plus standard node_exporter metrics for disk/cpu checks.
+# ============================================================================
+
+groups:
+  - name: imdf_api_alerts
+    interval: 30s
+    rules:
+      # ── Alert 1: API Error Rate > 5% ────────────────────────────────────
+      - alert: IMDFHighErrorRate
+        expr: |
+          (
+            rate(imdf_errors_total[5m])
+            /
+            rate(imdf_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF API 错误率超过 5%"
+          description: |
+            IMDF 服务的 API 错误率已超过 5% 阈值。
+            当前值: {{ $value | humanizePercentage }}
+            错误数(5m rate): {{ printf "%.2f" (query "rate(imdf_errors_total[5m])") }}/s
+            总请求数(5m rate): {{ printf "%.2f" (query "rate(imdf_requests_total[5m])") }}/s
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#high-error-rate"
+
+      # ── Alert 2: P95 响应时间 > 2s ─────────────────────────────────────
+      - alert: IMDFHighLatency
+        expr: |
+          imdf_request_latency_seconds{quantile="0.95"} > 2.0
+        for: 3m
+        labels:
+          severity: warning
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF P95 响应时间超过 2 秒"
+          description: |
+            IMDF 服务 P95 延迟已超过 2 秒阈值。
+            P50: {{ printf "%.3f" (query "imdf_request_latency_seconds{quantile=\"0.5\"}") }}s
+            P95: {{ $value }}s
+            P99: {{ printf "%.3f" (query "imdf_request_latency_seconds{quantile=\"0.99\"}") }}s
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#high-latency"
+
+      # ── Alert 2b: P99 响应时间 > 5s (升级版) ───────────────────────────
+      - alert: IMDFCriticalLatency
+        expr: |
+          imdf_request_latency_seconds{quantile="0.99"} > 5.0
+        for: 2m
+        labels:
+          severity: critical
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF P99 响应时间超过 5 秒 (严重)"
+          description: |
+            IMDF 服务 P99 延迟已超过 5 秒，严重性能下降。
+            P50: {{ printf "%.3f" (query "imdf_request_latency_seconds{quantile=\"0.5\"}") }}s
+            P95: {{ printf "%.3f" (query "imdf_request_latency_seconds{quantile=\"0.95\"}") }}s
+            P99: {{ $value }}s
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#critical-latency"
+
+  # ── Service Health Alerts ──────────────────────────────────────────────
+  - name: imdf_service_alerts
+    interval: 30s
+    rules:
+      # ── Alert 3: 服务停止 ──────────────────────────────────────────────
+      - alert: IMDFServiceDown
+        expr: |
+          up{job="imdf"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF 服务已停止 ({{ $labels.instance }})"
+          description: |
+            IMDF 服务在 {{ $labels.instance }} 上已停止响应。
+            服务序号: {{ $labels.job }}
+            Prometheus 无法抓取 /metrics 端点超过 1 分钟。
+            检查: systemctl status imdf
+            日志: journalctl -u imdf --since "5 min ago"
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#service-down"
+
+      # ── Alert 3b: 服务频繁重启 ─────────────────────────────────────────
+      - alert: IMDFFrequentRestarts
+        expr: |
+          rate(imdf_uptime_seconds[5m]) < 0 and changes(imdf_uptime_seconds[10m]) > 2
+        for: 0m
+        labels:
+          severity: warning
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF 服务频繁重启"
+          description: |
+            IMDF 服务在最近 10 分钟内重启了 {{ printf "%.0f" (query "changes(imdf_uptime_seconds[10m])") }} 次。
+            检查日志: journalctl -u imdf --since "10 min ago"
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#frequent-restarts"
+
+      # ── Alert: 队列积压 ────────────────────────────────────────────────
+      - alert: IMDFQueueBacklog
+        expr: |
+          imdf_queue_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF 任务队列深度过高"
+          description: |
+            IMDF 任务队列深度已超过 100，当前: {{ $value }}
+            运行中任务: {{ printf "%.0f" (query "imdf_running_tasks") }}
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#queue-backlog"
+
+      # ── Alert: 连接数异常 ──────────────────────────────────────────────
+      - alert: IMDFHighConnections
+        expr: |
+          imdf_active_connections > 1000
+        for: 3m
+        labels:
+          severity: warning
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF 活跃连接数过高"
+          description: |
+            IMDF 活跃连接数已超过 1000，当前: {{ $value }}
+            可能原因: 拒绝服务攻击 / WebSocket 连接泄漏 / 流量突发
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#high-connections"
+
+  # ── System Resource Alerts ─────────────────────────────────────────────
+  - name: imdf_system_alerts
+    interval: 30s
+    rules:
+      # ── Alert 4: 磁盘可用空间 < 10GB ──────────────────────────────────
+      - alert: IMDFLowDiskSpace
+        expr: |
+          node_filesystem_avail_bytes{mountpoint="/", fstype!="tmpfs", fstype!="devtmpfs"} < 10737418240
+        for: 5m
+        labels:
+          severity: critical
+          service: imdf
+          team: infra
+        annotations:
+          summary: "磁盘可用空间不足 10GB ({{ $labels.instance }})"
+          description: |
+            挂载点 {{ $labels.mountpoint }} 的可用磁盘空间已不足 10GB。
+            当前可用: {{ printf "%.1f" (query "node_filesystem_avail_bytes{mountpoint=\"/\"} / 1073741824") }}GB
+            总容量: {{ printf "%.1f" (query "node_filesystem_size_bytes{mountpoint=\"/\"} / 1073741824") }}GB
+            使用率: {{ printf "%.1f" (query "100 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"} * 100)") }}%
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#low-disk-space"
+
+      # ── Alert: 磁盘使用率 > 90% ────────────────────────────────────────
+      - alert: IMDFDiskAlmostFull
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/", fstype!="tmpfs", fstype!="devtmpfs"}
+            /
+            node_filesystem_size_bytes{mountpoint="/", fstype!="tmpfs", fstype!="devtmpfs"}
+          ) < 0.10
+        for: 5m
+        labels:
+          severity: critical
+          service: imdf
+          team: infra
+        annotations:
+          summary: "磁盘使用率超过 90% ({{ $labels.instance }})"
+          description: |
+            磁盘使用率: {{ printf "%.1f" (query "100 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"} * 100)") }}%
+            立即清理日志或扩容。
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#disk-almost-full"
+
+      # ── Alert: 内存使用率 > 90% ────────────────────────────────────────
+      - alert: IMDFHighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          service: imdf
+          team: infra
+        annotations:
+          summary: "系统内存使用率超过 90% ({{ $labels.instance }})"
+          description: |
+            系统内存使用率: {{ printf "%.1f" (query "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100") }}%
+            可用内存: {{ printf "%.1f" (query "node_memory_MemAvailable_bytes / 1073741824") }}GB
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#high-memory"
+
+      # ── Alert: CPU 使用率 > 90% ────────────────────────────────────────
+      - alert: IMDFHighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+          service: imdf
+          team: infra
+        annotations:
+          summary: "CPU 使用率超过 90% ({{ $labels.instance }})"
+          description: |
+            CPU 使用率: {{ $value }}%
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#high-cpu"
+
+      # ── Alert: 进程内存泄漏检测 (持续增长) ─────────────────────────────
+      - alert: IMDFMemoryLeak
+        expr: |
+          deriv(imdf_memory_rss_bytes[1h]) > 10485760
+        for: 30m
+        labels:
+          severity: warning
+          service: imdf
+          team: backend
+        annotations:
+          summary: "IMDF 进程内存持续增长 (疑似泄漏)"
+          description: |
+            IMDF 进程 RSS 内存在过去 1 小时内以 >10MB/h 的速度增长。
+            当前 RSS: {{ printf "%.1f" (query "imdf_memory_rss_bytes / 1048576") }}MB
+            增长率: {{ printf "%.1f" (query "deriv(imdf_memory_rss_bytes[1h]) / 1048576") }}MB/h
+          runbook_url: "https://github.com/your-org/imdf/wiki/Alerts#memory-leak"

@@ -1,0 +1,140 @@
+{
+  "title": "nanobot-factory Database (PG/Redis)",
+  "uid": "imdf-database",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-3h", "to": "now"},
+  "tags": ["imdf", "database", "postgres", "redis"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "PostgreSQL",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Active connections",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 1},
+      "targets": [
+        {"expr": "pg_stat_activity_count", "refId": "A", "legendFormat": "active"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Transactions per second (commit+rollback)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 1},
+      "targets": [
+        {"expr": "rate(pg_stat_database_xact_commit[1m]) + rate(pg_stat_database_xact_rollback[1m])", "refId": "A", "legendFormat": "{{datname}}"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Tuples fetched vs inserted",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 1},
+      "targets": [
+        {"expr": "rate(pg_stat_database_tup_fetched[1m])", "refId": "A", "legendFormat": "fetched"},
+        {"expr": "rate(pg_stat_database_tup_inserted[1m])", "refId": "B", "legendFormat": "inserted"},
+        {"expr": "rate(pg_stat_database_tup_updated[1m])", "refId": "C", "legendFormat": "updated"}
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Database size",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 9},
+      "targets": [
+        {"expr": "pg_database_size_bytes", "refId": "A", "legendFormat": "{{datname}}"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes"}}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Slow queries (IMDF listener)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 9},
+      "targets": [
+        {"expr": "rate(imdf_slow_queries_total[5m])", "refId": "A", "legendFormat": "slow_qps"}
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Cache hit ratio",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 9},
+      "targets": [
+        {"expr": "rate(imdf_cache_hits_total[5m]) / (rate(imdf_cache_hits_total[5m]) + rate(imdf_cache_misses_total[5m]))", "refId": "A", "legendFormat": "hit_ratio"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit"}}
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Redis",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 17}
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Redis memory usage",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 18},
+      "targets": [
+        {"expr": "redis_memory_used_bytes", "refId": "A", "legendFormat": "used"},
+        {"expr": "redis_memory_max_bytes", "refId": "B", "legendFormat": "max"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes"}}
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Redis ops/sec",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 18},
+      "targets": [
+        {"expr": "rate(redis_commands_total[1m])", "refId": "A", "legendFormat": "{{cmd}}"}
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Connected clients",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 18},
+      "targets": [
+        {"expr": "redis_connected_clients", "refId": "A"}
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Keyspace hit ratio",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+      "targets": [
+        {"expr": "redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)", "refId": "A", "legendFormat": "keyspace_hits"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit"}}
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Evicted keys",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "targets": [
+        {"expr": "rate(redis_evicted_keys_total[5m])", "refId": "A", "legendFormat": "evicted/s"}
+      ]
+    }
+  ]
+}

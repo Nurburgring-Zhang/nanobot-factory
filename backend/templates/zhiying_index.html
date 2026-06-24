@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智影数据工场</title>
+  <script src="/static/lib/vue.global.prod.js"></script>
+  <script src="/static/lib/element-plus.umd.js"></script>
+  <link rel="stylesheet" href="/static/lib/element-plus.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; }
+    #app { height: 100vh; display: flex; }
+    .sidebar { width: 200px; background: #1d1e1f; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar .logo { padding: 18px; font-size: 16px; font-weight: 700; border-bottom: 1px solid #333; }
+    .sidebar .menu-item { padding: 10px 18px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #aaa; font-size: 13px; border-left: 3px solid transparent; }
+    .sidebar .menu-item:hover { color: #fff; background: #2a2b2c; }
+    .sidebar .menu-item.active { color: #409eff; background: #2a2b2c; border-left-color: #409eff; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .header { height: 48px; background: #fff; border-bottom: 1px solid #e4e7ed; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
+    .header .title { font-size: 15px; font-weight: 600; }
+    .header .user-info { font-size: 13px; color: #606266; }
+    .content { flex: 1; overflow-y: auto; padding: 16px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: #fff; border-radius: 6px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    .stat-card .num { font-size: 24px; font-weight: 700; color: #409eff; }
+    .stat-card .label { font-size: 12px; color: #909399; margin-top: 2px; }
+    .card { background: #fff; border-radius: 6px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    .card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #303133; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f5f7fa; padding: 8px 10px; text-align: left; font-weight: 500; color: #606266; border-bottom: 1px solid #ebeef5; }
+    td { padding: 8px 10px; border-bottom: 1px solid #ebeef5; }
+    tr:hover td { background: #f5f7fa; }
+    .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; margin: 1px; background: #ecf5ff; color: #409eff; }
+    .tag-green { background: #f0f9eb; color: #67c23a; }
+    .tag-orange { background: #fdf6ec; color: #e6a23c; }
+    .tag-red { background: #fef0f0; color: #f56c6c; }
+    .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .mb-8 { margin-bottom: 8px; }
+    .w-200 { width: 200px; }
+    .btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid #dcdfe6; background: #fff; color: #606266; }
+    .btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
+    .btn-primary:hover { background: #66b1ff; }
+    .btn-sm { padding: 3px 8px; font-size: 12px; }
+    input, select { padding: 6px 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 13px; outline: none; }
+    input:focus, select:focus { border-color: #409eff; }
+  </style>
+</head>
+<body>
+<script>fetch('/templates/navbar.html').then(r=>r.text()).then(h=>document.body.insertAdjacentHTML('afterbegin',h))</script>
+<div id="app">
+  <div class="sidebar">
+    <div class="logo">🎬 智影工场</div>
+    <div class="menu-item" v-for="item in menu" :key="item.id" :class="{active:page===item.id}" @click="page=item.id;loadPage(item.id)">
+      <span>{{item.icon}}</span><span>{{item.label}}</span>
+    </div>
+  </div>
+  <div class="main">
+    <div class="header">
+      <div class="title">{{title}}</div>
+      <div class="user-info"><span style="background:#67c23a;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px">在线</span> 管理员</div>
+    </div>
+    <div class="content">
+      <!-- 仪表盘 -->
+      <div v-show="page==='dashboard'">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="num">{{g.users||0}}</div><div class="label">用户</div></div>
+          <div class="stat-card"><div class="num">{{g.items||0}}</div><div class="label">资产</div></div>
+          <div class="stat-card"><div class="num">{{g.tasks||0}}</div><div class="label">任务</div></div>
+          <div class="stat-card"><div class="num">{{g.storage_gb||0}}GB</div><div class="label">存储</div></div>
+        </div>
+      </div>
+      <!-- 需求管理 -->
+      <div v-show="page==='req'">
+        <div class="card">
+          <div class="card-title">📋 需求管理</div>
+          <div class="flex mb-8">
+            <button class="btn btn-primary" @click="createReq">+ 新建需求</button>
+            <select v-model="reqFilter" @change="loadReqs"><option value="">全部</option><option value="draft">草稿</option><option value="reviewing">审批中</option><option value="completed">已完成</option></select>
+          </div>
+          <table v-if="reqs.length"><tr><th>名称</th><th>优先级</th><th>状态</th><th>子任务</th><th>操作</th></tr>
+            <tr v-for="r in reqs" :key="r.id"><td>{{r.name}}</td><td><span :class="'tag tag-'+{p0:'red',p1:'orange'}[r.priority]||''">{{r.priority}}</span></td><td>{{r.status}}</td><td>{{r.subtasks||0}}</td><td><button class="btn btn-sm" @click="decompose(r.id)">拆解</button></td></tr>
+          </table>
+          <div v-else style="text-align:center;padding:40px;color:#909399">暂无需求</div>
+        </div>
+      </div>
+      <!-- 资产管理 -->
+      <div v-show="page==='assets'">
+        <div class="card">
+          <div class="card-title">🖼️ 资产管理</div>
+          <div class="flex mb-8">
+            <input v-model="assetQ" placeholder="搜索名称/标签" class="w-200">
+            <button class="btn btn-primary" @click="loadAssets">搜索</button>
+            <button class="btn" @click="createAsset">+ 新增</button>
+          </div>
+          <table v-if="assets.length"><tr><th>名称</th><th>类型</th><th>标签</th><th>评分</th><th>操作</th></tr>
+            <tr v-for="a in assets" :key="a.id"><td>{{a.name}}</td><td>{{a.type}}</td><td><span v-for="t in (a.tags||[])" :key="t" class="tag">{{t}}</span></td><td>{{a.score||'-'}}</td><td><button class="btn btn-sm" @click="preview(a)">查看</button></td></tr>
+          </table>
+          <div v-else style="text-align:center;padding:40px;color:#909399">暂无资产</div>
+        </div>
+      </div>
+      <!-- 任务管理 -->
+      <div v-show="page==='tasks'">
+        <div class="card"><div class="card-title">📌 任务管理</div>
+          <div class="flex mb-8"><button class="btn btn-primary" @click="createTask">+ 创建</button>
+            <select v-model="taskFilter" @change="loadTasks"><option value="">全部</option><option value="pending">待分配</option><option value="assigned">进行中</option><option value="completed">已完成</option></select></div>
+          <table v-if="tasks.length"><tr><th>名称</th><th>状态</th><th>负责人</th><th>评分</th><th>操作</th></tr>
+            <tr v-for="t in tasks" :key="t.id"><td>{{t.name}}</td><td>{{t.status}}</td><td>{{t.assigned_to||'-'}}</td><td>{{t.score||'-'}}</td><td><button class="btn btn-sm" @click="assign(t)">分配</button></td></tr>
+          </table><div v-else style="text-align:center;padding:40px;color:#909399">暂无任务</div>
+        </div>
+      </div>
+      <!-- 数据集 -->
+      <div v-show="page==='ds'">
+        <div class="card"><div class="card-title">💾 数据集</div>
+          <div class="flex mb-8"><button class="btn btn-primary" @click="createDS">+ 新建</button></div>
+          <table v-if="dsList.length"><tr><th>名称</th><th>类型</th><th>数量</th><th>版本</th><th>操作</th></tr>
+            <tr v-for="d in dsList" :key="d.id"><td>{{d.name}}</td><td>{{d.data_type}}</td><td>{{d.row_count}}</td><td>{{d.version}}</td><td><button class="btn btn-sm" @click="exportDS(d)">导出</button></td></tr>
+          </table><div v-else style="text-align:center;padding:40px;color:#909399">暂无数据集</div>
+        </div>
+      </div>
+      <!-- 众包管理 -->
+      <div v-show="page==='crowd'">
+        <el-tabs v-model="crowdTab">
+          <el-tab-pane label="👤 人员管理" name="workers">
+            <el-button type="primary" size="small" @click="showRegisterWorker=true" style="margin-bottom:8px">+ 注册人员</el-button>
+            <el-table :data="crowdWorkers" v-loading="loading.crowd" stripe size="small">
+              <el-table-column prop="username" label="用户名"/>
+              <el-table-column prop="level" label="等级"/>
+              <el-table-column prop="tasks_completed" label="完成任务"/>
+              <el-table-column prop="accuracy" label="准确率"/>
+              <el-table-column prop="earnings" label="收入"/>
+              <el-table-column prop="skills" label="技能"/>
+            </el-table>
+          </el-tab-pane>
+          <el-tab-pane label="📋 任务管理" name="tasks_tab">
+            <el-button type="primary" size="small" @click="showCreateTask=true" style="margin-bottom:8px">+ 创建任务</el-button>
+            <el-table :data="crowdTasks" v-loading="loading.crowdTasks" stripe size="small">
+              <el-table-column prop="title" label="任务名"/>
+              <el-table-column prop="task_type" label="类型"/>
+              <el-table-column prop="status" label="状态"/>
+              <el-table-column prop="budget" label="预算"/>
+              <el-table-column prop="assignees" label="分配人数"/>
+              <el-table-column label="操作">
+                <template #default="{row}">
+                  <el-button size="small" @click="assignTask(row)">分配</el-button>
+                  <el-button size="small" type="success" @click="reviewTask(row)">审核</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+
+      <!-- 注册人员对话框 -->
+      <el-dialog v-model="showRegisterWorker" title="注册众包人员" width="400px">
+        <el-form label-width="80px">
+          <el-form-item label="用户名"><el-input v-model="newWorkerName"/></el-form-item>
+          <el-form-item label="邮箱"><el-input v-model="newWorkerEmail"/></el-form-item>
+          <el-form-item label="技能"><el-input v-model="newWorkerSkills" placeholder="逗号分隔"/></el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showRegisterWorker=false">取消</el-button>
+          <el-button type="primary" @click="registerWorker">注册</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 创建任务对话框 -->
+      <el-dialog v-model="showCreateTask" title="创建众包任务" width="500px">
+        <el-form label-width="100px">
+          <el-form-item label="标题"><el-input v-model="newTaskTitle"/></el-form-item>
+          <el-form-item label="类型">
+            <el-select v-model="newTaskType">
+              <el-option label="标注" value="annotation"/>
+              <el-option label="审核" value="review"/>
+              <el-option label="描述" value="caption"/>
+              <el-option label="质量检查" value="quality_check"/>
+              <el-option label="数据采集" value="data_collection"/>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="预算"><el-input-number v-model="newTaskBudget" :min="0"/></el-form-item>
+          <el-form-item label="描述"><el-input v-model="newTaskDesc" type="textarea"/></el-form-item>
+          <el-form-item label="数据来源"><el-input v-model="newTaskDataRef"/></el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showCreateTask=false">取消</el-button>
+          <el-button type="primary" @click="createCrowdTask">创建</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 评测 -->
+      <div v-show="page==='eval'">
+        <div class="card"><div class="card-title">🧪 模型评测</div>
+          <div class="flex mb-8"><button class="btn btn-primary" @click="createEval">+ 创建</button></div>
+          <table v-if="evals.length"><tr><th>名称</th><th>状态</th><th>操作</th></tr>
+            <tr v-for="e in evals" :key="e.id"><td>{{e.name}}</td><td>{{e.status}}</td><td><button class="btn btn-sm" @click="loadBC(e.id)">BadCase</button></td></tr>
+          </table><div v-else style="text-align:center;padding:40px;color:#909399">暂无评测</div>
+        </div>
+      </div>
+      <!-- 统计 -->
+      <div v-show="page==='stats'">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="num">{{g.users||0}}</div><div class="label">用户</div></div>
+          <div class="stat-card"><div class="num">{{g.items||0}}</div><div class="label">资产</div></div>
+          <div class="stat-card"><div class="num">{{g.tasks||0}}</div><div class="label">任务</div></div>
+          <div class="stat-card"><div class="num">{{g.storage_gb||0}}GB</div><div class="label">存储</div></div>
+        </div>
+        <div class="card"><div class="card-title">🏆 排行</div><div v-for="(r,i) in rankings" :key="i" style="padding:4px 0;border-bottom:1px solid #f0f0f0;display:flex"><span style="width:24px;font-weight:700">{{i+1}}</span><span style="flex:1">{{r.user}}</span><span style="color:#409eff">{{r.value}}</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v2';
+const { createApp, ref, reactive, onMounted } = Vue;
+const ElMessage = ElementPlus.ElMessage;
+const ElMessageBox = ElementPlus.ElMessageBox;
+
+const app = createApp({
+  setup() {
+    const page = ref('dashboard');
+    const title = ref('仪表盘');
+    const menu = [
+      {id:'dashboard', icon:'📊', label:'仪表盘'},{id:'req', icon:'📋', label:'需求管理'},
+      {id:'assets', icon:'🖼️', label:'资产管理'},{id:'tasks', icon:'📌', label:'任务管理'},
+      {id:'ds', icon:'💾', label:'数据集'},{id:'crowd', icon:'👥', label:'众包管理'},
+      {id:'eval', icon:'🧪', label:'评测'},{id:'stats', icon:'📈', label:'统计'}];
+    const g = ref({}); // 全局统计
+    const rankings = ref([]);
+    const reqs = ref([]);
+    const reqFilter = ref('');
+    const assets = ref([]);
+    const assetQ = ref('');
+    const tasks = ref([]);
+    const taskFilter = ref('');
+    const dsList = ref([]);
+    const evals = ref([]);
+    const crowdTab = ref('workers');
+    const crowdWorkers = ref([]);
+    const crowdTasks = ref([]);
+    const showRegisterWorker = ref(false);
+    const newWorkerName = ref('');
+    const newWorkerEmail = ref('');
+    const newWorkerSkills = ref('');
+    const showCreateTask = ref(false);
+    const newTaskTitle = ref('');
+    const newTaskType = ref('annotation');
+    const newTaskBudget = ref(0);
+    const newTaskDesc = ref('');
+    const newTaskDataRef = ref('');
+    const loading = reactive({ crowd: false, crowdTasks: false });
+
+    async function api(path, data) {
+      try {
+        const opts = {headers:{'Content-Type':'application/json'}};
+        if (data) { opts.method = 'POST'; opts.body = JSON.stringify(data); }
+        const r = await fetch(API + path, opts);
+        if (!r.ok) return null;
+        return await r.json();
+      } catch(e) { console.error(path, e); return null; }
+    }
+
+    function loadPage(p) {
+      title.value = menu.find(m=>m.id===p)?.label || p;
+      if (p==='dashboard') loadStats();
+      else if (p==='req') loadReqs();
+      else if (p==='assets') loadAssets();
+      else if (p==='tasks') loadTasks();
+      else if (p==='ds') loadDS();
+      else if (p==='crowd') {}
+      else if (p==='eval') loadEval();
+      else if (p==='stats') loadStats();
+    }
+
+    async function loadStats() {
+      const d = await api('/stats/global');
+      if (d) g.value = d;
+      const r = await api('/stats/rankings');
+      if (r) rankings.value = r.annotator || [];
+    }
+
+    async function loadReqs() {
+      const q = reqFilter.value ? '?status='+reqFilter.value : '';
+      const d = await api('/requirements'+q);
+      if (d) reqs.value = d;
+    }
+
+    async function createReq() {
+      try {
+        const { value } = await ElMessageBox.prompt('输入需求描述：', '新建需求', { confirmButtonText:'确定', cancelButtonText:'取消', inputPlaceholder:'需求描述' });
+        if (!value) return;
+        const r = await api('/requirements', {name:value, description:value, type:'dataset_production', priority:'p2', proposer_id:'admin', project_id:'p1'});
+        if (r) { ElMessage.success('创建成功: '+r.id); loadReqs(); }
+        else ElMessage.error('创建失败');
+      } catch(e) { /* cancelled */ }
+    }
+
+    async function decompose(id) {
+      await api('/requirements/'+id+'/decompose', {});
+      ElMessage.success('拆解完成');
+      loadReqs();
+    }
+
+    async function loadAssets() {
+      const q = assetQ.value ? '?query='+encodeURIComponent(assetQ.value) : '';
+      const d = await api('/assets'+q);
+      if (d) assets.value = d;
+    }
+
+    async function createAsset() {
+      try {
+        const { value } = await ElMessageBox.prompt('资产名称：', '新建资产', { confirmButtonText:'确定', cancelButtonText:'取消' });
+        if (!value) return;
+        const r = await api('/assets', {name:value, type:'image', tags:[]});
+        if (r) { ElMessage.success('已创建'); loadAssets(); }
+        else ElMessage.error('创建失败');
+      } catch(e) {}
+    }
+
+    function preview(a) {
+      ElMessage.info('名称: '+a.name+'\n类型: '+a.type+'\n标签: '+(a.tags||[]).join(', ')+'\n评分: '+(a.score||'-'));
+    }
+
+    async function loadTasks() {
+      const q = taskFilter.value ? '?status='+taskFilter.value : '';
+      const d = await api('/tasks'+q);
+      if (d) tasks.value = d;
+    }
+
+    async function createTask() {
+      try {
+        const { value } = await ElMessageBox.prompt('任务名：', '创建任务', { confirmButtonText:'确定', cancelButtonText:'取消' });
+        if (!value) return;
+        const r = await api('/tasks', {name:value, type:'annotation', project_id:'p1', creator_id:'admin'});
+        if (r) { ElMessage.success('已创建: '+r.id); loadTasks(); }
+        else ElMessage.error('创建失败');
+      } catch(e) {}
+    }
+
+    async function assign(t) {
+      try {
+        const { value } = await ElMessageBox.prompt('分配用户ID：', '分配任务', { confirmButtonText:'确定', cancelButtonText:'取消' });
+        if (!value) return;
+        await api('/tasks/'+t.id+'/assign', {user_id: value});
+        ElMessage.success('已分配');
+        loadTasks();
+      } catch(e) {}
+    }
+
+    async function loadDS() {
+      const d = await api('/datasets?project_id=p1');
+      if (d) dsList.value = d;
+    }
+
+    async function createDS() {
+      try {
+        const { value } = await ElMessageBox.prompt('数据集名称：', '新建数据集', { confirmButtonText:'确定', cancelButtonText:'取消' });
+        if (!value) return;
+        const r = await api('/datasets', {name:value, project_id:'p1', data_type:'image_text'});
+        if (r) { ElMessage.success('已创建'); loadDS(); }
+        else ElMessage.error('创建失败');
+      } catch(e) {}
+    }
+
+    async function exportDS(d) {
+      const r = await api('/datasets/'+d.id+'/export?format=llava_json&output_path=/tmp/export_'+d.id+'.json');
+      if (r) ElMessage.success('导出路径: '+r.export_path);
+    }
+
+    async function loadEval() {
+      // 评测列表需要从eval_manager获取
+      const d = await api('/eval/tasks');
+      // 如果没有GET就用POST创建一个默认的
+      if (Array.isArray(d)) evals.value = d;
+      else evals.value = [];
+    }
+
+    async function createEval() {
+      try {
+        const { value } = await ElMessageBox.prompt('评测名称：', '创建评测', { confirmButtonText:'确定', cancelButtonText:'取消' });
+        if (!value) return;
+        const r = await api('/eval/tasks', {name:value, model_id:'model-v1', dataset_id:'ds-001'});
+        if (r) { ElMessage.success('已创建: '+r.id); loadEval(); }
+        else ElMessage.error('创建失败');
+      } catch(e) {}
+    }
+
+    async function loadBC(evalId) {
+      const d = await api('/eval/bad-cases?eval_task_id='+evalId);
+      if (d && d.length) ElMessage.info('BadCases:\n'+d.map(b=>b.type+'(严重度:'+b.severity+')').join('\n'));
+      else ElMessage.info('无BadCase');
+    }
+
+    async function loadCrowdWorkers() {
+      loading.crowd = true;
+      try { const r = await fetch('/api/v2/crowd/workers'); crowdWorkers.value = await r.json(); } catch(e) {}
+      loading.crowd = false;
+    }
+    async function loadCrowdTasks() {
+      loading.crowdTasks = true;
+      try { const r = await fetch('/api/v2/crowd/tasks'); crowdTasks.value = await r.json(); } catch(e) {}
+      loading.crowdTasks = false;
+    }
+    async function registerWorker() {
+      await fetch('/api/v2/crowd/workers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:newWorkerName.value, email:newWorkerEmail.value, skills:newWorkerSkills.value.split(',').map(s=>s.trim())})});
+      showRegisterWorker.value = false; newWorkerName.value = ''; newWorkerEmail.value = ''; newWorkerSkills.value = '';
+      await loadCrowdWorkers();
+    }
+    async function createCrowdTask() {
+      await fetch('/api/v2/crowd/tasks', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:newTaskTitle.value, task_type:newTaskType.value, budget:newTaskBudget.value, description:newTaskDesc.value, data_ref:newTaskDataRef.value})});
+      showCreateTask.value = false; newTaskTitle.value = '';
+      await loadCrowdTasks();
+    }
+    async function assignTask(task) {
+      const wid = prompt('输入人员ID:');
+      if(wid) { await fetch('/api/v2/crowd/tasks/'+task.task_id+'/assign', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({worker_id:wid})}); await loadCrowdTasks(); }
+    }
+    async function reviewTask(task) {
+      const ok = confirm('通过此任务?');
+      await fetch('/api/v2/crowd/tasks/'+task.task_id+'/review', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({passed:ok, score: ok ? 0.95 : 0.3, feedback: ok ? '质量合格' : '需要返工'})});
+      await loadCrowdTasks();
+    }
+
+    onMounted(() => { loadStats(); loadCrowdWorkers(); loadCrowdTasks(); });
+
+    return { page, title, menu, g, rankings, reqs, reqFilter, assets, assetQ, tasks, taskFilter, dsList, evals,
+      crowdTab, crowdWorkers, crowdTasks, showRegisterWorker, newWorkerName, newWorkerEmail, newWorkerSkills,
+      showCreateTask, newTaskTitle, newTaskType, newTaskBudget, newTaskDesc, newTaskDataRef, loading,
+      loadPage, loadReqs, createReq, decompose, loadAssets, createAsset, preview, loadTasks, createTask, assign,
+      loadDS, createDS, exportDS, loadEval, createEval, loadBC, loadCrowdWorkers, loadCrowdTasks,
+      registerWorker, createCrowdTask, assignTask, reviewTask };
+  }
+});
+app.use(ElementPlus);
+app.mount('#app');
+</script>
+</body>
+</html>

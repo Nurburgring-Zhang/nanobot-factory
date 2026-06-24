@@ -1,0 +1,16 @@
+# =====================================================================
+# 00-namespace.yaml
+# Creates the nanobot-factory namespace with a "safe" pod-security standard.
+# Apply first via: kubectl apply -f 00-namespace.yaml
+# =====================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nanobot-factory
+  labels:
+    name: nanobot-factory
+    app.kubernetes.io/name: nanobot-factory
+    app.kubernetes.io/part-of: nanobot-factory
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

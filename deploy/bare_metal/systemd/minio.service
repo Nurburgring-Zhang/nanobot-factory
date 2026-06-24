@@ -1,0 +1,40 @@
+# ============================================================================
+# minio.service — IMDF MinIO S3-compatible object storage
+# ============================================================================
+[Unit]
+Description=IMDF MinIO (S3 API :9000 + console :9001)
+After=network-online.target
+Wants=network-online.target
+Before=imdf-gateway.service imdf-asset.service imdf-cleaning.service \
+      imdf-dataset.service imdf-evaluation.service
+
+[Service]
+Type=simple
+User=minio-user
+Group=minio-user
+EnvironmentFile=/etc/default/minio
+ExecStart=/usr/local/bin/minio server $MINIO_VOLUMES $MINIO_OPTS
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# MinIO needs file descriptors + memory for cached chunks
+LimitNOFILE=65536
+MemoryMax=8G
+MemoryHigh=6G
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+NoSockets=false
+ReadWritePaths=/var/lib/minio
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=minio
+
+[Install]
+WantedBy=multi-user.target

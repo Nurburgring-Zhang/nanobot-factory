@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IMDF 无限数据工场 — 登录</title>
+<style>
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-card: #1e1e3a;
+  --border: #2a2a4a;
+  --text-primary: #e0e0f0;
+  --text-secondary: #8888aa;
+  --text-muted: #666688;
+  --accent-blue: #4a7aff;
+  --accent-green: #4ade80;
+  --accent-red: #ef4444;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --radius: 8px;
+  --transition: 0.2s ease;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+}
+.login-container {
+  width: 400px;
+  max-width: 90vw;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px 32px;
+  box-shadow: var(--shadow);
+}
+.logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.logo-main {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  letter-spacing: -0.5px;
+}
+.logo-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.tabs {
+  display: flex;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+}
+.tab.active {
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
+}
+.tab:hover { color: var(--text-primary); }
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.form-group input:focus {
+  border-color: var(--accent-blue);
+}
+.form-group input::placeholder {
+  color: var(--text-muted);
+}
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn-primary {
+  background: var(--accent-blue);
+  color: #fff;
+}
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.error-msg {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 16px;
+  color: var(--accent-red);
+  font-size: 12px;
+  display: none;
+}
+.error-msg.show { display: block; }
+.success-msg {
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.3);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 16px;
+  color: var(--accent-green);
+  font-size: 12px;
+  display: none;
+}
+.success-msg.show { display: block; }
+.form-footer {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.form-footer a {
+  color: var(--accent-blue);
+  cursor: pointer;
+  text-decoration: none;
+}
+.form-footer a:hover {
+  text-decoration: underline;
+}
+#registerForm { display: none; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="logo">
+    <div class="logo-main">IMDF</div>
+    <div class="logo-sub">无限数据工场 · Infinite Multimodal Data Foundry</div>
+  </div>
+
+  <div class="tabs" id="loginTabs">
+    <div class="tab active" data-tab="login" onclick="switchTab('login')">登录</div>
+    <div class="tab" data-tab="register" onclick="switchTab('register')">注册</div>
+  </div>
+
+  <div id="loginForm">
+    <div id="loginError" class="error-msg"></div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="loginUsername" placeholder="请输入用户名" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">登 录</button>
+    <div class="form-footer">
+      <a onclick="switchTab('register')">还没有账号？立即注册 →</a>
+    </div>
+  </div>
+
+  <div id="registerForm">
+    <div id="registerError" class="error-msg"></div>
+    <div id="registerSuccess" class="success-msg"></div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="regUsername" placeholder="3-32个字符" autocomplete="username" onkeydown="if(event.key==='Enter')doRegister()">
+    </div>
+    <div class="form-group">
+      <label>邮箱</label>
+      <input type="email" id="regEmail" placeholder="example@company.com" autocomplete="email" onkeydown="if(event.key==='Enter')doRegister()">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="regPassword" placeholder="至少6个字符" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+    </div>
+    <div class="form-group">
+      <label>确认密码</label>
+      <input type="password" id="regPasswordConfirm" placeholder="再次输入密码" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+    </div>
+    <button class="btn btn-primary" id="registerBtn" onclick="doRegister()">注 册</button>
+    <div class="form-footer">
+      <a onclick="switchTab('login')">← 已有账号？返回登录</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// API_BASE — use relative path so it works behind same-origin reverse proxy
+const API_BASE = '';
+
+// Simple XHR/JSON helper (no dependency on api.js to keep login standalone)
+async function apiLogin(method, path, body) {
+  const url = API_BASE + path;
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const res = await fetch(url, opts);
+    const data = await res.json();
+    return { status: res.status, ...data };
+  } catch (e) {
+    return { status: 0, success: false, error: e.message };
+  }
+}
+
+function switchTab(tab) {
+  const tabs = document.querySelectorAll('#loginTabs .tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  document.querySelector(`#loginTabs .tab[data-tab="${tab}"]`).classList.add('active');
+
+  document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+
+  // Clear messages
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('registerError').classList.remove('show');
+  document.getElementById('registerSuccess').classList.remove('show');
+}
+
+// Redirect to main app
+function redirectToApp() {
+  // Check if there's a redirect param
+  const params = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect') || '/';
+  window.location.href = redirect;
+}
+
+// Check if already logged in
+async function checkAuth() {
+  const token = localStorage.getItem('imdf_token');
+  if (!token) return false;
+  try {
+    const res = await fetch(API_BASE + '/api/v1/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      redirectToApp();
+      return true;
+    }
+  } catch (e) { /* ignore */ }
+  return false;
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  errorEl.classList.remove('show');
+
+  if (!username || !password) {
+    errorEl.textContent = '请输入用户名和密码';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+
+  const result = await apiLogin('POST', '/auth/login', { username, password });
+
+  btn.disabled = false;
+  btn.textContent = '登 录';
+
+  if (result.success && result.data) {
+    // Store tokens
+    const token = result.data.access_token || result.data.token;
+    const refreshToken = result.data.refresh_token;
+    if (token) {
+      localStorage.setItem('imdf_token', token);
+      if (refreshToken) localStorage.setItem('imdf_refresh_token', refreshToken);
+      // Store user info
+      if (result.data.user) {
+        localStorage.setItem('imdf_user', JSON.stringify(result.data.user));
+      }
+      redirectToApp();
+    }
+  } else {
+    errorEl.textContent = result.error || result.message || '登录失败，请检查用户名和密码';
+    errorEl.classList.add('show');
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+  const errorEl = document.getElementById('registerError');
+  const successEl = document.getElementById('registerSuccess');
+  const btn = document.getElementById('registerBtn');
+
+  errorEl.classList.remove('show');
+  successEl.classList.remove('show');
+
+  // Validation
+  if (!username || username.length < 3 || username.length > 32) {
+    errorEl.textContent = '用户名需要3-32个字符';
+    errorEl.classList.add('show');
+    return;
+  }
+  if (!email || !email.includes('@')) {
+    errorEl.textContent = '请输入有效的邮箱地址';
+    errorEl.classList.add('show');
+    return;
+  }
+  if (!password || password.length < 6) {
+    errorEl.textContent = '密码至少需要6个字符';
+    errorEl.classList.add('show');
+    return;
+  }
+  if (password !== passwordConfirm) {
+    errorEl.textContent = '两次输入的密码不一致';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '注册中...';
+
+  const result = await apiLogin('POST', '/auth/register', {
+    username, email, password
+  });
+
+  btn.disabled = false;
+  btn.textContent = '注 册';
+
+  if (result.success) {
+    successEl.textContent = '注册成功！正在跳转到登录...';
+    successEl.classList.add('show');
+    // Auto switch to login after a moment
+    setTimeout(() => {
+      switchTab('login');
+      document.getElementById('loginUsername').value = username;
+    }, 1500);
+  } else {
+    errorEl.textContent = result.error || result.message || '注册失败，请重试';
+    errorEl.classList.add('show');
+  }
+}
+
+// On page load, check if already authenticated
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
+});
+</script>
+</body>
+</html>

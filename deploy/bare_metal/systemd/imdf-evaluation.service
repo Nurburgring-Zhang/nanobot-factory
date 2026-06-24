@@ -1,0 +1,55 @@
+# ============================================================================
+# imdf-evaluation.service — model evaluation harness + reports (:8007)
+# ============================================================================
+[Unit]
+Description=IMDF evaluation-service (eval harness, benchmark reports)
+After=network-online.target postgresql.service redis-server.service minio.service
+Wants=network-online.target
+Requires=postgresql.service redis-server.service minio.service
+
+[Service]
+Type=simple
+User=imdf
+Group=imdf
+WorkingDirectory=/opt/nanobot-factory
+EnvironmentFile=/etc/imdf/imdf.env
+
+ExecStart=/opt/nanobot-factory/venv/bin/uvicorn \
+    backend.services.evaluation_service.main:app \
+    --host 0.0.0.0 \
+    --port 8007 \
+    --workers 2 \
+    --proxy-headers \
+    --forwarded-allow-ips='*' \
+    --log-level info
+
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+ReadWritePaths=/opt/nanobot-factory/data /opt/nanobot-factory/logs
+
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=3G
+MemoryHigh=2G
+CPUQuota=200%
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=imdf-evaluation
+
+[Install]
+WantedBy=multi-user.target

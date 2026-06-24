@@ -1,0 +1,130 @@
+# =====================================================================
+# cleaning-service (port 8004) - P3-2-W2
+# =====================================================================
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cleaning-service
+  namespace: nanobot-factory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cleaning-service
+  namespace: nanobot-factory
+  labels:
+    app: cleaning-service
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cleaning-service
+  template:
+    metadata:
+      labels:
+        app: cleaning-service
+        app.kubernetes.io/component: microservice
+    spec:
+      serviceAccountName: cleaning-service
+      containers:
+        - name: cleaning-service
+          image: ghcr.io/minimax-ai/nanobot-factory:v0.8.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/venv/bin/uvicorn
+            - backend.services.cleaning_service.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8004"
+            - --log-level
+            - info
+          ports:
+            - name: http
+              containerPort: 8004
+              protocol: TCP
+          env:
+            - name: NANOBOT_PORT
+              value: "8004"
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: nanobot-config
+                  key: CELERY_BROKER_URL
+          envFrom:
+            - configMapRef:
+                name: nanobot-config
+          resources:
+            requests:
+              cpu: 300m
+              memory: 512Mi
+            limits:
+              cpu: "1.5"
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8004
+            initialDelaySeconds: 25
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cleaning-service
+  namespace: nanobot-factory
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8004
+      targetPort: 8004
+      protocol: TCP
+  selector:
+    app: cleaning-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cleaning-service
+  namespace: nanobot-factory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cleaning-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300

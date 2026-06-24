@@ -1,0 +1,47 @@
+# AIGC批处理工具示例提示词
+# 每行一个提示词，用于批量生成
+
+# 风景类
+beautiful mountain landscape at sunset, golden hour lighting, photorealistic, 8K
+cyberpunk city at night, neon lights, rain on streets, futuristic, highly detailed
+serene beach scene with palm trees, turquoise water, white sand, tropical paradise
+
+# 人物类
+portrait of a young woman, soft lighting, professional photography, shallow depth of field
+fantasy warrior, medieval armor, epic pose, dramatic lighting, digital art
+cute anime character, school uniform, cherry blossoms background, kawaii style
+
+# 建筑类
+modern skyscraper glass facade, urban architecture, blue sky, architectural photography
+ancient temple ruins, jungle overgrown, mysterious atmosphere, cinematic lighting
+futuristic space station interior, holographic displays, sci-fi design, detailed
+
+# 艺术类
+abstract painting, vibrant colors, modern art, canvas texture, gallery quality
+watercolor illustration, floral design, pastel colors, artistic style
+oil painting style, classic still life, fruits and flowers, renaissance art
+
+# 动物类
+golden retriever dog, happy expression, park setting, natural lighting, photography
+exotic butterfly, iridescent wings, macro photography, colorful background
+majestic eagle in flight, mountain backdrop, wildlife photography, dramatic sky
+
+# 科幻类
+alien planet landscape, strange rocks and crystals, purple sky, alien flora, sci-fi
+robot/android character, detailed mechanical parts, cyberpunk aesthetic, future tech
+spaceship in orbit around a gas giant, space opera, detailed stars, cinematic
+
+# 美食类
+gourmet pizza with fresh basil, food photography, studio lighting, appetizing
+elegant sushi platter, traditional Japanese style, artful presentation
+chocolate cake with berries, dessert photography, warm lighting, detailed texture
+
+# 时尚类
+fashion model in elegant dress, studio photography, professional lighting, runway style
+casual street fashion, urban background, natural lighting, lifestyle photography
+vintage fashion illustration, art deco style, elegant design, vintage poster
+
+# 自然类
+macro flower photography, dew drops, soft focus, natural lighting, artistic
+forest path with sunbeams, morning mist, peaceful atmosphere, nature photography
+snow-covered mountain peaks, dramatic sky, adventure photography, inspiring

@@ -1,0 +1,344 @@
+# =============================================================================
+# P3-8-W2: Prometheus Deployment + Service + ConfigMap
+# =============================================================================
+# Scrape 12 microservice instances + IMDF main app.
+# Retention 15d default, 30d if storage permits.
+# OTLP receiver is on port 4317 (gRPC) + 4318 (HTTP) for Jaeger push.
+# =============================================================================
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: nanobot-factory-monitoring
+    pod-security.kubernetes.io/enforce: privileged
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: nanobot-factory-prod
+        monitor: imdf-stack
+
+    # OTLP receiver — push model for short-lived batch jobs / pushgateway equivalent
+    otlp:
+      receiver:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    # Rule files (alertmanager subscribes to alerts)
+    rule_files:
+      - /etc/prometheus/rules/*.yml
+
+    # Alertmanager endpoint
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager.monitoring.svc.cluster.local:9093
+
+    # 12 microservice scrape targets + IMDF main app + node exporter
+    scrape_configs:
+      # Main IMDF FastAPI app (canvas_web.py)
+      - job_name: imdf-main
+        metrics_path: /metrics
+        scrape_interval: 10s
+        kubernetes_sd_configs:
+          - role: service
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_label_app]
+            regex: imdf-main
+            action: keep
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+      # 12 microservices: agent / annotation / asset / cleaning / collection
+      # dataset / evaluation / notification / scoring / search / user / workflow
+      - job_name: microservices
+        metrics_path: /metrics
+        scrape_interval: 15s
+        kubernetes_sd_configs:
+          - role: service
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_label_component]
+            regex: microservice
+            action: keep
+          - source_labels: [__meta_kubernetes_service_label_app]
+            target_label: microservice
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+      # Pushgateway-equivalent: short-lived batch jobs (celery worker, render task)
+      - job_name: pushgateway
+        static_configs:
+          - targets: ['pushgateway.monitoring.svc.cluster.local:9091']
+
+      # Kubernetes API server metrics (control plane)
+      - job_name: kubernetes-apiservers
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # kubelet metrics (per-node runtime)
+      - job_name: kubernetes-nodes
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+
+      # node-exporter (host-level CPU/mem/disk/net)
+      - job_name: node-exporter
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+            regex: node-exporter
+            action: keep
+
+      # postgres-exporter
+      - job_name: postgres
+        static_configs:
+          - targets: ['postgres-exporter.monitoring.svc.cluster.local:9187']
+
+      # redis-exporter
+      - job_name: redis
+        static_configs:
+          - targets: ['redis-exporter.monitoring.svc.cluster.local:9121']
+
+      # prometheus self-scrape
+      - job_name: prometheus
+        static_configs:
+          - targets: ['localhost:9090']
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: monitoring
+  labels:
+    app: prometheus
+data:
+  alerts.yml: |
+    groups:
+      - name: imdf_high_latency
+        rules:
+          - alert: IMDFHighP99Latency
+            expr: histogram_quantile(0.99, sum(rate(imdf_request_latency_seconds_bucket[5m])) by (le, microservice)) > 2.0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "IMDF P99 latency > 2s on {{ $labels.microservice }}"
+              description: "P99 latency on microservice {{ $labels.microservice }} is {{ $value }}s for 5m."
+      - name: imdf_high_error_rate
+        rules:
+          - alert: IMDFHighErrorRate
+            expr: |
+              (sum(rate(imdf_requests_total{status_code=~"5.."}[5m])) by (microservice)
+              / sum(rate(imdf_requests_total[5m])) by (microservice)) > 0.05
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "IMDF error rate > 5% on {{ $labels.microservice }}"
+              description: "5xx error rate on {{ $labels.microservice }} is {{ $value | humanizePercentage }}."
+          - alert: IMDFQueueBacklog
+            expr: imdf_queue_depth > 1000
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "IMDF queue depth > 1000"
+              description: "Queue depth is {{ $value }}, possible worker stall."
+      - name: imdf_infra
+        rules:
+          - alert: PostgresDiskFull
+            expr: (node_filesystem_avail_bytes{mountpoint="/var/lib/postgresql"} / node_filesystem_size_bytes) < 0.1
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Postgres disk > 90% full"
+              description: "Postgres data volume only {{ $value | humanizePercentage }} free."
+          - alert: RedisMemoryHigh
+            expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Redis memory > 80%"
+              description: "Redis memory usage {{ $value | humanizePercentage }}."
+          - alert: MicroserviceDown
+            expr: up{job="microservices"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Microservice {{ $labels.microservice }} DOWN"
+              description: "Prometheus has not been able to scrape {{ $labels.instance }} for 2m."
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.51.2
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=15d
+            - --web.enable-lifecycle
+            - --web.console.libraries=/usr/share/prometheus/console_libraries
+            - --web.console.templates=/usr/share/prometheus/consoles
+            - --enable-feature=otlp-write-receiver
+          ports:
+            - name: http
+              containerPort: 9090
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: rules
+              mountPath: /etc/prometheus/rules
+            - name: storage
+              mountPath: /prometheus
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        - name: rules
+          configMap:
+            name: prometheus-rules
+        - name: storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9090
+      targetPort: http
+    - name: otlp-grpc
+      port: 4317
+      targetPort: otlp-grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+  selector:
+    app: prometheus
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+  - apiGroups: [""]
+    resources: [nodes, nodes/proxy, services, endpoints, pods]
+    verbs: [get, list, watch]
+  - apiGroups: [extensions, networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, watch]
+  - nonResourceURLs: ["/metrics"]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring

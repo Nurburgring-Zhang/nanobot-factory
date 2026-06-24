@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "n0",
+      "name": "raw_images",
+      "type": "source",
+      "created": "2026-06-16T03:52:43.456242",
+      "metadata": {}
+    },
+    {
+      "id": "n1",
+      "name": "cleaned_images",
+      "type": "transform",
+      "created": "2026-06-16T03:52:43.457386",
+      "metadata": {}
+    }
+  ],
+  "edges": [
+    {
+      "source": "n0",
+      "target": "n1",
+      "relation": "\u6e05\u6d17",
+      "time": "2026-06-16T03:52:43.462757"
+    }
+  ]
+}

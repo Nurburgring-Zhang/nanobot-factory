@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智影工场 · 导航门户</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #1e3a5f;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --border-hover: #3b82f6;
+            --accent: #3b82f6;
+            --accent2: #8b5cf6;
+            --green: #10b981;
+            --red: #ef4444;
+            --shadow: rgba(0,0,0,0.3);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        a { text-decoration: none; color: inherit; }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .header-logo {
+            font-size: 1.75rem;
+            line-height: 1;
+        }
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .header-nav a {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.5rem;
+        }
+        .header-nav a:hover {
+            color: var(--text-primary);
+            background: rgba(59,130,246,0.1);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 2rem 0 2.5rem;
+        }
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin: 1rem 0 2.5rem;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem 1.25rem;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-hover);
+            box-shadow: 0 12px 30px var(--shadow), 0 0 0 1px rgba(59,130,246,0.3);
+            background: var(--bg-hover);
+        }
+        .card-icon {
+            font-size: 2.25rem;
+            line-height: 1;
+        }
+        .card h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+        .card p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+        }
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.35rem;
+        }
+        .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .status-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+        .status-dot.gray { background: #64748b; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .cards-grid { grid-template-columns: repeat(2, 1fr); }
+            header { flex-direction: column; gap: 0.75rem; }
+            footer { flex-direction: column; gap: 0.75rem; text-align: center; }
+        }
+        @media (max-width: 500px) {
+            .cards-grid { grid-template-columns: 1fr; }
+            .header-nav { flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<script>fetch('/templates/navbar.html').then(r=>r.text()).then(h=>document.body.insertAdjacentHTML('afterbegin',h))</script>
+
+<header>
+    <div class="header-left">
+        <span class="header-logo">🤖</span>
+        <span class="header-title">智影工场</span>
+    </div>
+    <nav class="header-nav">
+        <a href="/zhiying">📊 智影数据工场</a>
+        <a href="/studio.html">🎨 AIGC生成</a>
+        <a href="/workflow.html">🔧 工作流</a>
+        <a href="/docs" target="_blank">📖 API文档</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:12px">
+        <input type="text" id="global-search" placeholder="🔍 搜索功能..." style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:6px 12px;color:#e2e8f0;font-size:13px;width:200px;outline:none" onkeyup="if(event.key==='Enter')doSearch(this.value)">
+        <span id="user-badge" style="font-size:13px;color:#94a3b8;padding:4px 10px;background:#1e293b;border-radius:6px;border:1px solid #334155">👤 访客</span>
+    </div>
+</header>
+
+<div class="container">
+    <section class="hero">
+        <h1>🚀 Nanobot Factory</h1>
+        <p>AI驱动AIGC数据生产平台 · 全功能导航门户</p>
+    </section>
+
+    <div class="cards-grid">
+        <a href="/zhiying" class="card">
+            <span class="card-icon">📊</span>
+            <h3>智影数据工场</h3>
+            <p>数据生产 / 标注 / 质量全流程管理</p>
+        </a>
+        <a href="/studio.html" class="card">
+            <span class="card-icon">🎨</span>
+            <h3>AIGC工作室</h3>
+            <p>图像 / 视频 / 3D模型智能生成</p>
+        </a>
+        <a href="/workflow.html" class="card">
+            <span class="card-icon">🔧</span>
+            <h3>工作流编辑器</h3>
+            <p>拖拽式自动化工作流编排</p>
+        </a>
+        <a href="/zhiying#ml-models" class="card">
+            <span class="card-icon">🧠</span>
+            <h3>ML模型管理</h3>
+            <p>模型训练 / 部署 / 版本管理</p>
+        </a>
+        <a href="/api/assets" class="card">
+            <span class="card-icon">📁</span>
+            <h3>资产管理</h3>
+            <p>数据集 / 素材 / 成品统一管理</p>
+        </a>
+        <a href="/zhiying#permissions" class="card">
+            <span class="card-icon">🔐</span>
+            <h3>权限管理</h3>
+            <p>用户角色 / 权限 / 团队协作</p>
+        </a>
+        <a href="/zhiying#quality" class="card">
+            <span class="card-icon">📈</span>
+            <h3>质量中心</h3>
+            <p>数据质量监控 / 审核 / 报表</p>
+        </a>
+        <a href="/zhiying" class="card">
+            <span class="card-icon">⚙️</span>
+            <h3>系统设置</h3>
+            <p>平台配置 / 存储 / 日志管理</p>
+        </a>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-left">
+        <span id="version-display">Nanobot Factory v1.0.0</span>
+        <span>|</span>
+        <span>运行状态: <span id="runtime-status">检查中...</span></span>
+    </div>
+    <div class="footer-right">
+        <span id="api-status">
+            <span class="status-dot gray"></span>API: 检查中...
+        </span>
+    </div>
+</footer>
+
+<script>
+    (function() {
+        var apiEl = document.getElementById('api-status');
+        var runtimeEl = document.getElementById('runtime-status');
+        var userBadge = document.getElementById('user-badge');
+        var searchInput = document.getElementById('global-search');
+
+        // 搜索功能
+        window.doSearch = function(query) {
+            if (!query.trim()) return;
+            var q = query.trim().toLowerCase();
+            var map = {
+                '数据': '/zhiying', '智影': '/zhiying', '工场': '/zhiying',
+                '生成': '/studio.html', 'aigc': '/studio.html', '图片': '/studio.html',
+                '视频': '/studio.html', '3d': '/studio.html',
+                '工作流': '/workflow.html', '节点': '/workflow.html', '编排': '/workflow.html',
+                '模型': '/zhiying', 'ml': '/zhiying', '标注': '/zhiying',
+                '权限': '/zhiying', '用户': '/zhiying', '组织': '/zhiying',
+                '质量': '/zhiying', '数据质量': '/zhiying',
+                '资产': '/zhiying', '数据集': '/zhiying', '版本': '/zhiying',
+                '设置': '/zhiying', '配置': '/zhiying',
+                '文档': '/docs', 'api': '/docs', 'swagger': '/docs',
+            };
+            for (var key in map) {
+                if (q.includes(key)) {
+                    window.location.href = map[key];
+                    return;
+                }
+            }
+            // 纯数字id: 跳转到资产详情
+            if (/^[a-zA-Z0-9_-]{8,}$/.test(q)) {
+                window.location.href = '/api/assets/' + q;
+                return;
+            }
+            // 默认跳转到zhiying
+            window.location.href = '/zhiying';
+        };
+
+        function updateHealth() {
+            var dot = apiEl.querySelector('.status-dot');
+            fetch('/health', { method: 'GET', signal: AbortSignal.timeout(5000) })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    dot.className = 'status-dot green';
+                    apiEl.innerHTML = '<span class="status-dot green"></span>API: 已连接';
+                    runtimeEl.textContent = '正常运行';
+
+                    if (data.version) {
+                        document.getElementById('version-display').textContent = 'Nanobot Factory ' + data.version;
+                    }
+                    var uptime = data.uptime || data.startup_time;
+                    if (uptime && runtimeEl.textContent === '正常运行') {
+                        runtimeEl.textContent = '正常运行 (' + uptime + ')';
+                    }
+                })
+                .catch(function() {
+                    dot.className = 'status-dot red';
+                    apiEl.innerHTML = '<span class="status-dot red"></span>API: 未连接';
+                    runtimeEl.textContent = '无法连接';
+                });
+        }
+
+        updateHealth();
+        setInterval(updateHealth, 15000);
+        
+        // 检查登录状态
+        fetch('/api/v2/auth/me', { headers: { 'X-Session-ID': localStorage.getItem('session_id') || '' } })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.success && d.user) {
+                    userBadge.textContent = '👤 ' + (d.user.username || '用户');
+                    localStorage.setItem('session_id', d.session_id || localStorage.getItem('session_id') || '');
+                }
+            })
+            .catch(function() {});
+    })();
+</script>
+
+</body>
+</html>

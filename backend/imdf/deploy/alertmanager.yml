@@ -1,0 +1,91 @@
+# ============================================================================
+# IMDF Alertmanager Configuration
+# ============================================================================
+# 通知渠道: Email / Slack / Webhook / PagerDuty
+# Webhook 示例: POST → IMDF /api/v1/alerts/webhook
+# ============================================================================
+
+global:
+  resolve_timeout: 5m
+
+  # ── SMTP 邮件配置 ──
+  smtp_smarthost: 'smtp.your-email-provider.com:587'
+  smtp_from: 'imdf-alerts@your-domain.com'
+  smtp_auth_username: 'imdf-alerts@your-domain.com'
+  smtp_auth_password: 'YOUR_SMTP_PASSWORD'
+  smtp_require_tls: true
+
+# ── 告警路由树 ──
+route:
+  group_by: ['alertname', 'service', 'severity']
+  group_wait: 30s       # 首次告警等待(聚合同一组的告警)
+  group_interval: 5m    # 同组新告警发送间隔
+  repeat_interval: 4h   # 未恢复告警的重复提醒间隔
+
+  receiver: 'default-webhook'
+
+  routes:
+    # Critical 告警: 邮件 + Webhook
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+
+    # Warning 告警: 仅 Webhook
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+
+# ── 通知接收器 ──
+receivers:
+  # 默认接收器 (Webhook → IMDF)
+  - name: 'default-webhook'
+    webhook_configs:
+      - url: 'http://localhost:8765/api/v1/alerts/webhook'
+        send_resolved: true
+
+  # Critical 告警接收器 (邮件 + Webhook)
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'ops-team@your-domain.com'
+        from: 'imdf-alerts@your-domain.com'
+        smarthost: 'smtp.your-email-provider.com:587'
+        auth_username: 'imdf-alerts@your-domain.com'
+        auth_password: 'YOUR_SMTP_PASSWORD'
+        headers:
+          Subject: '[IMDF CRITICAL] {{ .GroupLabels.alertname }}'
+
+    webhook_configs:
+      - url: 'http://localhost:8765/api/v1/alerts/webhook'
+        send_resolved: true
+
+    # Slack 通知 (可选 — 取消注释并填入 webhook URL)
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/T.../B.../...'
+    #     channel: '#imdf-alerts'
+    #     title: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+    #     text: '{{ .CommonAnnotations.description }}'
+    #     send_resolved: true
+
+  # Warning 告警接收器 (Webhook only)
+  - name: 'warning-alerts'
+    webhook_configs:
+      - url: 'http://localhost:8765/api/v1/alerts/webhook'
+        send_resolved: true
+
+# ── 告警抑制规则 ──
+inhibit_rules:
+  # 如果服务已停止，抑制该服务的其他告警
+  - source_match:
+      alertname: 'IMDFServiceDown'
+    target_match_re:
+      alertname: 'IMDFHighErrorRate|IMDFHighLatency|IMDFCriticalLatency|IMDFQueueBacklog'
+    equal: ['service']
+
+  # 如果磁盘已满，抑制低磁盘空间告警
+  - source_match:
+      severity: 'critical'
+      alertname: 'IMDFDiskAlmostFull'
+    target_match:
+      severity: 'warning'
+      alertname: 'IMDFLowDiskSpace'

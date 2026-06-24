@@ -1,0 +1,25 @@
+apiVersion: v2
+name: nanobot-factory
+description: |
+  Nanobot Factory - 12-microservice AIGC data generation platform.
+  Includes API gateway, PostgreSQL+pgvector, Redis, MinIO, and 12
+  domain microservices (user / asset / annotation / cleaning /
+  scoring / dataset / evaluation / agent / workflow / notification /
+  search / collection).
+type: application
+version: 0.1.0
+appVersion: "0.8.0"
+home: https://nanobot-factory.com
+sources:
+  - https://github.com/MiniMax-AI/nanobot-factory
+maintainers:
+  - name: platform-team
+    email: platform-team@nanobot-factory.com
+keywords:
+  - aigc
+  - data-generation
+  - microservices
+  - fastapi
+  - pgvector
+annotations:
+  category: DataPlatform

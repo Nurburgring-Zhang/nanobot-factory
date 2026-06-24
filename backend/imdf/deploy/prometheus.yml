@@ -1,0 +1,61 @@
+# ============================================================================
+# IMDF Prometheus Configuration
+# ============================================================================
+# Place at: /etc/prometheus/prometheus.yml
+# Validate with: promtool check config /etc/prometheus/prometheus.yml
+# Reload: kill -HUP $(pidof prometheus)
+# ============================================================================
+
+global:
+  scrape_interval: 15s      # 抓取频率
+  evaluation_interval: 30s  # 告警规则评估频率
+  scrape_timeout: 10s
+
+# ── Alertmanager 集成 ───────────────────────────────────────────────────
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'localhost:9093'
+
+# ── 告警规则文件 ───────────────────────────────────────────────────────
+rule_files:
+  - "/etc/prometheus/rules/prometheus-alerts.yml"
+  # Or relative to this config:
+  # - "deploy/prometheus-alerts.yml"
+
+# ── 抓取目标配置 ───────────────────────────────────────────────────────
+scrape_configs:
+  # ── IMDF 应用指标 ──
+  - job_name: 'imdf'
+    metrics_path: '/metrics'
+    scheme: 'http'
+    static_configs:
+      - targets: ['localhost:8765']
+        labels:
+          service: 'imdf'
+          env: 'production'
+
+  # ── Prometheus 自监控 ──
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ── Node Exporter (系统级指标: CPU/内存/磁盘/网络) ──
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9100']
+        labels:
+          env: 'production'
+
+  # ── Grafana (可选: Grafana自身指标) ──
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['localhost:3000']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  # ── Alertmanager (可选) ──
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['localhost:9093']

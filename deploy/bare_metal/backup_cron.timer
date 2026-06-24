@@ -1,0 +1,20 @@
+[Unit]
+Description=IMDF backup schedule (daily 03:00 + Sunday 04:00 OSS + 04:30 verify)
+Documentation=man:backup_cron.sh(8)
+Requires=imdf-backup.service
+
+[Timer]
+# Daily 03:00 — full PG + Redis
+OnCalendar=*-*-* 03:00:00
+# Sunday 04:00 — OSS mirror to warm/cold
+OnCalendar=Sun *-*-* 04:00:00
+# Persistent across reboots (catch up missed runs)
+Persistent=true
+# Random delay 0-15min to avoid thundering herd
+RandomizedDelaySec=15min
+# If the run is missed (e.g. host down for hours), kick one extra within 1h
+AccuracySec=1min
+Unit=imdf-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,86 @@
+# =====================================================================
+# Nanobot Factory - Nginx Ingress (single host)
+# =====================================================================
+# Routes:
+#   api-gateway.nanobot-factory.com  -> gateway:8000  (api + ws)
+#   minio.nanobot-factory.com       -> minio:9001    (admin console)
+#
+# TLS via cert-manager (cluster-issuer "letsencrypt-prod").  If you are
+# using a self-signed cluster, change clusterIssuer to "selfsigned" or
+# remove the tls block.
+# =====================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nanobot-factory
+  namespace: nanobot-factory
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/websocket-services: "gateway,notification-service"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Requested-With, X-CSRF-Token"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api-gateway.nanobot-factory.com
+        - minio.nanobot-factory.com
+      secretName: nanobot-factory-tls
+  rules:
+    - host: api-gateway.nanobot-factory.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 8000
+    - host: minio.nanobot-factory.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9001
+---
+# Separate Ingress for notification WebSocket (optional split, but websocket
+# support on the main ingress is enabled via annotation above)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nanobot-factory-ws
+  namespace: nanobot-factory
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/websocket-services: "notification-service"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ws.nanobot-factory.com
+      secretName: nanobot-factory-ws-tls
+  rules:
+    - host: ws.nanobot-factory.com
+      http:
+        paths:
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 8010

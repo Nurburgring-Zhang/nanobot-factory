@@ -1,0 +1,38 @@
+{
+  "project_name": "AIGC批处理工具",
+  "version": "v5.4 Final Windows Optimized",
+  "created_date": "2026-01-30T21:33:07.136151",
+  "features": [
+    "完整的AIGC批处理工具集",
+    "图像生成、编辑、视频生成、3D生成",
+    "Windows完全兼容（UTF-8编码）",
+    "本地虚拟环境管理",
+    "ComfyUI集成支持",
+    "WebUI集成支持",
+    "一键启动脚本",
+    "完整的Windows用户指南"
+  ],
+  "files_included": {
+    "启动脚本": "start.bat",
+    "环境设置": "setup.bat",
+    "虚拟环境管理": "manage_venv.py",
+    "ComfyUI集成": "backend_modules/comfyui_webui_integration.py",
+    "用户指南": "README_Windows.md",
+    "依赖文件": "requirements_windows.txt",
+    "主程序": "main.py"
+  },
+  "quick_start": [
+    "1. 解压到任意目录",
+    "2. 双击运行 setup.bat 进行环境配置",
+    "3. 双击运行 start.bat 启动程序",
+    "等待自动创建虚拟环境并安装依赖",
+    "4. 选择运行主程序、ComfyUI或WebUI",
+    "详细说明请查看 README_Windows.md"
+  ],
+  "system_requirements": {
+    "操作系统": "Windows 10/11",
+    "Python版本": "3.8+ (会自动安装)",
+    "内存": "建议8GB+",
+    "磁盘空间": "建议10GB+ (用于模型文件)"
+  }
+}

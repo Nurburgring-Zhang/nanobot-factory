@@ -1,0 +1,680 @@
+# =============================================================================
+# Nanobot Factory - Model Registry Configuration
+# 2026年2月最新模型支持
+# Supports: GPT-5, Claude 4 Opus/Sonnet, Gemini 2.0 Pro/Ultra,
+#           Seedream 6.0, Seedance 3.0, Qwen 3.0, Kimi K2, GLM-5, MiniMax-3
+# =============================================================================
+
+# Model Providers Configuration
+providers:
+  # =============================================================================
+  # International Providers
+  # =============================================================================
+
+  openai:
+    name: "OpenAI"
+    type: "text"
+    base_url: "https://api.openai.com/v1"
+    api_key_env: "OPENAI_API_KEY"
+    supports_streaming: true
+    supports_vision: false
+    supports_tools: true
+    default_model: "gpt-5"
+
+  anthropic:
+    name: "Anthropic Claude"
+    type: "text"
+    base_url: "https://api.anthropic.com"
+    api_key_env: "ANTHROPIC_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: true
+    default_model: "claude-opus-4-20250514"
+
+  google:
+    name: "Google Gemini"
+    type: "text"
+    base_url: "https://generativelanguage.googleapis.com/v1beta"
+    api_key_env: "GOOGLE_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: false
+    default_model: "gemini-2.0-pro"
+
+  openrouter:
+    name: "OpenRouter"
+    type: "text"
+    base_url: "https://openrouter.ai/api/v1"
+    api_key_env: "OPENROUTER_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: true
+    default_model: "anthropic/claude-3.5-sonnet"
+
+  groq:
+    name: "Groq"
+    type: "text"
+    base_url: "https://api.groq.com/openai/v1"
+    api_key_env: "GROQ_API_KEY"
+    supports_streaming: true
+    supports_vision: false
+    supports_tools: true
+    default_model: "llama-3.1-70b-versatile"
+
+  # =============================================================================
+  # Chinese Providers (2026年2月最新)
+  # =============================================================================
+
+  kimi:
+    name: "Moonshot AI (Kimi)"
+    type: "text"
+    base_url: "https://api.moonshot.cn/v1"
+    api_key_env: "KIMI_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: true
+    default_model: "moonshot-k2"
+
+  glm:
+    name: "Zhipu AI (智谱AI)"
+    type: "text"
+    base_url: "https://open.bigmodel.cn/api/paas/v4"
+    api_key_env: "GLM_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: true
+    default_model: "glm-5"
+
+  minimax:
+    name: "MiniMax"
+    type: "text"
+    base_url: "https://api.minimax.chat/v1"
+    api_key_env: "MINIMAX_API_KEY"
+    supports_streaming: true
+    supports_vision: false
+    supports_tools: false
+    default_model: "MiniMax-Text-03"
+
+  doubao:
+    name: "ByteDance Doubao (豆包)"
+    type: "text"
+    base_url: "https://ark.cn-beijing.volces.com/api/v3"
+    api_key_env: "DOUBAO_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: true
+    default_model: "doubao-pro-32k"
+
+  baidu:
+    name: "Baidu Wenxin (文心一言)"
+    type: "text"
+    base_url: "https://qianfan.baidubce.com/v2"
+    api_key_env: "BAIDU_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: false
+    default_model: "ernie-4.0-8k"
+
+  tencent:
+    name: "Tencent Hunyuan (腾讯混元)"
+    type: "text"
+    base_url: "https://hunyuan.tencentcloudapi.com"
+    api_key_env: "TENCENT_API_KEY"
+    supports_streaming: false
+    supports_vision: false
+    supports_tools: false
+    default_model: "hunyuan"
+
+  alibaba:
+    name: "Alibaba Qwen (通义千问)"
+    type: "text"
+    base_url: "https://dashscope.aliyuncs.com/api/v1"
+    api_key_env: "ALIBABA_API_KEY"
+    supports_streaming: true
+    supports_vision: true
+    supports_tools: true
+    default_model: "qwen3-72b"
+
+  # =============================================================================
+  # Local & New Providers
+  # =============================================================================
+
+  ollama:
+    name: "Ollama (本地模型)"
+    type: "text"
+    base_url: "http://localhost:11434"
+    api_key_env: ""  # 不需要API key
+    supports_streaming: true
+    supports_vision: false
+    supports_tools: false
+    default_model: "llama3"
+
+  deepseek:
+    name: "DeepSeek AI"
+    type: "text"
+    base_url: "https://api.deepseek.com"
+    api_key_env: "DEEPSEEK_API_KEY"
+    supports_streaming: true
+    supports_vision: false
+    supports_tools: true
+    default_model: "deepseek-chat"
+
+  # =============================================================================
+  # Media Generation Providers (2026年2月最新)
+  # =============================================================================
+
+  seedream:
+    name: "ByteDance Seedream (即梦/海螺)"
+    type: "image"
+    base_url: "https://api.minimax.chat/v1"
+    api_key_env: "SEEDREAM_API_KEY"
+    supports_streaming: false
+    supports_vision: false
+    supports_tools: false
+    default_model: "seedream-6.0"
+
+  seedance:
+    name: "ByteDance Seedance (即梦/视频)"
+    type: "video"
+    base_url: "https://api.minimax.chat/v1"
+    api_key_env: "SEEDANCE_API_KEY"
+    supports_streaming: false
+    supports_vision: false
+    supports_tools: false
+    default_model: "seedance-3.0"
+
+# =============================================================================
+# Model Catalog - 2026年2月最新模型列表
+# =============================================================================
+
+models:
+  # =============================================================================
+  # OpenAI GPT-5 Series
+  # =============================================================================
+  gpt-5:
+    provider: openai
+    name: "GPT-5"
+    context_length: 200000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 98
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["complex_reasoning", "code_generation", "creative_writing"]
+
+  gpt-5-turbo:
+    provider: openai
+    name: "GPT-5 Turbo"
+    context_length: 200000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 95
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "code_generation", "conversation"]
+
+  gpt-5-flash:
+    provider: openai
+    name: "GPT-5 Flash"
+    context_length: 100000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code"]
+    quality_score: 90
+    cost_tier: "budget"
+    latency_tier: "fastest"
+    use_cases: ["fast_responses", "high_volume", "cost_sensitive"]
+
+  # =============================================================================
+  # Anthropic Claude 4 Series
+  # =============================================================================
+  claude-4-opus:
+    provider: anthropic
+    name: "Claude 4 Opus"
+    context_length: 200000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning", "vision"]
+    quality_score: 99
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["complex_reasoning", "long_context", "code_generation"]
+
+  claude-4-sonnet:
+    provider: anthropic
+    name: "Claude 4 Sonnet"
+    context_length: 200000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning", "vision"]
+    quality_score: 96
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "code_generation", "conversation"]
+
+  # =============================================================================
+  # Google Gemini 2.0 Series
+  # =============================================================================
+  gemini-2-0-ultra:
+    provider: google
+    name: "Gemini 2.0 Ultra"
+    context_length: 1000000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: false
+    capabilities: ["text", "code", "reasoning", "vision", "long_context"]
+    quality_score: 97
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["complex_reasoning", "long_context", "multimodal"]
+
+  gemini-2-0-pro:
+    provider: google
+    name: "Gemini 2.0 Pro"
+    context_length: 200000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: false
+    capabilities: ["text", "code", "reasoning", "vision"]
+    quality_score: 94
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "multimodal", "code_generation"]
+
+  gemini-2-0-flash:
+    provider: google
+    name: "Gemini 2.0 Flash"
+    context_length: 1000000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: false
+    capabilities: ["text", "code", "vision", "long_context"]
+    quality_score: 91
+    cost_tier: "budget"
+    latency_tier: "fastest"
+    use_cases: ["fast_responses", "high_volume", "cost_sensitive"]
+
+  # =============================================================================
+  # Kimi K2 Series (Moonshot AI)
+  # =============================================================================
+  kimi-k2:
+    provider: kimi
+    name: "Kimi K2"
+    context_length: 200000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning", "vision"]
+    quality_score: 93
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "code_generation", "long_context"]
+
+  kimi-k2-thinking:
+    provider: kimi
+    name: "Kimi K2 Thinking"
+    context_length: 200000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 95
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["complex_reasoning", "math", "code_analysis"]
+
+  # =============================================================================
+  # GLM-5 Series (Zhipu AI)
+  # =============================================================================
+  glm-5:
+    provider: glm
+    name: "GLM-5"
+    context_length: 128000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning", "vision"]
+    quality_score: 92
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "multimodal", "code_generation"]
+
+  glm-5-plus:
+    provider: glm
+    name: "GLM-5 Plus"
+    context_length: 128000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning", "vision"]
+    quality_score: 94
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["complex_reasoning", "long_context", "multimodal"]
+
+  # =============================================================================
+  # MiniMax-3 Series
+  # =============================================================================
+  minimax-3:
+    provider: minimax
+    name: "MiniMax-3"
+    context_length: 100000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: false
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 90
+    cost_tier: "budget"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "cost_sensitive", "high_volume"]
+
+  minimax-3-plus:
+    provider: minimax
+    name: "MiniMax-3 Plus"
+    context_length: 100000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: false
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 93
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "code_generation"]
+
+  # =============================================================================
+  # Qwen 3.0 Series (Alibaba)
+  # =============================================================================
+  qwen-3-72b:
+    provider: alibaba
+    name: "Qwen 3.0 72B"
+    context_length: 32000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 94
+    cost_tier: "standard"
+    latency_tier: "medium"
+    use_cases: ["general_purpose", "code_generation", "reasoning"]
+
+  qwen-3-32b:
+    provider: alibaba
+    name: "Qwen 3.0 32B"
+    context_length: 32000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 91
+    cost_tier: "budget"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "cost_sensitive", "high_volume"]
+
+  qwen-3-thinking:
+    provider: alibaba
+    name: "Qwen 3.0 Thinking"
+    context_length: 32000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 96
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["complex_reasoning", "math", "code_analysis"]
+
+  qwen-3-ultra:
+    provider: alibaba
+    name: "Qwen 3.0 Ultra"
+    context_length: 32000
+    supports_vision: false
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "reasoning"]
+    quality_score: 97
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["complex_reasoning", "code_generation", "creative_writing"]
+
+  # =============================================================================
+  # Doubao Series (ByteDance)
+  # =============================================================================
+  doubao-pro-32k:
+    provider: doubao
+    name: "Doubao Pro 32K"
+    context_length: 32000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: true
+    capabilities: ["text", "code", "vision"]
+    quality_score: 88
+    cost_tier: "budget"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "cost_sensitive"]
+
+  # =============================================================================
+  # Baidu ERNIE Series
+  # =============================================================================
+  ernie-4-0-8k:
+    provider: baidu
+    name: "ERNIE 4.0 8K"
+    context_length: 8000
+    supports_vision: true
+    supports_streaming: true
+    supports_tools: false
+    capabilities: ["text", "code", "vision"]
+    quality_score: 89
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "chinese_language"]
+
+  # =============================================================================
+  # Tencent Hunyuan Series
+  # =============================================================================
+  hunyuan:
+    provider: tencent
+    name: "Tencent Hunyuan"
+    context_length: 8000
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["text", "code"]
+    quality_score: 86
+    cost_tier: "budget"
+    latency_tier: "fast"
+    use_cases: ["general_purpose", "chinese_language", "cost_sensitive"]
+
+  # =============================================================================
+  # Media Generation Models (2026年2月最新)
+  # =============================================================================
+
+  seedream-6-0:
+    provider: seedream
+    name: "Seedream 6.0"
+    type: "image"
+    context_length: 0
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_generation"]
+    quality_score: 95
+    cost_tier: "standard"
+    latency_tier: "medium"
+    use_cases: ["image_generation", "art_creation", "design"]
+
+  seedance-3-0:
+    provider: seedance
+    name: "Seedance 3.0"
+    type: "video"
+    context_length: 0
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["video_generation"]
+    quality_score: 93
+    cost_tier: "premium"
+    latency_tier: "slow"
+    use_cases: ["video_generation", "animation", "creative"]
+
+  # =============================================================================
+  # Latest Image Generation Models - 2026年2月
+  # =============================================================================
+
+  flux2-klein:
+    provider: blackforest
+    name: "Flux2-Klein"
+    type: "image"
+    context_length: 0
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_generation", "image_editing"]
+    quality_score: 97
+    cost_tier: "premium"
+    latency_tier: "fast"
+    use_cases: ["image_generation", "art_creation", "photorealistic", "style_transfer"]
+
+  flux2-schnell:
+    provider: blackforest
+    name: "Flux2-Schnell"
+    type: "image"
+    context_length: 0
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_generation"]
+    quality_score: 95
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["fast_generation", "prototyping", "batch_processing"]
+
+  qwen2-image:
+    provider: alibaba
+    name: "Qwen2-Image"
+    type: "image"
+    context_length: 8192
+    supports_vision: true
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_generation", "image_editing", "vision_understanding"]
+    quality_score: 94
+    cost_tier: "standard"
+    latency_tier: "medium"
+    use_cases: ["image_generation", "image_editing", "multimodal"]
+
+  qwen2-image-edit:
+    provider: alibaba
+    name: "Qwen2-Image-Edit"
+    type: "image_editing"
+    context_length: 8192
+    supports_vision: true
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_editing", "inpainting", "outpainting"]
+    quality_score: 93
+    cost_tier: "standard"
+    latency_tier: "medium"
+    use_cases: ["image_editing", "product_photography", "design"]
+
+  zimage:
+    provider: zhipu
+    name: "Zimage"
+    type: "image"
+    context_length: 4096
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_generation", "style_transfer"]
+    quality_score: 92
+    cost_tier: "standard"
+    latency_tier: "fast"
+    use_cases: ["image_generation", "chinese_art", "cultural_content"]
+
+  minimax-image:
+    provider: minimax
+    name: "MiniMax-Image"
+    type: "image"
+    context_length: 8192
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_generation", "high_resolution"]
+    quality_score: 94
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["high_quality_generation", "commercial_art", "advertising"]
+
+  kling-image:
+    provider: kling
+    name: "Kling-Image"
+    type: "image"
+    context_length: 4096
+    supports_vision: false
+    supports_streaming: false
+    supports_tools: false
+    capabilities: ["image_generation", "video_generation"]
+    quality_score: 93
+    cost_tier: "premium"
+    latency_tier: "medium"
+    use_cases: ["image_generation", "creative_art", "marketing"]
+
+# =============================================================================
+# Routing Strategies
+# =============================================================================
+
+routing:
+  # Default routing strategy
+  default: "quality_optimized"
+
+  # Strategy configurations
+  strategies:
+    quality_optimized:
+      name: "Quality Optimized"
+      description: "Select the highest quality model for the task"
+      priority: ["quality_score"]
+
+    cost_optimized:
+      name: "Cost Optimized"
+      description: "Minimize cost while maintaining acceptable quality"
+      priority: ["cost_tier", "quality_score"]
+
+    latency_optimized:
+      name: "Latency Optimized"
+      description: "Minimize response time"
+      priority: ["latency_tier", "quality_score"]
+
+    balanced:
+      name: "Balanced"
+      description: "Balance quality, cost, and latency"
+      priority: ["quality_score", "latency_tier", "cost_tier"]
+
+# =============================================================================
+# Shadow Deployment (A/B Testing)
+# =============================================================================
+
+shadow_deployment:
+  enabled: true
+  traffic_split: 10  # Percentage of traffic to shadow model
+  models:
+    - model: "gpt-5"
+      shadow: "claude-4-sonnet"
+    - model: "gemini-2-0-pro"
+      shadow: "gemini-2-0-flash"
+
+# =============================================================================
+# Hot-Reload Settings
+# =============================================================================
+
+hot_reload:
+  enabled: true
+  watch_file: "models.yaml"
+  reload_interval: 5  # seconds
+  auto_retry_failed_requests: true
+  max_retries: 3

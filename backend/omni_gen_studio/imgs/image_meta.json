@@ -1,0 +1,392 @@
+[
+  {
+    "query": "Krita AI 7.0 interface design dark mode UI",
+    "image_info": {
+      "url": "https://docs.interstice.cloud/_astro/introduction.BKohX6H2_ZW3MbM.webp",
+      "img_format": "WEBP",
+      "mode": "RGB",
+      "file_size": 68280,
+      "width": 1415,
+      "height": 813,
+      "total_pixels": 1150395,
+      "basic_score": 0.9363851207326916,
+      "file_name": "krita-ai-diffusion-plugin-interface-dark-mode.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 100.0,
+      "clarity_score": 90.0,
+      "watermark_score": 100.0,
+      "overall_score": 95.0,
+      "explanation": "The image perfectly matches the search query and prompt, showcasing a dark mode UI of Krita integrated with an AI diffusion plugin and a ComfyUI node-based backend. It clearly demonstrates the interface design and workflow for AI generation within the software.",
+      "file_name": "krita-ai-diffusion-plugin-interface-dark-mode.jpg",
+      "caption": "A split-screen view of the Krita interface in dark mode showing an AI Image Generation plugin docker on the left and a ComfyUI node graph interface on the right, featuring a generated image of a galaxy inside a glass bottle.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Krita AI 7.0 interface design dark mode UI",
+    "image_info": {
+      "url": "https://weirdwonderfulai.art/wp-content/uploads/2023/11/Drawing-with-Krita-1024x578.jpg",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 50011,
+      "width": 1024,
+      "height": 578,
+      "total_pixels": 591872,
+      "basic_score": 0.8741440875165768,
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 100.0,
+      "clarity_score": 85.0,
+      "watermark_score": 100.0,
+      "overall_score": 92.0,
+      "explanation": "The image perfectly matches the search query and prompt. It displays the Krita interface in dark mode, specifically featuring an AI diffusion plugin workflow where a simple sketch is transformed into a detailed render. The UI layout is clear and representative of modern AI-integrated design software.",
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg",
+      "caption": "A screenshot of the Krita interface in dark mode featuring an AI diffusion plugin. The screen is split between a hand-drawn sketch of a cottage on the left canvas and a photorealistic AI-generated version of the same scene in a dark forest on the right panel.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Krita AI 7.0 interface design dark mode UI",
+    "image_info": {
+      "url": "https://i.ytimg.com/vi/-QDPEcVmdLI/maxresdefault.jpg",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 145035,
+      "width": 1280,
+      "height": 720,
+      "total_pixels": 921600,
+      "basic_score": 0.9342967605141964,
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg_f5"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 95.0,
+      "clarity_score": 75.0,
+      "watermark_score": 100.0,
+      "overall_score": 88.0,
+      "explanation": "The image perfectly matches the search query and prompt, showcasing the Krita interface with an AI diffusion plugin in dark mode. It specifically demonstrates pose control (ControlNet) functionality. The clarity is decent, though there is some minor compression visible in the UI text.",
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg",
+      "caption": "A screenshot of the Krita 5.x interface utilizing an AI diffusion plugin in dark mode. The workspace features two futuristic fencers with colorful pose-estimation skeletons overlaid, while the right-hand panel displays AI generation controls, prompt fields, and generated image previews.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Krita AI 7.0 interface design dark mode UI",
+    "image_info": {
+      "url": "https://mitsuhakitsune.com/wp-content/uploads/2024/05/krita-ai-inpainting.gif",
+      "img_format": "GIF",
+      "mode": "P",
+      "file_size": 275405,
+      "width": 507,
+      "height": 322,
+      "total_pixels": 163254,
+      "basic_score": 0.7296414429492633,
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg_27"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 95.0,
+      "clarity_score": 65.0,
+      "watermark_score": 100.0,
+      "overall_score": 80.0,
+      "explanation": "The image perfectly matches the search query and prompt, showing a Krita interface with a dark mode UI and a visible AI generation plugin panel. However, the image resolution is relatively low, resulting in pixelation and blurry text.",
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg",
+      "caption": "A screenshot of the Krita digital painting software interface in dark mode, featuring a dedicated AI Image Generation plugin panel on the right and an anime-style illustration on the canvas.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Krita AI 7.0 interface design dark mode UI",
+    "image_info": {
+      "url": "https://preview.redd.it/generative-ai-for-krita-using-lcm-on-comfyui-tutorial-v0-20la2p0lpr2c1.jpg?width=1080&crop=smart&auto=webp&s=e1dbc294125e840797d4162a9b7c77648b9a0abb",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 65360,
+      "width": 1080,
+      "height": 675,
+      "total_pixels": 729000,
+      "basic_score": 0.9018449847803349,
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg_d2"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 95.0,
+      "clarity_score": 65.0,
+      "watermark_score": 100.0,
+      "overall_score": 78.0,
+      "explanation": "The image perfectly matches the search query and prompt, showcasing a dark mode Krita interface with a Generative AI plugin (using ComfyUI) in action. It demonstrates the real-time translation of a simple sketch into a detailed render. However, the resolution is somewhat low, making the fine text within the UI difficult to read.",
+      "file_name": "krita-ai-diffusion-plugin-dark-mode-ui.jpg",
+      "caption": "A screenshot of the Krita digital painting software interface in dark mode, demonstrating a Generative AI diffusion plugin. The left pane shows a simple hand-drawn sketch of a house and tree, while the right pane displays a real-time, AI-generated photorealistic winter landscape based on the sketch.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "professional AIGC web tool dark ui design",
+    "image_info": {
+      "url": "https://mintcdn.com/dripart/qYv6P0RgI3co7-eH/images/interface/overview/locale.jpg?fit=max&auto=format&n=qYv6P0RgI3co7-eH&q=85&s=e5f9d37eb8ea17027846273e69bf292e",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 82488,
+      "width": 1508,
+      "height": 936,
+      "total_pixels": 1411488,
+      "basic_score": 0.8910686062160991,
+      "file_name": "comfyui-dark-theme-settings-ui-design.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 100.0,
+      "clarity_score": 90.0,
+      "watermark_score": 100.0,
+      "overall_score": 95.0,
+      "explanation": "The image is a perfect match for the search query and prompt, showcasing the specific 'ComfyUI' web interface with a professional dark theme. The text is sharp and legible, and the composition clearly highlights the UI design elements requested.",
+      "file_name": "comfyui-dark-theme-settings-ui-design.jpg",
+      "caption": "A screenshot of the ComfyUI settings menu featuring a professional dark theme interface, displaying options for language selection, developer mode, and token weight adjustments within an AIGC web tool.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "professional AIGC web tool dark ui design",
+    "image_info": {
+      "url": "https://i.redd.it/comfyui-themes-v0-tg4wyhtoxf3f1.png?width=1287&format=png&auto=webp&s=6b140c5f6a497432f5fc151609392b3aa76c571b",
+      "img_format": "PNG",
+      "mode": "RGB",
+      "file_size": 245311,
+      "width": 1287,
+      "height": 628,
+      "total_pixels": 808236,
+      "basic_score": 0.9038214423381375,
+      "file_name": "comfyui-dark-theme-web-interface-design.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 100.0,
+      "clarity_score": 85.0,
+      "watermark_score": 100.0,
+      "overall_score": 92.0,
+      "explanation": "The image is a perfect match for the search query and prompt, showcasing the ComfyUI web interface in a professional dark theme. The layout is clear, demonstrating the node-based workflow of an AIGC tool. Clarity is good, though some fine text is slightly softened due to resolution.",
+      "file_name": "comfyui-dark-theme-web-interface-design.jpg",
+      "caption": "A professional screenshot of the ComfyUI web interface utilizing a dark theme. The UI shows a complex node-based workflow for AI image generation, including text encoders, samplers, and a final preview of a glowing 'OCEAN' text graphic.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "professional AIGC web tool dark ui design",
+    "image_info": {
+      "url": "https://preview.redd.it/comfyui-themes-v0-iezqzptoxf3f1.png?width=640&crop=smart&auto=webp&s=de56cad28d6fe5708ab04d78cb844549af4f645d",
+      "img_format": "PNG",
+      "mode": "P",
+      "file_size": 48099,
+      "width": 640,
+      "height": 306,
+      "total_pixels": 195840,
+      "basic_score": 0.717473273563112,
+      "file_name": "comfyui-dark-theme-aigc-interface.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 100.0,
+      "clarity_score": 85.0,
+      "watermark_score": 100.0,
+      "overall_score": 92.0,
+      "explanation": "The image is a perfect representation of the search query and prompt. it shows a professional node-based AIGC interface (ComfyUI) with a clean dark theme. The clarity is good enough to read the node titles and the generated output.",
+      "file_name": "comfyui-dark-theme-aigc-interface.jpg",
+      "caption": "A screenshot of the ComfyUI web interface featuring a professional dark theme and a node-based workflow for AI image generation, showing a final output of 'Mountain Blossom' typography.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "professional AIGC web tool dark ui design",
+    "image_info": {
+      "url": "https://comfyui-wiki.com/_next/static/media/setting-language.f8b09ed4.jpg",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 60518,
+      "width": 1000,
+      "height": 800,
+      "total_pixels": 800000,
+      "basic_score": 0.9123587539520399,
+      "file_name": "comfyui-dark-theme-settings-interface.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 95.0,
+      "clarity_score": 90.0,
+      "watermark_score": 40.0,
+      "overall_score": 75.0,
+      "explanation": "The image is a direct representation of the ComfyUI settings page, perfectly matching the dark theme and professional AIGC tool requirements. Clarity is excellent, but a prominent website watermark is present in the bottom left corner.",
+      "file_name": "comfyui-dark-theme-settings-interface.jpg",
+      "caption": "A professional dark UI design of the ComfyUI settings menu, showing options for Dev Mode, Token Weight, and locale language selection.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Futuristic 3D generation tool interface, deep black background #0f172a, neon cyan #06b6d4 wireframe renders, holographic UI elements, immersive 3D workspace, professional creative tool",
+    "image_info": {
+      "url": "https://cdn.dribbble.com/userupload/19266988/file/original-2787af2b02672007d8b40e10fb9d95d5.png?resize=752x&vertical=center",
+      "img_format": "PNG",
+      "mode": "RGBA",
+      "file_size": 302850,
+      "width": 752,
+      "height": 564,
+      "total_pixels": 424128,
+      "basic_score": 0.8473723453025404,
+      "file_name": "futuristic_3d_ai_generation_tool_ui.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 92.0,
+      "clarity_score": 90.0,
+      "watermark_score": 100.0,
+      "overall_score": 91.0,
+      "explanation": "The image is an excellent match for the search query, showcasing a sophisticated and futuristic UI for a 3D AI generation tool. It follows a professional dark-mode aesthetic with clean navigation and high-quality asset previews. While it lacks the specific 'wireframe' renders mentioned in the prompt, the overall composition and 'professional creative tool' feel are spot on.",
+      "file_name": "futuristic_3d_ai_generation_tool_ui.jpg",
+      "caption": "A professional UI/UX design mockup for a 3D AI generation tool called 'Resfort', showcasing a dark-themed dashboard with options for model types, generation history, and detailed 3D asset previews including a tiger, a shield, and a golden goblet.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Futuristic 3D generation tool interface, deep black background #0f172a, neon cyan #06b6d4 wireframe renders, holographic UI elements, immersive 3D workspace, professional creative tool",
+    "image_info": {
+      "url": "https://www.blendernation.com/wp-content/uploads/2017/06/04.jpg",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 238912,
+      "width": 1602,
+      "height": 802,
+      "total_pixels": 1284804,
+      "basic_score": 0.9136314050888027,
+      "file_name": "futuristic-3d-holographic-ui-generation-tool.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 98.0,
+      "clarity_score": 80.0,
+      "watermark_score": 100.0,
+      "overall_score": 90.0,
+      "explanation": "The image is an excellent match for the search query and prompt. It features a sophisticated holographic UI with neon cyan wireframes, 3D renders (globe, terrain, objects), and a dark, professional workspace environment. The clarity is good, though it lacks the extreme sharpness of high-resolution 4K renders.",
+      "file_name": "futuristic-3d-holographic-ui-generation-tool.jpg",
+      "caption": "A high-tech futuristic 3D generation tool interface displaying holographic neon cyan wireframe renders of a globe, terrain, and geometric shapes on an immersive digital workspace table inside a dark command center.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Futuristic 3D generation tool interface, deep black background #0f172a, neon cyan #06b6d4 wireframe renders, holographic UI elements, immersive 3D workspace, professional creative tool",
+    "image_info": {
+      "url": "https://cdn.dribbble.com/userupload/43592000/file/original-566ce2562111eea568fc066f5226ce8a.png?resize=400x0",
+      "img_format": "PNG",
+      "mode": "RGBA",
+      "file_size": 163140,
+      "width": 400,
+      "height": 300,
+      "total_pixels": 120000,
+      "basic_score": 0.7309163592444539,
+      "file_name": "futuristic_3d_interface_design.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 75.0,
+      "clarity_score": 95.0,
+      "watermark_score": 100.0,
+      "overall_score": 80.0,
+      "explanation": "The image captures the 'futuristic 3D UI' theme very well with a high-quality, professional aesthetic. While it doesn't follow the specific color scheme (black/cyan) or wireframe style mentioned in the prompt, it is a top-tier example of modern 3D interface design and highly relevant to the general search query.",
+      "file_name": "futuristic_3d_interface_design.jpg",
+      "caption": "A professional futuristic user interface design for a 3D tool, featuring a central abstract chrome-like 3D object on a sleek blue gradient background with clean typography and navigation elements.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "AIGC web interface design, Krita AI style, deep indigo #1e1b4b background, dense sidebar controls, central canvas area, professional creative software UI, desktop view, high fidelity, dark mode, blue and cyan accents",
+    "image_info": {
+      "url": "https://cdn.mos.cms.futurecdn.net/xcKTaQw6XCBTsY2QpipNtW-1200-80.jpg",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 93838,
+      "width": 1200,
+      "height": 675,
+      "total_pixels": 810000,
+      "basic_score": 0.9186985418683902,
+      "file_name": "krita-ai-plugin-interface-dark-mode.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 90.0,
+      "clarity_score": 95.0,
+      "watermark_score": 100.0,
+      "overall_score": 92.0,
+      "explanation": "The image perfectly captures the 'Krita AI style' requested. While it is a screenshot of a desktop application rather than a dedicated 'web interface design' mockup, it features the dense sidebar controls, dark mode aesthetic, and central canvas area described in the prompt. It accurately depicts a professional creative software UI with an AI plugin integrated.",
+      "file_name": "krita-ai-plugin-interface-dark-mode.jpg",
+      "caption": "A high-fidelity screenshot of the Krita software interface featuring an integrated AI image generation plugin, dense sidebar controls, and a central canvas displaying a surreal AI-generated image of floating coffee cups in a dark mode setting.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "AIGC web interface design, Krita AI style, deep indigo #1e1b4b background, dense sidebar controls, central canvas area, professional creative software UI, desktop view, high fidelity, dark mode, blue and cyan accents",
+    "image_info": {
+      "url": "https://docs.interstice.cloud/_astro/introduction.BKohX6H2_ZW3MbM.webp",
+      "img_format": "WEBP",
+      "mode": "RGB",
+      "file_size": 68280,
+      "width": 1415,
+      "height": 813,
+      "total_pixels": 1150395,
+      "basic_score": 0.9363851207326916,
+      "file_name": "krita-ai-comfyui-web-interface-design.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 95.0,
+      "clarity_score": 85.0,
+      "watermark_score": 100.0,
+      "overall_score": 90.0,
+      "explanation": "The image perfectly matches the search query and prompt by displaying the Krita software interface alongside a node-based AI web interface (ComfyUI). It features the requested dark mode, dense sidebar controls, and blue/cyan accents. While it is a screenshot of existing software rather than a conceptual design mockup, it is highly relevant for demonstrating Krita AI style interface integration.",
+      "file_name": "krita-ai-comfyui-web-interface-design.jpg",
+      "caption": "A split-screen desktop view showing the Krita digital painting application integrated with a ComfyUI node-based web interface for AI image generation, featuring a dark mode theme with indigo backgrounds and cyan accents.",
+      "recommend": true,
+      "error": ""
+    }
+  },
+  {
+    "query": "Modern AIGC web dashboard, clean dark mode #0f172a, floating panels with #312e81 accents, sleek timeline for video generation, glassmorphism effects, high-fidelity UI, responsive web design",
+    "image_info": {
+      "url": "https://colorlib.com/wp/wp-content/uploads/sites/2/mvc5-admin-dashboards.jpg",
+      "img_format": "JPEG",
+      "mode": "RGB",
+      "file_size": 152435,
+      "width": 1200,
+      "height": 975,
+      "total_pixels": 1170000,
+      "basic_score": 0.9289574347748432,
+      "file_name": "modern-dark-mode-admin-dashboard-ui.jpg"
+    },
+    "llm_score": {
+      "success": true,
+      "relevance_score": 65.0,
+      "clarity_score": 95.0,
+      "watermark_score": 95.0,
+      "overall_score": 75.0,
+      "explanation": "The image is a high-quality, professional dark mode dashboard. However, it is a general-purpose admin template (Skote) rather than a specific AIGC (AI Generated Content) dashboard. It lacks the requested glassmorphism effects and the specific video generation timeline mentioned in the prompt, though it does feature a clean layout and an activity timeline.",
+      "file_name": "modern-dark-mode-admin-dashboard-ui.jpg",
+      "caption": "A professional dark mode web dashboard interface featuring data visualization widgets, bar charts for email metrics, revenue statistics, and a vertical activity timeline.",
+      "recommend": true,
+      "error": ""
+    }
+  }
+]

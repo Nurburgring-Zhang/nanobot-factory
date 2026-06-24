@@ -1,0 +1,36 @@
+# IMDF P2-1-W2 minimal async-queue requirements
+# ----------------------------------------------------------------
+# This file is the slim subset of requirements_full.txt needed to
+# run the Celery + Redis async queue layer (P2-1-W2).
+# For the full dependency set, see requirements_full.txt.
+
+# Web framework (needed for /api/queue/health endpoint)
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+
+# Pydantic — used by FastAPI
+pydantic>=2.0.0
+
+# Settings
+python-dotenv>=1.0.0
+
+# P2-1-W2: Celery + Redis async queue
+celery[redis]==5.3.6
+redis==5.0.1
+
+# P2-3-W3: OWASP A06 依赖扫描 (CI/CD 用, 运行时不需要, 但写在这里便于本地复现)
+# 注: safety 2.3.5 是 last-free-version, 3.x 需要 API key; pip-audit 用 PyPA 官方 advisory DB
+# 两个版本约束有 packaging 冲突, CI 用两个独立 job 各自安装; 本地二选一安装.
+safety==2.3.5
+pip-audit>=2.7.0  # 避免 packaging<22 约束, 与 safety 2.3.5 兼容
+
+# P3-8-W2: Prometheus metrics + OpenTelemetry / Jaeger distributed tracing
+# prometheus-client: /metrics endpoint
+prometheus-client==0.19.0
+# OpenTelemetry core API + SDK + OTLP gRPC exporter (push to Jaeger all-in-one)
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-exporter-otlp==1.21.0
+# Auto-instrumentation for FastAPI + SQLAlchemy (route + DB tracing)
+opentelemetry-instrumentation-fastapi==0.42b0
+opentelemetry-instrumentation-sqlalchemy==0.42b0

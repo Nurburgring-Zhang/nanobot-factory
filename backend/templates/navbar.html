@@ -1,0 +1,75 @@
+<!-- 统一导航栏 -->
+<style>
+.nf-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 48px;
+  background: #1e293b; border-bottom: 1px solid #334155;
+  position: sticky; top: 0; z-index: 1000;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+.nf-topbar-left { display: flex; align-items: center; gap: 16px; }
+.nf-topbar-logo { font-size: 16px; font-weight: 700; background: linear-gradient(135deg,#06b6d4,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.nf-topbar-nav { display: flex; gap: 4px; }
+.nf-topbar-nav a {
+  padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;
+  color: #94a3b8; text-decoration: none; transition: all 0.15s;
+}
+.nf-topbar-nav a:hover { color: #e2e8f0; background: rgba(59,130,246,0.1); }
+.nf-topbar-nav a.active { color: #60a5fa; background: rgba(59,130,246,0.15); }
+.nf-topbar-right { display: flex; align-items: center; gap: 12px; }
+.nf-search-box {
+  background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+  padding: 4px 10px; color: #e2e8f0; font-size: 12px; width: 160px; outline: none;
+}
+.nf-search-box:focus { border-color: #3b82f6; }
+.nf-user-badge {
+  font-size: 12px; color: #94a3b8; padding: 4px 8px;
+  background: #0f172a; border-radius: 4px; border: 1px solid #334155;
+}
+.nf-status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+.nf-status-dot.green { background: #10b981; }
+.nf-status-dot.red { background: #ef4444; }
+</style>
+
+<header class="nf-topbar">
+  <div class="nf-topbar-left">
+    <a href="/" style="text-decoration:none"><span class="nf-topbar-logo">🤖 智影工场</span></a>
+    <nav class="nf-topbar-nav">
+      <a href="/" class="active">首页</a>
+      <a href="/zhiying">数据工场</a>
+      <a href="/studio.html">AIGC生成</a>
+      <a href="/workflow.html">工作流</a>
+      <a href="/docs" target="_blank">API文档</a>
+    </nav>
+  </div>
+  <div class="nf-topbar-right">
+    <input type="text" class="nf-search-box" id="nf-search" placeholder="🔍 搜索..." onkeyup="if(event.key==='Enter'){var m={'数据':'/zhiying','智影':'/zhiying','生成':'/studio.html','aigc':'/studio.html','工作流':'/workflow.html','节点':'/workflow.html','模型':'/zhiying','标注':'/zhiying','权限':'/zhiying','质量':'/zhiying','资产':'/zhiying','版本':'/zhiying','文档':'/docs','api':'/docs'};var q=this.value.trim().toLowerCase();for(var k in m){if(q.includes(k)){window.location.href=m[k];return}}window.location.href='/zhiying'}">
+    <span class="nf-user-badge" id="nf-user">👤 访客</span>
+    <span id="nf-api-status"><span class="nf-status-dot green"></span></span>
+  </div>
+</header>
+
+<script>
+(function() {
+  // API状态检查
+  fetch('/health', { signal: AbortSignal.timeout(5000) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var el = document.getElementById('nf-api-status');
+      if (d.status === 'healthy') {
+        el.innerHTML = '<span class="nf-status-dot green"></span> ' + (d.agents_count || '') + ' Agents';
+      }
+    })
+    .catch(function() {
+      document.getElementById('nf-api-status').innerHTML = '<span class="nf-status-dot red"></span>';
+    });
+  
+  // 高亮当前页面
+  var path = window.location.pathname;
+  document.querySelectorAll('.nf-topbar-nav a').forEach(function(a) {
+    if (path === a.getAttribute('href') || (path.startsWith('/zhiying') && a.getAttribute('href') === '/zhiying')) {
+      a.classList.add('active');
+    }
+  });
+})();
+</script>

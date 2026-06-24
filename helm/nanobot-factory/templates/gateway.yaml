@@ -1,0 +1,128 @@
+{{- if .Values.gateway.enabled -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "gateway") | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "gateway") | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas.gateway }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "nanobot-factory.selectorLabels" (dict "ctx" . "name" "gateway") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "gateway") | nindent 8 }}
+    spec:
+      serviceAccountName: gateway
+      containers:
+        - name: gateway
+          image: {{ include "nanobot-factory.image" (dict "ctx" .) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /opt/venv/bin/uvicorn
+            - backend.gateway.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --log-level
+            - info
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nanobot-factory.fullname" . }}-secrets
+                  key: JWT_SECRET
+            - name: GATEWAY_UPSTREAM
+              value: "http://app.nanobot-factory.svc.cluster.local:8001"
+            - name: GATEWAY_LOG_LEVEL
+              value: {{ .Values.logging.level | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "nanobot-factory.fullname" . }}-config
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+          livenessProbe:
+            httpGet:
+              path: /_gw/healthz
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /_gw/healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "gateway") | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      nodePort: {{ .Values.gateway.nodePort }}
+      protocol: TCP
+  selector:
+    {{- include "nanobot-factory.selectorLabels" (dict "ctx" . "name" "gateway") | nindent 4 }}
+---
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "gateway") | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gateway
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
+{{- end }}

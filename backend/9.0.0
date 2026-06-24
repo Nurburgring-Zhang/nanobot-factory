@@ -1,0 +1,30 @@
+Collecting aio-pika
+  Obtaining dependency information for aio-pika from https://files.pythonhosted.org/packages/2b/24/59a1644995f7a0245588a1761d4b515fc63b7a6038310ead2b07eb44cd8b/aio_pika-9.6.1-py3-none-any.whl.metadata
+  Using cached aio_pika-9.6.1-py3-none-any.whl.metadata (15 kB)
+Collecting aiormq<7,>=6.8 (from aio-pika)
+  Obtaining dependency information for aiormq<7,>=6.8 from https://files.pythonhosted.org/packages/70/9b/be86ea5a73010b437bb5f9511d1fcbb828cdf8eddde0c6f2b38006b9ce92/aiormq-6.9.3-py3-none-any.whl.metadata
+  Using cached aiormq-6.9.3-py3-none-any.whl.metadata (19 kB)
+Collecting yarl (from aio-pika)
+  Obtaining dependency information for yarl from https://files.pythonhosted.org/packages/93/22/b85eca6fa2ad9491af48c973e4c8cf6b103a73dbb271fe3346949449fca0/yarl-1.23.0-cp311-cp311-win_amd64.whl.metadata
+  Using cached yarl-1.23.0-cp311-cp311-win_amd64.whl.metadata (82 kB)
+Collecting pamqp==3.3.0 (from aiormq<7,>=6.8->aio-pika)
+  Obtaining dependency information for pamqp==3.3.0 from https://files.pythonhosted.org/packages/ac/8d/c1e93296e109a320e508e38118cf7d1fc2a4d1c2ec64de78565b3c445eb5/pamqp-3.3.0-py2.py3-none-any.whl.metadata
+  Using cached pamqp-3.3.0-py2.py3-none-any.whl.metadata (4.7 kB)
+Collecting idna>=2.0 (from yarl->aio-pika)
+  Obtaining dependency information for idna>=2.0 from https://files.pythonhosted.org/packages/0e/61/66938bbb5fc52dbdf84594873d5b51fb1f7c7794e9c0f5bd885f30bc507b/idna-3.11-py3-none-any.whl.metadata
+  Using cached idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting multidict>=4.0 (from yarl->aio-pika)
+  Obtaining dependency information for multidict>=4.0 from https://files.pythonhosted.org/packages/c9/68/f16a3a8ba6f7b6dc92a1f19669c0810bd2c43fc5a02da13b1cbf8e253845/multidict-6.7.1-cp311-cp311-win_amd64.whl.metadata
+  Using cached multidict-6.7.1-cp311-cp311-win_amd64.whl.metadata (5.5 kB)
+Collecting propcache>=0.2.1 (from yarl->aio-pika)
+  Obtaining dependency information for propcache>=0.2.1 from https://files.pythonhosted.org/packages/f4/78/6cce448e2098e9f3bfc91bb877f06aa24b6ccace872e39c53b2f707c4648/propcache-0.4.1-cp311-cp311-win_amd64.whl.metadata
+  Using cached propcache-0.4.1-cp311-cp311-win_amd64.whl.metadata (14 kB)
+Using cached aio_pika-9.6.1-py3-none-any.whl (52 kB)
+Using cached aiormq-6.9.3-py3-none-any.whl (27 kB)
+Using cached pamqp-3.3.0-py2.py3-none-any.whl (33 kB)
+Using cached yarl-1.23.0-cp311-cp311-win_amd64.whl (87 kB)
+Using cached idna-3.11-py3-none-any.whl (71 kB)
+Using cached multidict-6.7.1-cp311-cp311-win_amd64.whl (45 kB)
+Using cached propcache-0.4.1-cp311-cp311-win_amd64.whl (41 kB)
+Installing collected packages: propcache, pamqp, multidict, idna, yarl, aiormq, aio-pika
+Successfully installed aio-pika-9.6.1 aiormq-6.9.3 idna-3.11 multidict-6.7.1 pamqp-3.3.0 propcache-0.4.1 yarl-1.23.0

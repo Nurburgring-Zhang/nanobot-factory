@@ -1,0 +1,179 @@
+# =====================================================================
+# Nanobot Factory - Helm default values
+# =====================================================================
+# Override on install:
+#   helm install nanobot-factory ./helm/nanobot-factory \
+#     --namespace nanobot-factory \
+#     --set image.tag=v0.9.0 \
+#     --set secrets.postgresPassword=supersecret
+# =====================================================================
+
+# ---------- Global ----------
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  registry: ghcr.io/minimax-ai
+  repository: nanobot-factory
+  tag: "v0.8.0"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# ---------- Replicas ----------
+replicas:
+  default: 2
+  gateway: 2
+  redis: 1
+  postgres: 1
+  minio: 1
+
+# ---------- Resource limits / requests ----------
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+  # Heavy services get extra headroom
+  heavy:
+    cpu: "1.5"
+    memory: 1Gi
+
+# ---------- Autoscaling (HPA) ----------
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# ---------- Services & ports ----------
+services:
+  user:          { port: 8001, heavy: false }
+  asset:         { port: 8002, heavy: false }
+  annotation:    { port: 8003, heavy: false }
+  cleaning:      { port: 8004, heavy: true  }
+  scoring:       { port: 8005, heavy: true  }
+  dataset:       { port: 8006, heavy: true  }
+  evaluation:    { port: 8007, heavy: true  }
+  agent:         { port: 8008, heavy: true  }
+  workflow:      { port: 8009, heavy: true  }
+  notification:  { port: 8010, heavy: false }
+  search:        { port: 8011, heavy: true  }
+  collection:    { port: 8012, heavy: false }
+  gateway:       { port: 8000, heavy: false }
+
+# ---------- Gateway ----------
+gateway:
+  enabled: true
+  nodePort: 30800
+  upstreamTimeout: 30
+  routes:
+    - { name: user-service,       prefix: /api/v1/auth,         port: 8001, auth: false }
+    - { name: user-service,       prefix: /api/v1/users,        port: 8001, auth: true  }
+    - { name: user-service,       prefix: /api/v1/roles,        port: 8001, auth: true  }
+    - { name: asset-service,      prefix: /api/v1/assets,       port: 8002, auth: true  }
+    - { name: asset-service,      prefix: /api/v1/items,        port: 8002, auth: true  }
+    - { name: annotation-service, prefix: /api/v1/annotations,  port: 8003, auth: true  }
+    - { name: annotation-service, prefix: /api/v1/tasks,        port: 8003, auth: true  }
+    - { name: cleaning-service,   prefix: /api/v1/clean,        port: 8004, auth: true  }
+    - { name: scoring-service,    prefix: /api/v1/score,        port: 8005, auth: true  }
+    - { name: dataset-service,    prefix: /api/v1/datasets,     port: 8006, auth: true  }
+    - { name: evaluation-service, prefix: /api/v1/evaluations,  port: 8007, auth: true  }
+    - { name: evaluation-service, prefix: /api/v1/bad_cases,    port: 8007, auth: true  }
+    - { name: agent-service,      prefix: /api/v1/agents,       port: 8008, auth: true  }
+    - { name: agent-service,      prefix: /api/v1/agent_tasks,  port: 8008, auth: true  }
+    - { name: workflow-service,   prefix: /api/v1/workflows,    port: 8009, auth: true  }
+    - { name: notification-service, prefix: /api/v1/notifications, port: 8010, auth: true }
+    - { name: search-service,     prefix: /api/v1/search,       port: 8011, auth: true  }
+    - { name: collection-service, prefix: /api/v1/collections,  port: 8012, auth: true  }
+
+# ---------- Database (PostgreSQL + pgvector) ----------
+postgres:
+  enabled: true
+  image: pgvector/pgvector:pg16
+  storage: 10Gi
+  storageClassName: standard
+  database: imdf
+  user: postgres
+  port: 5432
+
+# ---------- Redis ----------
+redis:
+  enabled: true
+  image: redis:7-alpine
+  maxmemory: 256mb
+
+# ---------- MinIO ----------
+minio:
+  enabled: true
+  image: minio/minio:latest
+  storage: 50Gi
+  storageClassName: standard
+  apiPort: 9000
+  consolePort: 9001
+  buckets:
+    - nanobot-assets
+    - nanobot-exports
+
+# ---------- Secrets (override per environment!) ----------
+secrets:
+  postgresPassword: "CHANGE_ME_postgres_strong_password_32chars_min"
+  jwtSecret: "CHANGE_ME_jwt_signing_secret_use_openssl_rand_hex_64"
+  jwtRefreshSecret: "CHANGE_ME_jwt_refresh_secret_separate_from_jwt"
+  minioRootUser: "minioadmin"
+  minioRootPassword: "CHANGE_ME_minio_root_password_32chars_min"
+  s3AccessKey: "CHANGE_ME_s3_service_access_key"
+  s3SecretKey: "CHANGE_ME_s3_service_secret_key"
+  smtpHost: "smtp.example.com"
+  smtpPort: "587"
+  smtpUser: "notifications@nanobot-factory.com"
+  smtpPassword: "CHANGE_ME_smtp_relay_password"
+  encryptionKey: "CHANGE_ME_fernet_44char_urlsafe_base64"
+  csrfSecret: "CHANGE_ME_csrf_signing_secret"
+
+# ---------- Ingress ----------
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/websocket-services: "gateway,notification-service"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api-gateway.nanobot-factory.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: gateway
+          port: 8000
+    - host: ws.nanobot-factory.com
+      paths:
+        - path: /ws
+          pathType: Prefix
+          service: notification-service
+          port: 8010
+    - host: minio.nanobot-factory.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: minio
+          port: 9001
+  tls:
+    - secretName: nanobot-factory-tls
+      hosts:
+        - api-gateway.nanobot-factory.com
+        - ws.nanobot-factory.com
+        - minio.nanobot-factory.com
+
+# ---------- Logging / observability ----------
+logging:
+  level: INFO
+  otelEndpoint: http://otel-collector.observability.svc.cluster.local:4317
+
+# ---------- Feature flags ----------
+features:
+  pgvector: true
+  celery: true
+  s3: true

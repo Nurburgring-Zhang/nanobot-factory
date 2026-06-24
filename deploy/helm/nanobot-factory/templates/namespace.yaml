@@ -1,0 +1,15 @@
+{{- if and .Values.namespace.create (not (.Capabilities.APIVersions.Has "v1/Namespace")) -}}
+{{- fail "Namespace creation requires cluster-admin privileges" -}}
+{{- end -}}
+{{- if .Values.namespace.create -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }}
+  labels:
+    name: {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }}
+    {{- include "nanobot-factory.labels" . | nindent 4 }}
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+{{- end }}

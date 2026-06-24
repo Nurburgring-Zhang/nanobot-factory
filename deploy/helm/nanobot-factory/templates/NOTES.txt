@@ -1,0 +1,55 @@
+nanobot-factory has been installed! 🚀
+
+Release name: {{ .Release.Name }}
+Namespace:    {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }}
+
+=====================================================================
+Verify the rollout
+=====================================================================
+$ kubectl --namespace {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }} \
+    get deploy,pods,svc,hpa,pdb -l app.kubernetes.io/instance={{ .Release.Name }}
+
+Wait for all pods Ready:
+$ kubectl --namespace {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }} \
+    wait --for=condition=ready pod -l app.kubernetes.io/instance={{ .Release.Name }} --timeout=300s
+
+=====================================================================
+Probe the service (port-forward)
+=====================================================================
+$ kubectl --namespace {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }} \
+    port-forward svc/{{ include "nanobot-factory.fullname" . }} 8080:80
+
+Then open:
+    http://localhost:8080/healthz   (liveness — expect 200)
+    http://localhost:8080/readyz    (readiness — expect 200)
+    http://localhost:8080/metrics   (Prometheus scrape)
+
+=====================================================================
+External access
+=====================================================================
+{{- if .Values.ingress.enabled }}
+
+DNS A/CNAME → {{ (index .Values.ingress.hosts 0).host }}
+
+$ curl -fsS https://{{ (index .Values.ingress.hosts 0).host }}/healthz
+{{- else }}
+
+Ingress is disabled. Use port-forward (above) or your own ingress.
+{{- end }}
+
+=====================================================================
+Uninstall
+=====================================================================
+$ helm uninstall {{ .Release.Name }} \
+    --namespace {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }}
+
+PVCs are retained by default — delete them manually if you want a full cleanup.
+
+=====================================================================
+Useful values to override
+=====================================================================
+helm upgrade {{ .Release.Name }} . \
+    --namespace {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }} \
+    --set image.tag=1.1.0 \
+    --set replicaCount=3 \
+    --set config.logLevel=DEBUG

@@ -1,0 +1,43 @@
+# ============================================================================
+# prometheus.service — IMDF Prometheus metrics scraper
+# ============================================================================
+[Unit]
+Description=IMDF Prometheus (scrape :9090)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart=/usr/bin/prometheus \
+    --config.file=/etc/prometheus/prometheus.yml \
+    --storage.tsdb.path=/var/lib/prometheus \
+    --storage.tsdb.retention.time=30d \
+    --storage.tsdb.retention.size=80GB \
+    --storage.tsdb.wal-compression \
+    --web.console.libraries=/usr/share/prometheus/console_libraries \
+    --web.console.templates=/usr/share/prometheus/consoles \
+    --web.enable-lifecycle \
+    --web.enable-admin-api
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+LimitNOFILE=65536
+MemoryMax=8G
+MemoryHigh=6G
+CPUQuota=300%
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/prometheus
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=prometheus
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+Collecting redis
+  Obtaining dependency information for redis from https://files.pythonhosted.org/packages/f0/28/84e57fce7819e81ec5aa1bd31c42b89607241f4fb1a3ea5b0d2dbeaea26c/redis-7.3.0-py3-none-any.whl.metadata
+  Downloading redis-7.3.0-py3-none-any.whl.metadata (12 kB)
+Downloading redis-7.3.0-py3-none-any.whl (404 kB)
+   ---------------------------------------- 404.4/404.4 kB 1.7 MB/s eta 0:00:00
+Installing collected packages: redis
+Successfully installed redis-7.3.0

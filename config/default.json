@@ -1,0 +1,9 @@
+{
+  "provider": "openrouter",
+  "model": "anthropic/claude-3.5-sonnet",
+  "apiKey": "",
+  "apiBase": "https://openrouter.ai/api/v1",
+  "maxTokens": 4096,
+  "temperature": 0.7,
+  "systemPrompt": "You are Nanobot Factory, an AI assistant specialized in multimedia data management and generation."
+}

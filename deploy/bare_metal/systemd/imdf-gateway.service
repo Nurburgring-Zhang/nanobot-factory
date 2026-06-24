@@ -1,0 +1,68 @@
+# ============================================================================
+# imdf-gateway.service — public API gateway (4 uvicorn workers, :8000)
+# ----------------------------------------------------------------------------
+# Fronted by nginx; receives all /api/* traffic from the public internet.
+# ============================================================================
+[Unit]
+Description=IMDF api-gateway (uvicorn)
+Documentation=https://imdf.example.com/docs
+After=network-online.target postgresql.service redis-server.service minio.service
+Wants=network-online.target
+Requires=postgresql.service redis-server.service minio.service
+
+[Service]
+Type=simple
+User=imdf
+Group=imdf
+WorkingDirectory=/opt/nanobot-factory
+EnvironmentFile=/etc/imdf/imdf.env
+
+ExecStart=/opt/nanobot-factory/venv/bin/uvicorn \
+    backend.gateway.main:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --proxy-headers \
+    --forwarded-allow-ips='*' \
+    --access-log \
+    --log-level info
+
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# ── Hardening ───────────────────────────────────────────────────────────
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+ReadWritePaths=/opt/nanobot-factory/data /opt/nanobot-factory/logs /opt/nanobot-factory/data/prometheus
+
+# ── Resource limits ─────────────────────────────────────────────────────
+LimitNOFILE=65536
+LimitNPROC=8192
+MemoryMax=4G
+MemoryHigh=3G
+CPUQuota=400%
+
+# ── Logging ─────────────────────────────────────────────────────────────
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=imdf-gateway
+
+# ── Watchdog (P3-8 liveness) ─────────────────────────────────────────────
+WatchdogSec=30
+NotifyAccess=main
+Type=notify
+
+[Install]
+WantedBy=multi-user.target

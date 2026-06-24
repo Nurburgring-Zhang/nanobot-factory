@@ -1,0 +1,164 @@
+# ============================================================================
+# alertmanager.yml — IMDF routing rules
+# ----------------------------------------------------------------------------
+# Routes by severity → Slack (warn/info) + PagerDuty (critical).
+# Inhibits noisy alerts when a parent is firing.
+# ============================================================================
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alertmanager@imdf.example.com'
+  smtp_auth_username: 'alertmanager@imdf.example.com'
+  smtp_auth_password: 'CHANGE_ME_smtp_password'
+  smtp_require_tls: true
+  slack_api_url: 'CHANGE_ME_slack_webhook_url'
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'service', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # Critical → PagerDuty + Slack
+    - matchers:
+        - severity = "critical"
+      receiver: pagerduty
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+    - matchers:
+        - severity = "critical"
+      receiver: slack-critical
+
+    # Warning → Slack only
+    - matchers:
+        - severity = "warning"
+      receiver: slack-warn
+
+    # Info → daily digest only
+    - matchers:
+        - severity = "info"
+      receiver: 'slack-info'
+      repeat_interval: 24h
+
+    # Security → security-team Slack (24/7 on-call)
+    - matchers:
+        - category = "security"
+        - severity = "critical"
+      receiver: 'slack-security'
+      group_wait: 5s
+      repeat_interval: 30m
+      continue: true
+    - matchers:
+        - category = "security"
+        - severity =~ "critical|warning"
+      receiver: 'pagerduty-security'
+      group_wait: 5s
+      repeat_interval: 30m
+
+    # Business (pipeline/billing/SLA) → ops-digest channel
+    - matchers:
+        - category = "business"
+        - severity =~ "critical|warning"
+      receiver: 'slack-business'
+      repeat_interval: 2h
+
+inhibit_rules:
+  # If a service is down, mute its individual endpoint alerts
+  - source_matchers: [alertname = "ImdfServiceDown"]
+    target_matchers: [alertname = "ImdfServiceHighErrorRate"]
+    equal: [microservice]
+  - source_matchers: [alertname = "ImdfServiceDown"]
+    target_matchers: [alertname = "ImdfServiceHighLatency"]
+    equal: [microservice]
+  # If host is down, mute all per-service alerts
+  - source_matchers: [alertname = "HostDown"]
+    target_matchers: [severity = "warning"]
+    equal: [instance]
+  # If the gateway is down, all downstream service alerts are noise
+  - source_matchers: [alertname = "ImdfGatewayDown"]
+    target_matchers: [microservice =~ "imdf-.*"]
+    equal: [cluster]
+  # If Postgres is down, mute dependent resource warnings
+  - source_matchers: [alertname = "PostgresConnectionsHigh"]
+    target_matchers: [alertname = "CeleryQueueBacklog"]
+    equal: [cluster]
+
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#imdf-alerts'
+        send_resolved: true
+        title: '{{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}'
+
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#imdf-incidents'
+        send_resolved: true
+        title: 'CRITICAL: {{ .CommonLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Service:* {{ .Labels.service }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+
+  - name: 'slack-warn'
+    slack_configs:
+      - channel: '#imdf-warn'
+        send_resolved: true
+        title: 'WARN: {{ .CommonLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}'
+
+  - name: 'slack-info'
+    slack_configs:
+      - channel: '#imdf-info'
+        send_resolved: false
+        title: 'INFO: {{ .CommonLabels.alertname }}'
+
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: 'CHANGE_ME_pagerduty_integration_key'
+        send_resolved: true
+        description: '{{ .CommonLabels.alertname }} on {{ .CommonLabels.microservice }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+          cluster: '{{ .CommonLabels.cluster }}'
+
+  - name: 'pagerduty-security'
+    pagerduty_configs:
+      - service_key: 'CHANGE_ME_pagerduty_security_integration_key'
+        send_resolved: true
+        description: '[SECURITY] {{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          cluster: '{{ .CommonLabels.cluster }}'
+
+  - name: 'slack-security'
+    slack_configs:
+      - channel: '#imdf-security'
+        send_resolved: true
+        title: '[SECURITY] {{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})'
+        text: |
+          {{ range .Alerts }}
+          *Category:* {{ .Labels.category }}
+          *Severity:* {{ .Labels.severity }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+
+  - name: 'slack-business'
+    slack_configs:
+      - channel: '#imdf-business'
+        send_resolved: true
+        title: '[BUSINESS] {{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}'

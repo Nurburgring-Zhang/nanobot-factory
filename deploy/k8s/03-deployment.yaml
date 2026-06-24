@@ -1,0 +1,145 @@
+# =====================================================================
+# 03-deployment.yaml
+# Deployment for the FastAPI + nginx sidecar container.
+# 1 resource: Deployment (1 pod × 1 container; nginx + uvicorn are in the same image).
+# =====================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nanobot-factory
+  namespace: nanobot-factory
+  labels:
+    app.kubernetes.io/name: nanobot-factory
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nanobot-factory
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nanobot-factory
+        app.kubernetes.io/component: backend
+      annotations:
+        # Force pod restart when ConfigMap changes (cheap, no rolling-update)
+        config-checksum: "v1"
+    spec:
+      serviceAccountName: nanobot-factory
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101             # nginx user in alpine
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: nanobot-factory
+          image: nanobot-factory:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: backend
+              containerPort: 8001
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: nanobot-factory-config
+          env:
+            - name: POD_NAME
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+            - name: POD_NAMESPACE
+              valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+              ephemeral-storage: "256Mi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+              ephemeral-storage: "2Gi"
+          startupProbe:
+            exec:
+              command: ["curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30          # allow up to 150s for cold start
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /run/nginx
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nanobot-factory-data
+        - name: logs
+          persistentVolumeClaim:
+            claimName: nanobot-factory-logs
+        - name: tmp
+          emptyDir: { sizeLimit: 256Mi }
+        - name: cache
+          emptyDir: { sizeLimit: 256Mi }
+        - name: nginx-run
+          emptyDir: { sizeLimit: 32Mi }
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: nanobot-factory
+                    app.kubernetes.io/component: backend
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: nanobot-factory

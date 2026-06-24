@@ -1,0 +1,238 @@
+# =====================================================================
+# CD — deploy to staging/production
+# Manual dispatch (with environment choice) OR push tag (vX.Y.Z) → prod.
+# =====================================================================
+name: cd
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [staging, production]
+        default: staging
+      image_tag:
+        description: "Image tag to deploy (default: latest)"
+        required: false
+        type: string
+        default: "latest"
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write        # for OIDC → cloud
+  packages: read
+
+jobs:
+  # -----------------------------------------------------------------
+  # 1. Resolve image + render manifests
+  # -----------------------------------------------------------------
+  render:
+    name: Render & validate manifests
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+
+      - name: Setup kubeconform
+        run: |
+          curl -sSLO https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar xf kubeconform-linux-amd64.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Resolve image + version
+        id: meta
+        env:
+          GHCR: ghcr.io/${{ github.repository }}
+        run: |
+          # Pull inputs / event-derived values
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF_NAME}"                # v1.2.3
+            VERSION="${TAG#v}"
+          else
+            TAG="${{ inputs.image_tag }}"
+            VERSION="${TAG}"
+          fi
+          echo "image=${GHCR}:${TAG}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Pull GHCR token (only when not on tag)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Render Helm chart
+        working-directory: deploy/helm/nanobot-factory
+        env:
+          ENV_NAME: ${{ inputs.environment || 'production' }}
+          IMAGE: ${{ steps.meta.outputs.image }}
+        run: |
+          VALUES_FILE="values-${ENV_NAME}.yaml"
+          if [ ! -f "$VALUES_FILE" ]; then
+            echo "::notice::No $VALUES_FILE found, using defaults"
+            VALUES_ARGS=""
+          else
+            VALUES_ARGS="-f $VALUES_FILE"
+          fi
+          helm template nanobot-factory . \
+              --namespace nanobot-factory \
+              --set image.repository=${IMAGE%:*} \
+              --set image.tag=${IMAGE##*:} \
+              $VALUES_ARGS \
+              > /tmp/rendered.yaml
+          echo "Rendered $(wc -l < /tmp/rendered.yaml) lines"
+
+      - name: kubeconform
+        run: kubeconform -strict -summary /tmp/rendered.yaml
+
+      - name: Upload rendered manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-manifests
+          path: /tmp/rendered.yaml
+          retention-days: 14
+
+  # -----------------------------------------------------------------
+  # 2. Deploy to staging (always on tag-push OR manual staging)
+  # -----------------------------------------------------------------
+  deploy-staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    needs: render
+    if: github.event_name == 'push' || inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.nanobot.example.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl (staging)
+        run: |
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
+          mkdir -p "$HOME/.kube"
+          mv /tmp/kubeconfig "$HOME/.kube/config"
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+
+      - name: Helm upgrade --install
+        working-directory: deploy/helm/nanobot-factory
+        env:
+          IMAGE: ${{ needs.render.outputs.image }}
+        run: |
+          helm upgrade --install nanobot-factory . \
+              --namespace nanobot-factory --create-namespace \
+              --set image.repository=${IMAGE%:*} \
+              --set image.tag=${IMAGE##*:} \
+              --set config.allowedOrigins="https://staging.nanobot.example.com" \
+              --wait --timeout 10m
+
+      - name: Verify rollout
+        run: |
+          kubectl -n nanobot-factory rollout status deploy/nanobot-factory --timeout=5m
+          kubectl -n nanobot-factory get pods -l app.kubernetes.io/instance=nanobot-factory
+
+      - name: Smoke test
+        run: |
+          kubectl -n nanobot-factory port-forward svc/nanobot-factory 8080:80 &
+          PF_PID=$!
+          sleep 5
+          curl -fsS http://localhost:8080/healthz
+          curl -fsS http://localhost:8080/readyz
+          kill $PF_PID || true
+
+  # -----------------------------------------------------------------
+  # 3. Deploy to production (only on tag-push OR manual production)
+  # -----------------------------------------------------------------
+  deploy-production:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: [render, deploy-staging]
+    if: github.event_name == 'push' || inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://nanobot.example.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl (production)
+        run: |
+          echo "${{ secrets.PROD_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
+          mkdir -p "$HOME/.kube"
+          mv /tmp/kubeconfig "$HOME/.kube/config"
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+
+      - name: Backup current release
+        run: |
+          helm status nanobot-factory -n nanobot-factory > /tmp/helm-pre-status.txt || true
+          cat /tmp/helm-pre-status.txt
+
+      - name: Helm upgrade --install
+        working-directory: deploy/helm/nanobot-factory
+        env:
+          IMAGE: ${{ needs.render.outputs.image }}
+        run: |
+          helm upgrade --install nanobot-factory . \
+              --namespace nanobot-factory --create-namespace \
+              --set image.repository=${IMAGE%:*} \
+              --set image.tag=${IMAGE##*:} \
+              --history-max 10 \
+              --wait --timeout 15m
+
+      - name: Verify rollout
+        run: |
+          kubectl -n nanobot-factory rollout status deploy/nanobot-factory --timeout=10m
+
+      - name: Smoke test
+        run: |
+          kubectl -n nanobot-factory port-forward svc/nanobot-factory 8080:80 &
+          PF_PID=$!
+          sleep 5
+          curl -fsS http://localhost:8080/healthz
+          curl -fsS http://localhost:8080/readyz
+          kill $PF_PID || true
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, rolling back to previous revision..."
+          helm history nanobot-factory -n nanobot-factory
+          helm rollback nanobot-factory -n nanobot-factory
+          exit 1
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "nanobot-factory ${{ needs.render.outputs.image_tag }} deployed to ${{ inputs.environment || 'production' }}: ${{ job.status }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        continue-on-error: true

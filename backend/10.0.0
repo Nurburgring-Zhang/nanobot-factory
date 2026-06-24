@@ -1,0 +1,75 @@
+Collecting aioboto3
+  Obtaining dependency information for aioboto3 from https://files.pythonhosted.org/packages/e5/3e/e8f5b665bca646d43b916763c901e00a07e40f7746c9128bdc912a089424/aioboto3-15.5.0-py3-none-any.whl.metadata
+  Using cached aioboto3-15.5.0-py3-none-any.whl.metadata (8.9 kB)
+Collecting aiobotocore[boto3]==2.25.1 (from aioboto3)
+  Obtaining dependency information for aiobotocore[boto3]==2.25.1 from https://files.pythonhosted.org/packages/95/2a/d275ec4ce5cd0096665043995a7d76f5d0524853c76a3d04656de49f8808/aiobotocore-2.25.1-py3-none-any.whl.metadata
+  Using cached aiobotocore-2.25.1-py3-none-any.whl.metadata (25 kB)
+Collecting aiofiles>=23.2.1 (from aioboto3)
+  Obtaining dependency information for aiofiles>=23.2.1 from https://files.pythonhosted.org/packages/bc/8a/340a1555ae33d7354dbca4faa54948d76d89a27ceef032c8c3bc661d003e/aiofiles-25.1.0-py3-none-any.whl.metadata
+  Using cached aiofiles-25.1.0-py3-none-any.whl.metadata (6.3 kB)
+Collecting aiohttp<4.0.0,>=3.9.2 (from aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for aiohttp<4.0.0,>=3.9.2 from https://files.pythonhosted.org/packages/dc/f2/27cdf04c9851712d6c1b99df6821a6623c3c9e55956d4b1e318c337b5a48/aiohttp-3.13.3-cp311-cp311-win_amd64.whl.metadata
+  Using cached aiohttp-3.13.3-cp311-cp311-win_amd64.whl.metadata (8.4 kB)
+Collecting aioitertools<1.0.0,>=0.5.1 (from aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for aioitertools<1.0.0,>=0.5.1 from https://files.pythonhosted.org/packages/10/a1/510b0a7fadc6f43a6ce50152e69dbd86415240835868bb0bd9b5b88b1e06/aioitertools-0.13.0-py3-none-any.whl.metadata
+  Using cached aioitertools-0.13.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting botocore<1.40.62,>=1.40.46 (from aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for botocore<1.40.62,>=1.40.46 from https://files.pythonhosted.org/packages/38/c5/f6ce561004db45f0b847c2cd9b19c67c6bf348a82018a48cb718be6b58b0/botocore-1.40.61-py3-none-any.whl.metadata
+  Using cached botocore-1.40.61-py3-none-any.whl.metadata (5.7 kB)
+Requirement already satisfied: python-dateutil<3.0.0,>=2.1 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from aiobotocore[boto3]==2.25.1->aioboto3) (2.9.0.post0)
+Requirement already satisfied: jmespath<2.0.0,>=0.7.1 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from aiobotocore[boto3]==2.25.1->aioboto3) (1.1.0)
+Requirement already satisfied: multidict<7.0.0,>=6.0.0 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from aiobotocore[boto3]==2.25.1->aioboto3) (6.7.1)
+Collecting wrapt<2.0.0,>=1.10.10 (from aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for wrapt<2.0.0,>=1.10.10 from https://files.pythonhosted.org/packages/83/88/16b7231ba49861b6f75fc309b11012ede4d6b0a9c90969d9e0db8d991aeb/wrapt-1.17.3-cp311-cp311-win_amd64.whl.metadata
+  Using cached wrapt-1.17.3-cp311-cp311-win_amd64.whl.metadata (6.5 kB)
+Collecting boto3<1.40.62,>=1.40.46 (from aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for boto3<1.40.62,>=1.40.46 from https://files.pythonhosted.org/packages/61/24/3bf865b07d15fea85b63504856e137029b6acbc73762496064219cdb265d/boto3-1.40.61-py3-none-any.whl.metadata
+  Using cached boto3-1.40.61-py3-none-any.whl.metadata (6.6 kB)
+Collecting aiohappyeyeballs>=2.5.0 (from aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for aiohappyeyeballs>=2.5.0 from https://files.pythonhosted.org/packages/0f/15/5bf3b99495fb160b63f95972b81750f18f7f4e02ad051373b669d17d44f2/aiohappyeyeballs-2.6.1-py3-none-any.whl.metadata
+  Using cached aiohappyeyeballs-2.6.1-py3-none-any.whl.metadata (5.9 kB)
+Collecting aiosignal>=1.4.0 (from aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for aiosignal>=1.4.0 from https://files.pythonhosted.org/packages/fb/76/641ae371508676492379f16e2fa48f4e2c11741bd63c48be4b12a6b09cba/aiosignal-1.4.0-py3-none-any.whl.metadata
+  Using cached aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+Collecting attrs>=17.3.0 (from aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for attrs>=17.3.0 from https://files.pythonhosted.org/packages/3a/2a/7cc015f5b9f5db42b7d48157e23356022889fc354a2813c15934b7cb5c0e/attrs-25.4.0-py3-none-any.whl.metadata
+  Using cached attrs-25.4.0-py3-none-any.whl.metadata (10 kB)
+Collecting frozenlist>=1.1.1 (from aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for frozenlist>=1.1.1 from https://files.pythonhosted.org/packages/0a/f5/603d0d6a02cfd4c8f2a095a54672b3cf967ad688a60fb9faf04fc4887f65/frozenlist-1.8.0-cp311-cp311-win_amd64.whl.metadata
+  Using cached frozenlist-1.8.0-cp311-cp311-win_amd64.whl.metadata (21 kB)
+Requirement already satisfied: propcache>=0.2.0 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3) (0.4.1)
+Requirement already satisfied: yarl<2.0,>=1.17.0 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3) (1.23.0)
+Collecting s3transfer<0.15.0,>=0.14.0 (from boto3<1.40.62,>=1.40.46->aiobotocore[boto3]==2.25.1->aioboto3)
+  Obtaining dependency information for s3transfer<0.15.0,>=0.14.0 from https://files.pythonhosted.org/packages/48/f0/ae7ca09223a81a1d890b2557186ea015f6e0502e9b8cb8e1813f1d8cfa4e/s3transfer-0.14.0-py3-none-any.whl.metadata
+  Using cached s3transfer-0.14.0-py3-none-any.whl.metadata (1.7 kB)
+Requirement already satisfied: urllib3!=2.2.0,<3,>=1.25.4 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from botocore<1.40.62,>=1.40.46->aiobotocore[boto3]==2.25.1->aioboto3) (2.6.3)
+Requirement already satisfied: six>=1.5 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from python-dateutil<3.0.0,>=2.1->aiobotocore[boto3]==2.25.1->aioboto3) (1.17.0)
+Requirement already satisfied: typing-extensions>=4.2 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from aiosignal>=1.4.0->aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3) (4.15.0)
+Requirement already satisfied: idna>=2.0 in d:\minimax\nanobot-factory\nanobot-factory\backend\venv\lib\site-packages (from yarl<2.0,>=1.17.0->aiohttp<4.0.0,>=3.9.2->aiobotocore[boto3]==2.25.1->aioboto3) (3.11)
+Using cached aioboto3-15.5.0-py3-none-any.whl (35 kB)
+Using cached aiofiles-25.1.0-py3-none-any.whl (14 kB)
+Using cached aiohttp-3.13.3-cp311-cp311-win_amd64.whl (457 kB)
+Using cached aioitertools-0.13.0-py3-none-any.whl (24 kB)
+Using cached boto3-1.40.61-py3-none-any.whl (139 kB)
+Using cached botocore-1.40.61-py3-none-any.whl (14.1 MB)
+Using cached wrapt-1.17.3-cp311-cp311-win_amd64.whl (38 kB)
+Using cached aiobotocore-2.25.1-py3-none-any.whl (86 kB)
+Using cached aiohappyeyeballs-2.6.1-py3-none-any.whl (15 kB)
+Using cached aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+Using cached attrs-25.4.0-py3-none-any.whl (67 kB)
+Using cached frozenlist-1.8.0-cp311-cp311-win_amd64.whl (44 kB)
+Using cached s3transfer-0.14.0-py3-none-any.whl (85 kB)
+Installing collected packages: wrapt, frozenlist, attrs, aioitertools, aiohappyeyeballs, aiofiles, botocore, aiosignal, s3transfer, aiohttp, boto3, aiobotocore, aioboto3
+  Attempting uninstall: botocore
+    Found existing installation: botocore 1.42.63
+    Uninstalling botocore-1.42.63:
+      Successfully uninstalled botocore-1.42.63
+  Attempting uninstall: s3transfer
+    Found existing installation: s3transfer 0.16.0
+    Uninstalling s3transfer-0.16.0:
+      Successfully uninstalled s3transfer-0.16.0
+  Attempting uninstall: boto3
+    Found existing installation: boto3 1.42.63
+    Uninstalling boto3-1.42.63:
+      Successfully uninstalled boto3-1.42.63
+Successfully installed aioboto3-15.5.0 aiobotocore-2.25.1 aiofiles-25.1.0 aiohappyeyeballs-2.6.1 aiohttp-3.13.3 aioitertools-0.13.0 aiosignal-1.4.0 attrs-25.4.0 boto3-1.40.61 botocore-1.40.61 frozenlist-1.8.0 s3transfer-0.14.0 wrapt-1.17.3

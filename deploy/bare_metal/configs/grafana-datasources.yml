@@ -1,0 +1,52 @@
+# ============================================================================
+# grafana-datasources.yml — auto-provisioned Prometheus + Jaeger + Loki
+# ============================================================================
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      timeInterval: 15s
+      queryTimeout: 60s
+      manageAlerts: true
+      prometheusType: Prometheus
+      cacheLevel: High
+      incrementalQuerying: true
+
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://127.0.0.1:16686
+    editable: false
+    jsonData:
+      timeOut: 60
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: -1m
+        spanEndTimeShift: 1m
+        tags: [{ key: 'service.name', value: 'job' }]
+      tracesToMetrics:
+        datasourceUid: prometheus
+        spanStartTimeShift: -1m
+        spanEndTimeShift: 1m
+        tags: [{ key: 'service.name', value: 'job' }]
+        queries:
+          - name: 'Requests rate'
+            query: 'rate(http_requests_total{service="$__tags{service.name}"}[5m])'
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://127.0.0.1:3100
+    editable: false
+    jsonData:
+      maxLines: 2000
+      timeout: 60

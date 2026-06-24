@@ -1,0 +1,264 @@
+# =====================================================================
+# CI — lint, test, build, docker
+# Triggers: PR / push to main
+# =====================================================================
+name: ci
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+# Cancel an in-flight run for the same branch/PR
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # -----------------------------------------------------------------
+  # 1. Python lint + unit tests
+  # -----------------------------------------------------------------
+  python-lint:
+    name: Python lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install ruff
+        run: pip install ruff==0.5.7
+
+      - name: Lint
+        working-directory: backend
+        run: ruff check .
+
+      - name: Format check
+        working-directory: backend
+        run: ruff format --check .
+
+  python-test:
+    name: Python tests (pytest)
+    runs-on: ubuntu-latest
+    needs: python-lint
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_full.txt
+          pip install pytest pytest-asyncio pytest-cov pytest-timeout httpx
+
+      - name: Run tests
+        env:
+          DEV_MODE: "true"
+          LOG_LEVEL: "WARNING"
+        run: |
+          pytest tests/unit -m "not slow" \
+              --cov=backend --cov-report=xml --cov-report=term \
+              --junitxml=junit-${{ matrix.python-version }}.xml
+
+      - name: Upload coverage
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: false
+
+  # -----------------------------------------------------------------
+  # 2. Frontend lint + typecheck + build
+  # -----------------------------------------------------------------
+  frontend-lint:
+    name: Frontend lint + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true   # project doesn't have linting yet
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+  frontend-build:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    needs: frontend-lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+        env:
+          CI: "true"
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-renderer
+          path: dist/
+          retention-days: 7
+
+  # -----------------------------------------------------------------
+  # 3. Helm lint + kubeconform schema check
+  # -----------------------------------------------------------------
+  helm-lint:
+    name: Helm chart lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.0
+
+      - name: Setup kubeconform
+        run: |
+          curl -sSLO https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar xf kubeconform-linux-amd64.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Helm lint
+        working-directory: deploy/helm/nanobot-factory
+        run: helm lint .
+
+      - name: Helm template
+        working-directory: deploy/helm/nanobot-factory
+        run: |
+          helm template nanobot-factory . \
+              --namespace nanobot-factory \
+              > /tmp/rendered.yaml
+          cat /tmp/rendered.yaml | head -200
+
+      - name: kubeconform schema check
+        run: |
+          kubeconform -strict -summary -verbose \
+              deploy/k8s/*.yaml \
+              /tmp/rendered.yaml
+
+  # -----------------------------------------------------------------
+  # 4. Docker build (multi-arch, push to GHCR on main only)
+  # -----------------------------------------------------------------
+  docker-build:
+    name: Docker build & push
+    runs-on: ubuntu-latest
+    needs: [python-test, frontend-build, helm-lint]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  # -----------------------------------------------------------------
+  # 5. CI success gate
+  # -----------------------------------------------------------------
+  ci-success:
+    name: CI status
+    runs-on: ubuntu-latest
+    needs: [python-test, frontend-build, helm-lint, docker-build]
+    if: always()
+    steps:
+      - name: Report
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "::error::One or more CI jobs failed"
+            exit 1
+          fi
+          echo "All CI jobs passed ✓"

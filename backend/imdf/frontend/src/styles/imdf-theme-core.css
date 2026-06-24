@@ -1,0 +1,165 @@
+html[data-theme-template] body,
+html[data-theme-template] #root {
+  background: var(--t8-bg-app);
+  color: var(--t8-text-main);
+  font-family: var(--t8-font-family);
+}
+
+html[data-theme-template] ::selection {
+  background: var(--t8-accent);
+  color: var(--t8-accent-text);
+}
+
+.t8-panel {
+  background: var(--t8-bg-panel);
+  border: 1px solid var(--t8-border);
+  border-radius: var(--t8-radius-panel);
+  box-shadow: var(--t8-shadow-panel);
+  color: var(--t8-text-main);
+}
+
+.t8-card {
+  background: var(--t8-bg-panel-elevated);
+  border: 1px solid var(--t8-border);
+  border-radius: var(--t8-radius-panel);
+  color: var(--t8-text-main);
+}
+
+.t8-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--t8-border);
+  border-radius: var(--t8-radius-button);
+  background: var(--t8-bg-panel-elevated);
+  color: var(--t8-text-main);
+  font-weight: 700;
+  transition: transform 80ms ease, box-shadow 80ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.t8-btn:hover {
+  border-color: var(--t8-border-strong);
+  background: var(--t8-bg-panel-muted);
+}
+
+.t8-btn-primary {
+  background: var(--t8-accent);
+  border-color: var(--t8-border-strong);
+  color: var(--t8-accent-text);
+  box-shadow: var(--t8-shadow-button);
+}
+
+.t8-btn-primary:hover {
+  background: var(--t8-accent-hover);
+}
+
+.t8-input,
+.t8-select,
+.t8-textarea {
+  background: var(--t8-bg-panel-elevated);
+  border: 1px solid var(--t8-border);
+  border-radius: min(var(--t8-radius-button), 12px);
+  color: var(--t8-text-main);
+  outline: none;
+}
+
+html[data-theme-template] select,
+html[data-theme-template] .t8-select {
+  color-scheme: dark;
+}
+
+html[data-theme-template][data-theme-mode="light"] select,
+html[data-theme-template][data-theme-mode="light"] .t8-select {
+  color-scheme: light;
+}
+
+html[data-theme-template] select option,
+html[data-theme-template] .t8-select option {
+  background-color: var(--t8-bg-panel-elevated) !important;
+  color: var(--t8-text-main) !important;
+}
+
+html[data-theme-template] select option:checked,
+html[data-theme-template] .t8-select option:checked {
+  background-color: color-mix(in srgb, var(--t8-accent) 24%, var(--t8-bg-panel-elevated)) !important;
+  color: var(--t8-text-main) !important;
+}
+
+html[data-theme-template] select option:disabled,
+html[data-theme-template] .t8-select option:disabled {
+  color: var(--t8-text-dim) !important;
+}
+
+.t8-input::placeholder,
+.t8-textarea::placeholder {
+  color: var(--t8-text-dim);
+}
+
+.t8-input:focus,
+.t8-select:focus,
+.t8-textarea:focus {
+  border-color: var(--t8-border-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--t8-accent) 22%, transparent);
+}
+
+.t8-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--t8-border);
+  border-radius: 9999px;
+  background: var(--t8-bg-panel-muted);
+  color: var(--t8-text-main);
+  font-weight: 700;
+}
+
+.t8-node {
+  background: var(--t8-bg-node);
+  border: 1px solid var(--t8-border-strong);
+  border-radius: var(--t8-radius-node);
+  box-shadow: var(--t8-shadow-panel);
+  color: var(--t8-text-main);
+}
+
+.t8-node-header {
+  background: var(--t8-bg-node-header);
+  border-bottom: 1px solid var(--t8-border);
+  color: var(--t8-text-main);
+}
+
+html[data-theme-template] .react-flow__background {
+  background-color: var(--t8-bg-canvas) !important;
+}
+
+html[data-theme-template] .react-flow__edge-path {
+  stroke: var(--t8-edge);
+}
+
+html[data-theme-template] .react-flow__edge.selected .react-flow__edge-path,
+html[data-theme-template] .react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--t8-edge-selected) !important;
+}
+
+html[data-theme-template] .react-flow__selection,
+html[data-theme-template] .react-flow__nodesselection-rect {
+  background: var(--t8-selection-bg) !important;
+  border-color: var(--t8-selection-border) !important;
+}
+
+html[data-theme-template="op-style"] .react-flow__background-pattern circle {
+  fill: var(--t8-grid-dot) !important;
+  opacity: 0.42;
+}
+
+html[data-theme-template="op-style"] .react-flow__edge-path {
+  stroke: var(--t8-edge) !important;
+  stroke-width: 2.5 !important;
+}
+
+html[data-theme-template="op-style"] .react-flow__controls,
+html[data-theme-template="op-style"] .react-flow__minimap {
+  background: var(--t8-bg-panel) !important;
+  border: 2px solid var(--t8-border-strong) !important;
+  box-shadow: var(--t8-shadow-panel) !important;
+}

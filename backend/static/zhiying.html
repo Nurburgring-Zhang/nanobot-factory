@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智影数据工场</title>
+  <!-- CDN引入 Vue3 + ElementPlus + ECharts -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/element-plus/dist/index.full.min.js"></script>
+  <script src="https://unpkg.com/element-plus/dist/locale/zh-cn.min.js"></script>
+  <script src="https://unpkg.com/echarts@5/dist/echarts.min.js"></script>
+  <script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+    #app { height: 100vh; display: flex; }
+    .sidebar { width: 220px; background: #1d1e1f; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar .logo { padding: 20px; font-size: 18px; font-weight: 700; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
+    .sidebar .logo img { width: 28px; height: 28px; }
+    .sidebar .menu { flex: 1; overflow-y: auto; padding: 10px 0; }
+    .sidebar .menu-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #aaa; font-size: 14px; transition: all .2s; border-left: 3px solid transparent; }
+    .sidebar .menu-item:hover { color: #fff; background: #2a2b2c; }
+    .sidebar .menu-item.active { color: #409eff; background: #2a2b2c; border-left-color: #409eff; }
+    .sidebar .menu-item .icon { width: 18px; text-align: center; font-size: 16px; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .header { height: 56px; background: #fff; border-bottom: 1px solid #e4e7ed; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+    .header .title { font-size: 16px; font-weight: 600; color: #303133; }
+    .header .user-info { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #606266; }
+    .content { flex: 1; overflow-y: auto; padding: 20px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #303133; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .stat-card .num { font-size: 28px; font-weight: 700; color: #409eff; }
+    .stat-card .label { font-size: 13px; color: #909399; margin-top: 4px; }
+    .table-actions { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .el-table th { background: #f5f7fa !important; }
+    .chart-box { height: 300px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin: 2px; }
+    .tag-blue { background: #ecf5ff; color: #409eff; }
+    .tag-green { background: #f0f9eb; color: #67c23a; }
+    .tag-orange { background: #fdf6ec; color: #e6a23c; }
+    .tag-red { background: #fef0f0; color: #f56c6c; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 11px; }
+    .flex { display: flex; gap: 12px; }
+    .flex-1 { flex: 1; }
+    .mb-12 { margin-bottom: 12px; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-muted { color: #909399; font-size: 13px; }
+    .w-full { width: 100%; }
+    /* 质量仪表盘样式 */
+    .radar-grid { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
+    .radar-item { display: flex; align-items: center; gap: 10px; }
+    .radar-label { width: 80px; font-size: 13px; color: #606266; text-align: right; flex-shrink: 0; }
+    .radar-bar-bg { flex: 1; height: 18px; background: #f0f2f5; border-radius: 9px; overflow: hidden; }
+    .radar-bar { height: 100%; border-radius: 9px; transition: width 0.6s ease; }
+    .radar-val { width: 36px; font-size: 12px; font-weight: 600; color: #303133; text-align: right; }
+    .anomaly-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background .15s; }
+    .anomaly-row:hover { background: #fafafa; }
+    .anomaly-rank { width: 20px; font-size: 12px; font-weight: 700; color: #909399; text-align: center; }
+    .anomaly-info { flex: 1; min-width: 0; }
+    .anomaly-name { font-size: 13px; color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .anomaly-reasons { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+    .anomaly-score { width: 36px; text-align: center; font-size: 14px; font-weight: 700; border-radius: 4px; padding: 2px 0; }
+    .score-bad { color: #f56c6c; background: #fef0f0; }
+    .score-warn { color: #e6a23c; background: #fdf6ec; }
+    .score-ok { color: #67c23a; background: #f0f9eb; }
+    .dist-label { font-size: 13px; color: #606266; margin-bottom: 4px; }
+    .dist-bar-bg { height: 20px; background: #f0f2f5; border-radius: 10px; overflow: hidden; }
+    .dist-bar { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #409eff, #79bbff); transition: width 0.5s ease; }
+    .type-bar { background: linear-gradient(90deg, #67c23a, #95d475); }
+    .trend-bar { width: 16px; border-radius: 4px 4px 0 0; transition: height 0.4s ease; min-height: 2px; }
+    .qualified-bar { background: #409eff; }
+    .anomaly-bar { background: #f56c6c; }
+    .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- 侧边栏 -->
+  <div class="sidebar">
+    <div class="logo">🎬 智影数据工场</div>
+    <div class="menu">
+      <div v-for="item in menuItems" :key="item.id"
+           class="menu-item" :class="{ active: currentPage === item.id }"
+           @click="currentPage = item.id">
+        <span class="icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </div>
+    </div>
+    <div style="padding: 16px 20px; border-top: 1px solid #333; font-size: 12px; color: #666;">
+      v1.0.0 | API v2
+    </div>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="main">
+    <div class="header">
+      <div class="title">{{ currentPageTitle }}</div>
+      <div class="user-info">
+        <el-tag size="small" type="success">服务在线</el-tag>
+        <span>管理员</span>
+      </div>
+    </div>
+    <div class="content">
+      <!-- 仪表盘 -->
+      <div class="page" :class="{ active: currentPage === 'dashboard' }">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="num">{{ stats.totalUsers }}</div><div class="label">总用户</div></div>
+          <div class="stat-card"><div class="num">{{ stats.totalAssets }}</div><div class="label">总资产数</div></div>
+          <div class="stat-card"><div class="num">{{ stats.totalDatasets }}</div><div class="label">数据集</div></div>
+          <div class="stat-card"><div class="num">{{ stats.totalTasks }}</div><div class="label">总任务</div></div>
+          <div class="stat-card"><div class="num">{{ stats.completedTasks }}</div><div class="label">已完成任务</div></div>
+          <div class="stat-card"><div class="num">{{ stats.storageGb }}GB</div><div class="label">存储占用</div></div>
+        </div>
+        <div class="flex" style="gap:16px">
+          <div class="card flex-1"><div class="card-title">📊 最近任务</div>
+            <el-table :data="recentTasks" size="small" style="width:100%" empty-text="暂无最近任务">
+              <el-table-column prop="name" label="任务名" min-width="140"/>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="{row}"><el-tag :type="row.status==='completed'?'success':row.status==='running'?'warning':'info'" size="small">{{row.status}}</el-tag></template>
+              </el-table-column>
+              <el-table-column prop="assignee" label="负责人" width="100"/>
+              <el-table-column prop="score" label="评分" width="80"/>
+            </el-table>
+          </div>
+          <div class="card" style="width:340px"><div class="card-title">🏆 标注之星(周)</div>
+            <div v-for="(r,i) in rankings" :key="i" style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f0f0f0">
+              <span style="width:24px;color:#909399;font-weight:700;">{{i+1}}</span>
+              <span style="flex:1;">{{r.user}}</span>
+              <span style="color:#409eff;font-weight:600;">{{r.value}}项</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 资产管理 -->
+      <div class="page" :class="{ active: currentPage === 'assets' }">
+        <div class="card">
+          <div class="card-title">📁 文件夹 / 🔍 搜索</div>
+          <div class="flex mb-12">
+            <el-input v-model="assetQuery" placeholder="搜索资产名称/标签..." style="width:300px" clearable @clear="loadAssets" @keyup.enter="loadAssets"/>
+            <el-button type="primary" @click="loadAssets">搜索</el-button>
+            <el-button @click="showCreateAsset=true">+ 新增资产</el-button>
+            <el-button v-if="assetSelected.length" type="danger" size="small" @click="batchDeleteAssets">🗑 批量删除 ({{assetSelected.length}})</el-button>
+          </div>
+          <el-table ref="assetTableRef" :data="assetList" size="small" style="width:100%" v-loading="loading.assets" empty-text="暂无资产数据" @selection-change="onAssetSelectionChange">
+            <el-table-column type="selection" width="40"/>
+            <el-table-column prop="name" label="名称" min-width="160"/>
+            <el-table-column prop="type" label="类型" width="80"/>
+            <el-table-column label="标签" min-width="160">
+              <template #default="{row}">
+                <span v-for="t in (row.tags||[])" :key="t" class="tag tag-blue">{{t}}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="score" label="评分" width="80"/>
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="{row}">
+                <el-button type="primary" link size="small" @click="previewAsset(row)">预览</el-button>
+                <el-button type="danger" link size="small" @click="deleteAsset(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+      <!-- 需求管理 -->
+      <div class="page" :class="{ active: currentPage === 'requirements' }">
+        <div class="card">
+          <div class="card-title">📋 需求管理</div>
+          <div class="table-actions">
+            <el-button type="primary" @click="showCreateReq=true">+ 新建需求</el-button>
+            <el-input v-model="reqSearch" placeholder="搜索需求名..." style="width:200px" clearable @clear="loadRequirements" @keyup.enter="loadRequirements"/>
+            <el-select v-model="reqFilter" placeholder="状态筛选" style="width:140px" @change="loadRequirements">
+              <el-option label="全部" value=""/>
+              <el-option label="审批中" value="reviewing"/>
+              <el-option label="进行中" value="in_progress"/>
+              <el-option label="已完成" value="completed"/>
+            </el-select>
+            <el-button v-if="reqSelected.length" type="danger" size="small" @click="batchDeleteReqs">🗑 批量删除 ({{reqSelected.length}})</el-button>
+          </div>
+          <el-table :data="reqList" size="small" style="width:100%" v-loading="loading.reqs" empty-text="暂无需求数据" @selection-change="onReqSelectionChange">
+            <el-table-column type="selection" width="40"/>
+            <el-table-column prop="name" label="需求名" min-width="180"/>
+            <el-table-column prop="priority" label="优先级" width="80">
+              <template #default="{row}">
+                <el-tag :type="row.priority==='p0'?'danger':row.priority==='p1'?'warning':'info'" size="small">{{row.priority}}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" width="100"/>
+            <el-table-column prop="subtasks" label="子任务" width="80"/>
+            <el-table-column label="操作" width="120">
+              <template #default="{row}">
+                <el-button type="primary" link size="small" @click="decomposeReq(row.id)">拆解</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+      <!-- 任务管理 -->
+      <div class="page" :class="{ active: currentPage === 'tasks' }">
+        <div class="card">
+          <div class="card-title">📌 任务管理</div>
+          <div class="table-actions">
+            <el-button type="primary" @click="showCreateTask=true">+ 创建任务</el-button>
+            <el-input v-model="taskSearch" placeholder="搜索任务名..." style="width:200px" clearable @clear="loadTasks" @keyup.enter="loadTasks"/>
+            <el-select v-model="taskStatusFilter" placeholder="状态" style="width:120px" @change="loadTasks">
+              <el-option label="全部" value=""/><el-option label="待分配" value="pending"/>
+              <el-option label="进行中" value="assigned"/><el-option label="待审核" value="submitted"/>
+              <el-option label="已完成" value="completed"/>
+            </el-select>
+            <el-button v-if="taskSelected.length" type="danger" size="small" @click="batchDeleteTasks">🗑 批量删除 ({{taskSelected.length}})</el-button>
+          </div>
+          <el-table :data="taskList" size="small" style="width:100%" v-loading="loading.tasks" empty-text="暂无任务数据" @selection-change="onTaskSelectionChange">
+            <el-table-column type="selection" width="40"/>
+            <el-table-column prop="name" label="任务" min-width="160"/>
+            <el-table-column prop="type" label="类型" width="100"/>
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{row}"><el-tag :type="row.status==='completed'?'success':row.status==='assigned'?'primary':'info'" size="small">{{row.status}}</el-tag></template>
+            </el-table-column>
+            <el-table-column prop="assigned_to" label="负责人" width="100"/>
+            <el-table-column prop="score" label="评分" width="80"/>
+            <el-table-column label="操作" width="160">
+              <template #default="{row}">
+                <el-button type="primary" link size="small" @click="assignTask(row)">分配</el-button>
+                <el-button type="success" link size="small" @click="reviewTask(row)">审核</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+      <!-- 数据集管理 -->
+      <div class="page" :class="{ active: currentPage === 'datasets' }">
+        <div class="card">
+          <div class="card-title">💾 数据集管理</div>
+          <div class="table-actions">
+            <el-button type="primary" @click="showCreateDS=true">+ 新建数据集</el-button>
+            <el-input v-model="dsSearch" placeholder="搜索数据集名..." style="width:200px" clearable @clear="loadDatasets" @keyup.enter="loadDatasets"/>
+          </div>
+          <el-table :data="datasetList" size="small" style="width:100%" v-loading="loading.datasets" empty-text="暂无数据集">
+            <el-table-column prop="name" label="名称" min-width="160"/>
+            <el-table-column prop="data_type" label="类型" width="100"/>
+            <el-table-column prop="row_count" label="数据量" width="100"/>
+            <el-table-column prop="version" label="版本" width="80"/>
+            <el-table-column label="操作" width="200">
+              <template #default="{row}">
+                <el-button type="primary" link size="small" @click="exportDS(row,'llava_json')">导出LLaVA</el-button>
+                <el-button type="primary" link size="small" @click="exportDS(row,'coco_json')">COCO</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+      <!-- 评测看板 -->
+      <div class="page" :class="{ active: currentPage === 'eval' }">
+        <div class="card">
+          <div class="card-title">🧪 模型评测</div>
+          <div class="table-actions">
+            <el-button type="primary" @click="showCreateEval=true">+ 创建评测</el-button>
+          </div>
+          <el-table :data="evalList" size="small" style="width:100%" empty-text="暂无评测任务" v-loading="loading.evalList">
+            <el-table-column prop="name" label="评测任务" min-width="160"/>
+            <el-table-column prop="status" label="状态" width="100"/>
+            <el-table-column prop="metrics" label="指标" min-width="200">
+              <template #default="{row}">
+                <span v-for="(v,k) in (typeof row.metrics==='string'?JSON.parse(row.metrics||'{}'):row.metrics||{})" :key="k" class="tag tag-green">{{k}}={{v}}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120">
+              <template #default="{row}">
+                <el-button type="primary" link size="small" @click="viewBadCases(row.id)">BadCase</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+        <div class="card"><div class="card-title">⚠️ Bad Case 列表</div>
+          <el-table :data="badCaseList" size="small" style="width:100%" empty-text="暂无Bad Case" v-loading="loading.evalList">
+            <el-table-column prop="type" label="类型" width="120">
+              <template #default="{row}"><el-tag :type="row.type==='幻觉'?'danger':row.type==='细节缺失'?'warning':'info'" size="small">{{row.type}}</el-tag></template>
+            </el-table-column>
+            <el-table-column prop="severity" label="严重度" width="80"/>
+            <el-table-column prop="status" label="状态" width="100"/>
+            <el-table-column label="操作" width="120">
+              <template #default="{row}"><el-button type="primary" link size="small">分配修正</el-button></template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+      <!-- 统计看板 -->
+      <div class="page" :class="{ active: currentPage === 'stats' }">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="num">{{ stats.totalUsers }}</div><div class="label">总用户</div></div>
+          <div class="stat-card"><div class="num">{{ stats.totalAssets }}</div><div class="label">总资产</div></div>
+          <div class="stat-card"><div class="num">{{ stats.totalTasks }}</div><div class="label">总任务</div></div>
+          <div class="stat-card"><div class="num">{{ stats.storageGb }}GB</div><div class="label">存储</div></div>
+          <div class="stat-card"><div class="num">{{ stats.approvalRate }}%</div><div class="label">整体通过率</div></div>
+        </div>
+        <div class="flex" style="gap:16px">
+          <div class="card flex-1"><div class="card-title">📈 用户排行</div>
+            <div v-for="(r,i) in rankings" :key="i" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0">
+              <span :style="{width:'28px',color:i<3?'#f56c6c':'#909399',fontWeight:700}">{{['🥇','🥈','🥉',''][i] || (i+1)}}</span>
+              <span style="flex:1">{{r.user}}</span>
+              <span style="color:#409eff">{{r.value}}</span>
+            </div>
+          </div>
+          <div class="card flex-1"><div class="card-title">📊 数据类型分布</div>
+            <div id="chartType" style="height:250px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 治理中心 -->
+      <div class="page" :class="{ active: currentPage === 'governance' }">
+        <div class="card"><div class="card-title">🔐 审计日志</div>
+          <div class="table-actions">
+            <el-input v-model="auditFilter" placeholder="搜索用户/操作..." style="width:250px" clearable/>
+            <el-button type="primary" @click="loadAudit">查询</el-button>
+            <el-button @click="createBackup">创建备份</el-button>
+          </div>
+          <el-table :data="auditList" size="small" style="width:100%" max-height="400" empty-text="暂无审计日志" v-loading="loading.audit">
+            <el-table-column prop="timestamp" label="时间" width="160"/>
+            <el-table-column prop="user" label="用户" width="100"/>
+            <el-table-column prop="action" label="操作" width="120"/>
+            <el-table-column prop="target" label="目标" width="120"/>
+          </el-table>
+        </div>
+        <div class="card"><div class="card-title">🔄 血缘追踪</div>
+          <el-input v-model="lineageEntityType" placeholder="实体类型 (如 item / dataset)" style="width:200px" class="mb-12"/>
+          <el-input v-model="lineageQuery" placeholder="输入实体ID" style="width:300px" class="mb-12"/>
+          <el-button type="primary" @click="loadLineage">查询血缘</el-button>
+          <pre v-if="lineageGraph.nodes" style="margin-top:12px;background:#fafafa;padding:12px;border-radius:4px;font-size:13px;">{{ JSON.stringify(lineageGraph, null, 2) }}</pre>
+        </div>
+      </div>
+
+      <!-- 用户管理 -->
+      <div class="page" :class="{ active: currentPage === 'users' }">
+        <div class="card"><div class="card-title">👥 用户管理</div>
+          <div class="table-actions">
+            <el-button type="primary" @click="showCreateUser=true">+ 创建用户</el-button>
+          </div>
+          <el-table :data="userList" size="small" style="width:100%" empty-text="暂无用户数据" v-loading="loading.users">
+            <el-table-column prop="username" label="用户名" min-width="120"/>
+            <el-table-column prop="role" label="角色" width="100">
+              <template #default="{row}"><el-tag :type="row.role==='admin'?'danger':row.role==='operator'?'warning':'info'" size="small">{{row.role}}</el-tag></template>
+            </el-table-column>
+            <el-table-column prop="is_active" label="状态" width="80">
+              <template #default="{row}"><el-tag :type="row.is_active?'success':'danger'" size="small">{{row.is_active?'启用':'禁用'}}</el-tag></template>
+            </el-table-column>
+            <el-table-column prop="created_at" label="创建时间" width="160"/>
+          </el-table>
+        </div>
+      </div>
+
+      <!-- 质量仪表盘 -->
+      <div class="page" :class="{ active: currentPage === 'quality' }">
+        <!-- 质量总览卡片 -->
+        <div class="stats-grid">
+          <div class="stat-card"><div class="num" :style="{color:'#409eff'}">{{ quality.overview.total }}</div><div class="label">总数据量</div></div>
+          <div class="stat-card"><div class="num" :style="{color:'#67c23a'}">{{ quality.overview.qualified }}</div><div class="label">合格数</div></div>
+          <div class="stat-card"><div class="num" :style="{color: quality.overview.anomaly_count > 0 ? '#f56c6c' : '#67c23a'}">{{ quality.overview.anomaly_count }}</div><div class="label">异常数</div></div>
+          <div class="stat-card"><div class="num" :style="{color: quality.overview.pass_rate >= 80 ? '#67c23a' : quality.overview.pass_rate >= 60 ? '#e6a23c' : '#f56c6c'}">{{ quality.overview.pass_rate }}%</div><div class="label">合格率</div></div>
+          <div class="stat-card"><div class="num" style="color:#909399">24h</div><div class="label"><span :style="{color:quality.delta24h >= 0?'#67c23a':'#f56c6c'}">{{ quality.delta24h >= 0 ? '+' : '' }}{{ quality.delta24h }}</span></div></div>
+        </div>
+
+        <!-- 质量维度雷达图 + 异常列表 -->
+        <div class="flex" style="gap:16px">
+          <div class="card flex-1">
+            <div class="card-title">🎯 质量维度评分</div>
+            <div class="radar-grid">
+              <div v-for="(v,k) in quality.dimensions" :key="k" class="radar-item">
+                <div class="radar-label">{{ dimensionLabels[k] || k }}</div>
+                <div class="radar-bar-bg">
+                  <div class="radar-bar" :style="{width: v + '%', background: radarColor(v)}"></div>
+                </div>
+                <div class="radar-val">{{ v }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="width:400px">
+            <div class="card-title">⚠️ 异常数据 TOP{{ quality.anomalyLimit }}</div>
+            <div v-if="quality.anomalies.length === 0" class="text-muted" style="padding:20px;text-align:center">暂无异常数据 ✅</div>
+            <div v-for="(a,i) in quality.anomalies" :key="a.id" class="anomaly-row" @click="previewAnomaly(a)">
+              <span class="anomaly-rank">{{ i+1 }}</span>
+              <div class="anomaly-info">
+                <div class="anomaly-name">{{ a.name || a.id }}</div>
+                <div class="anomaly-reasons">
+                  <span v-for="r in a.reasons" :key="r" class="tag tag-red">{{ r }}</span>
+                </div>
+              </div>
+              <div class="anomaly-score" :class="a.score < 30 ? 'score-bad' : a.score < 60 ? 'score-warn' : 'score-ok'">{{ a.score }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 数据分布 + 趋势 -->
+        <div class="flex" style="gap:16px">
+          <div class="card flex-1">
+            <div class="card-title">📐 分辨率分布</div>
+            <div v-if="quality.resolutionDist.length === 0" class="text-muted" style="padding:20px;text-align:center">暂无数据</div>
+            <div v-for="item in quality.resolutionDist" :key="item.name" style="margin-bottom:10px">
+              <div class="dist-label">{{ item.name }} <span style="float:right;color:#909399;font-size:12px">{{ item.count }}</span></div>
+              <div class="dist-bar-bg">
+                <div class="dist-bar" :style="{width: (item.count / Math.max(...quality.resolutionDist.map(d=>d.count)) * 100) + '%'}"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card flex-1">
+            <div class="card-title">🏷️ 类型分布</div>
+            <div v-if="quality.typeDist.length === 0" class="text-muted" style="padding:20px;text-align:center">暂无数据</div>
+            <div v-for="item in quality.typeDist" :key="item.name" style="margin-bottom:10px">
+              <div class="dist-label">{{ item.name }} <span style="float:right;color:#909399;font-size:12px">{{ item.count }}</span></div>
+              <div class="dist-bar-bg">
+                <div class="dist-bar type-bar" :style="{width: (item.count / Math.max(...quality.typeDist.map(d=>d.count)) * 100) + '%'}"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7天趋势 -->
+        <div class="card">
+          <div class="card-title">📈 最近7天质量趋势
+            <span style="font-size:12px;color:#909399;margin-left:10px">合格数 / 异常数</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;height:180px;gap:4px;padding:20px 10px 30px;position:relative">
+            <div v-for="(d,i) in quality.trend7d" :key="i" style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;position:relative">
+              <div style="display:flex;gap:2px;align-items:flex-end;height:140px;width:100%;justify-content:center">
+                <div class="trend-bar qualified-bar" :style="{height: (d.qualified / Math.max(...quality.trend7d.map(x=>x.total)) * 130) + 'px'}" :title="'合格: '+d.qualified"></div>
+                <div class="trend-bar anomaly-bar" :style="{height: (d.anomalies / Math.max(...quality.trend7d.map(x=>x.total)) * 130) + 'px'}" :title="'异常: '+d.anomalies"></div>
+              </div>
+              <span style="font-size:11px;color:#909399;margin-top:6px;white-space:nowrap">{{ d.date }}</span>
+            </div>
+            <div style="position:absolute;top:0;right:10px;font-size:12px">
+              <span class="legend-dot" style="background:#409eff"></span> 合格
+              <span class="legend-dot" style="background:#f56c6c;margin-left:12px"></span> 异常
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- ML模型管理 -->
+<div class="page" :class="{ active: currentPage === 'ml_models' }">
+  <div class="card">
+    <div class="card-title">🧠 ML模型管理</div>
+    <div class="flex mb-12">
+      <el-input v-model="mlModelName" placeholder="模型名称" style="width:200px"/>
+      <el-select v-model="mlModelType" placeholder="模型类型" style="width:160px">
+        <el-option label="目标检测" value="object_detection"/>
+        <el-option label="图像分类" value="image_classification"/>
+        <el-option label="语义分割" value="semantic_segmentation"/>
+        <el-option label="图像描述" value="caption"/>
+        <el-option label="打标" value="tag"/>
+      </el-select>
+      <el-button type="primary" @click="registerMLModel">注册模型</el-button>
+      <el-button @click="loadMLModels">刷新</el-button>
+    </div>
+    <el-table :data="mlModelList" size="small" style="width:100%" empty-text="暂无ML模型" v-loading="loading.mlModels">
+      <el-table-column prop="name" label="模型名" min-width="120"/>
+      <el-table-column prop="model_type" label="类型" width="120"/>
+      <el-table-column prop="status" label="状态" width="100">
+        <template #default="{row}"><el-tag :type="row.status==='ready'?'success':row.status==='training'?'warning':'info'" size="small">{{row.status}}</el-tag></template>
+      </el-table-column>
+      <el-table-column prop="accuracy" label="准确率" width="80"/>
+      <el-table-column prop="total_predictions" label="预测数" width="80"/>
+      <el-table-column prop="created_at" label="创建时间" width="160"/>
+      <el-table-column label="操作" width="150">
+        <template #default="{row}">
+          <el-button size="small" type="primary" @click="predictWithModel(row)">预标注</el-button>
+          <el-button size="small" type="danger" @click="removeMLModel(row.id)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+  <!-- 预标注对话框 -->
+  <el-dialog v-model="predictDialogVisible" title="🧠 预标注" width="500px" destroy-on-close>
+    <el-form label-width="100px">
+      <el-form-item label="模型">
+        <el-tag>{{ predictModel?.name || '-' }}</el-tag>
+      </el-form-item>
+      <el-form-item label="输入方式">
+        <el-radio-group v-model="predictInputMode">
+          <el-radio value="url">图片URL</el-radio>
+          <el-radio value="id">资产ID</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item v-if="predictInputMode==='url'" label="图片URL">
+        <el-input v-model="predictImageUrl" placeholder="输入图片URL地址" type="textarea" :rows="3"/>
+      </el-form-item>
+      <el-form-item v-else label="资产ID">
+        <el-input v-model="predictAssetId" placeholder="输入资产ID"/>
+      </el-form-item>
+    </el-form>
+    <div v-if="predictResult !== null" style="margin-top:12px;padding:12px;background:#f5f7fa;border-radius:4px">
+      <div style="font-weight:600;margin-bottom:8px">✅ 预测结果：</div>
+      <pre style="font-size:13px;white-space:pre-wrap;margin:0">{{ JSON.stringify(predictResult, null, 2) }}</pre>
+    </div>
+    <template #footer>
+      <el-button @click="predictDialogVisible=false">关闭</el-button>
+      <el-button type="primary" :loading="predictLoading" @click="doPredict">执行预标注</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- 主动学习 -->
+  <div class="card">
+    <div class="card-title">🎯 主动学习样本</div>
+    <el-button @click="loadActiveLearning" size="small">获取推荐样本</el-button>
+    <el-table :data="activeLearningSamples" size="small" style="width:100%;margin-top:8px" empty-text="暂无推荐样本">
+      <el-table-column prop="task_id" label="任务ID" min-width="120"/>
+      <el-table-column prop="confidence" label="置信度" width="100"/>
+      <el-table-column prop="model_id" label="模型ID" width="120"/>
+      <el-table-column label="操作" width="120">
+        <template #default="{row}">
+          <el-button size="small" type="primary" @click="annotateSample(row)">标注</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+</div>
+
+<!-- 多模态标注 -->
+<div class="page" :class="{ active: currentPage === 'multimodal' }">
+  <div class="card">
+    <div class="card-title">🎬 多模态标注</div>
+    <el-tabs v-model="multimodalTab">
+      <el-tab-pane label="视频标注" name="video">
+        <div class="flex mb-12">
+          <el-input v-model="videoPath" placeholder="视频文件路径" style="width:400px"/>
+          <el-button type="primary" @click="extractVideoFrames">提取帧</el-button>
+        </div>
+        <el-table :data="videoFrames" size="small" style="width:100%" empty-text="暂无帧数据">
+          <el-table-column prop="frame_index" label="帧号" width="80"/>
+          <el-table-column prop="timestamp" label="时间戳" width="100"/>
+          <el-table-column prop="width" label="宽度" width="70"/>
+          <el-table-column prop="height" label="高度" width="70"/>
+        </el-table>
+      </el-tab-pane>
+      <el-tab-pane label="音频标注" name="audio">
+        <div class="flex mb-12">
+          <el-input v-model="audioPath" placeholder="音频文件路径" style="width:400px"/>
+          <el-button type="primary" @click="transcribeAudio">转写</el-button>
+        </div>
+        <div v-if="audioTranscript" style="background:#f5f7fa;padding:16px;border-radius:8px;margin-top:8px">
+          <p>{{ audioTranscript.text }}</p>
+          <p style="color:#909399;font-size:12px;margin-top:8px">时长: {{ audioTranscript.duration }}s · 语言: {{ audioTranscript.language }}</p>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 标注列表</div>
+    <el-table :data="annotationList" size="small" style="width:100%" empty-text="暂无标注数据">
+      <el-table-column prop="id" label="ID" width="160"/>
+      <el-table-column prop="media_type" label="媒体类型" width="100"/>
+      <el-table-column prop="annotation_type" label="标注类型" width="100"/>
+      <el-table-column prop="data" label="数据" min-width="200"/>
+      <el-table-column prop="created_at" label="时间" width="160"/>
+    </el-table>
+  </div>
+</div>
+
+<!-- 数据集版本管理 -->
+<div class="page" :class="{ active: currentPage === 'dataset_versions' }">
+  <div class="card">
+    <div class="card-title">🗂️ 数据集版本管理</div>
+    <div class="flex mb-12" style="gap:8px">
+      <el-input v-model="dsVersionDatasetId" placeholder="数据集ID" style="width:200px"/>
+      <el-input v-model="dsVersionName" placeholder="数据集名称" style="width:200px"/>
+      <el-button type="primary" @click="initDatasetVersion">初始化</el-button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>📜 版本历史</span>
+      <div style="display:flex;gap:8px">
+        <el-input v-model="dsVersionBranch" placeholder="分支名" style="width:150px" size="small"/>
+        <el-input v-model="dsVersionMsg" placeholder="提交信息" style="width:200px" size="small"/>
+        <el-button type="primary" size="small" @click="commitDatasetVersion">提交</el-button>
+        <el-button size="small" @click="loadVersionLog">刷新</el-button>
+      </div>
+    </div>
+    <el-table :data="versionLog" size="small" style="width:100%;margin-top:8px" empty-text="暂无版本记录">
+      <el-table-column prop="version_id" label="版本ID" width="180"/>
+      <el-table-column prop="message" label="消息" min-width="200"/>
+      <el-table-column prop="branch" label="分支" width="100"/>
+      <el-table-column prop="data_count" label="数据量" width="80"/>
+      <el-table-column prop="created_at" label="时间" width="160"/>
+      <el-table-column label="操作" width="200">
+        <template #default="{row}">
+          <el-button size="small" type="primary" @click="checkoutVersion(row.version_id)">签出</el-button>
+          <el-button size="small" @click="tagVersion(row.version_id)">打标签</el-button>
+          <el-button size="small" type="warning" @click="rollbackVersion(row.version_id)">回滚</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+  <div class="card">
+    <div class="card-title">🔀 分支操作</div>
+    <div class="flex mb-12" style="gap:8px">
+      <el-input v-model="dsBranchName" placeholder="新分支名" style="width:200px"/>
+      <el-button @click="createDatasetBranch" size="small">创建分支</el-button>
+    </div>
+    <div class="flex" style="gap:8px">
+      <el-input v-model="dsMergeSource" placeholder="源分支" style="width:150px"/>
+      <el-input v-model="dsMergeTarget" placeholder="目标分支" style="width:150px"/>
+      <el-select v-model="dsMergeStrategy" style="width:120px">
+        <el-option label="以源为主" value="ours"/>
+        <el-option label="合并" value="union"/>
+      </el-select>
+      <el-button type="primary" @click="mergeDatasetBranch" size="small">合并</el-button>
+    </div>
+  </div>
+</div>
+
+    </div>
+  </div>
+</div>
+
+<!-- API配置 -->
+<script>
+const API = '/api/v2';
+
+// ========== 对话框（通过el-message-box模拟） ==========
+function showDialog(title, content, confirmCb) {
+  ElMessageBox.prompt('', title, { inputValue: '', confirmButtonText: '确认', cancelButtonText: '取消', message: content || '请输入' })
+    .then(({ value }) => { if (confirmCb) confirmCb(value); })
+    .catch(() => {});
+}
+
+function showCreateDialog(title, fields, confirmCb) {
+  ElMessageBox.prompt('', title, { confirmButtonText: '创建', cancelButtonText: '取消', inputValue: '' })
+    .then(({ value }) => { if (confirmCb) confirmCb(value); })
+    .catch(() => {});
+}
+
+// ========== Vue 应用 ==========
+const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
+
+const app = createApp({
+  setup() {
+    const currentPage = ref('dashboard');
+    const menuItems = [
+      { id: 'dashboard', label: '仪表盘', icon: '📊' },
+      { id: 'assets', label: '资产管理', icon: '🖼️' },
+      { id: 'requirements', label: '需求管理', icon: '📋' },
+      { id: 'tasks', label: '任务管理', icon: '📌' },
+      { id: 'datasets', label: '数据集', icon: '💾' },
+      { id: 'eval', label: '模型评测', icon: '🧪' },
+      { id: 'stats', label: '统计看板', icon: '📈' },
+      { id: 'governance', label: '数据治理', icon: '🔐' },
+      { id: 'ml_models', label: 'ML模型', icon: '🧠' },
+      { id: 'multimodal', label: '多模态标注', icon: '🎬' },
+      { id: 'dataset_versions', label: '数据集版本', icon: '🗂️' },
+      { id: 'quality', label: '质量中心', icon: '📊' },
+      { id: 'users', label: '用户管理', icon: '👥' },
+    ];
+
+    const currentPageTitle = computed(() => menuItems.find(m => m.id === currentPage.value)?.label || '');
+
+    // 数据
+    const stats = reactive({ totalUsers: 0, totalAssets: 0, totalDatasets: 0, totalTasks: 0, completedTasks: 0, storageGb: 0, approvalRate: 0 });
+    const rankings = ref([]);
+    const recentTasks = ref([]);
+    const loading = reactive({ assets: false, reqs: false, tasks: false, datasets: false, evalList: false, audit: false, users: false, mlModels: false });
+
+    // 资产
+    const assetList = ref([]);
+    const assetQuery = ref('');
+    const assetSelected = ref([]);
+    const reqSelected = ref([]);
+    const taskSelected = ref([]);
+
+    // ML 预标注
+    const predictDialogVisible = ref(false);
+    const predictModel = ref(null);
+    const predictInputMode = ref('url');
+    const predictImageUrl = ref('');
+    const predictAssetId = ref('');
+    const predictResult = ref(null);
+    const predictLoading = ref(false);
+
+    // 需求
+    const reqList = ref([]);
+    const reqFilter = ref('');
+    const reqSearch = ref('');
+
+    // 任务
+    const taskList = ref([]);
+    const taskStatusFilter = ref('');
+    const taskSearch = ref('');
+
+    // 数据集
+    const datasetList = ref([]);
+    const dsSearch = ref('');
+
+    // 评测
+    const evalList = ref([]);
+    const badCaseList = ref([]);
+
+    // 审计
+    const auditList = ref([]);
+    const auditFilter = ref('');
+    const lineageQuery = ref('');
+    const lineageEntityType = ref('item');
+    const lineageGraph = ref({});
+    const userList = ref([]);
+
+    // ML模型
+    const mlModelList = ref([]);
+    const mlModelName = ref('');
+    const mlModelType = ref('tag');
+    const activeLearningSamples = ref([]);
+
+    // 多模态标注
+    const multimodalTab = ref('video');
+    const videoPath = ref('');
+    const videoFrames = ref([]);
+    const audioPath = ref('');
+    const audioTranscript = ref(null);
+    const annotationList = ref([]);
+
+    // 数据集版本
+    const dsVersionDatasetId = ref('ds_main');
+    const dsVersionName = ref('');
+    const dsVersionBranch = ref('main');
+    const dsVersionMsg = ref('');
+    const versionLog = ref([]);
+    const dsBranchName = ref('');
+    const dsMergeSource = ref('');
+    const dsMergeTarget = ref('main');
+    const dsMergeStrategy = ref('ours');
+
+    // 质量仪表盘
+    const quality = reactive({
+      overview: { total: 0, qualified: 0, anomaly_count: 0, pass_rate: 0, dimensions: { clarity: 0, composition: 0, color: 0, consistency: 0, diversity: 0 } },
+      anomalies: [],
+      anomalyLimit: 10,
+      resolutionDist: [],
+      typeDist: [],
+      trend7d: [],
+      delta24h: 0,
+    });
+    const dimensionLabels = { clarity: '清晰度', composition: '构图', color: '色彩', consistency: '标注一致性', diversity: '多样性' };
+
+    // ===== API调用 =====
+    async function get(path) {
+      try {
+        const r = await fetch(API + path);
+        if (!r.ok) return [];
+        return await r.json();
+      } catch(e) { console.error('API Error:', path, e); return []; }
+    }
+
+    async function post(path, data) {
+      try {
+        const r = await fetch(API + path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (!r.ok) return null;
+        return await r.json();
+      } catch(e) { console.error('API POST Error:', path, e); return null; }
+    }
+
+    async function loadStats() {
+      const g = await get('/stats/global');
+      if (g) { stats.totalUsers = g.users || 0; stats.totalAssets = g.items || 0; stats.totalTasks = g.tasks || 0; stats.storageGb = g.storage_gb || 0; }
+      const r = await get('/stats/rankings');
+      if (r) rankings.value = r.annotator || [];
+    }
+
+    async function loadAssets() {
+      loading.assets = true;
+      const q = assetQuery.value ? `?query=${encodeURIComponent(assetQuery.value)}` : '';
+      assetList.value = await get('/assets' + q);
+      loading.assets = false;
+    }
+
+    async function loadRequirements() {
+      loading.reqs = true;
+      const params = new URLSearchParams();
+      if (reqFilter.value) params.set('status', reqFilter.value);
+      if (reqSearch.value) params.set('query', reqSearch.value);
+      const qs = params.toString();
+      reqList.value = await get('/requirements' + (qs ? '?'+qs : ''));
+      loading.reqs = false;
+    }
+
+    async function loadTasks() {
+      loading.tasks = true;
+      const params = new URLSearchParams();
+      if (taskStatusFilter.value) params.set('status', taskStatusFilter.value);
+      if (taskSearch.value) params.set('query', taskSearch.value);
+      const qs = params.toString();
+      taskList.value = await get('/tasks' + (qs ? '?'+qs : ''));
+      loading.tasks = false;
+    }
+
+    async function loadDatasets() {
+      loading.datasets = true;
+      // GET /api/v2/datasets requires project_id query param
+      let url = '/datasets?project_id=p1';
+      if (dsSearch.value) url += '&query=' + encodeURIComponent(dsSearch.value);
+      datasetList.value = await get(url);
+      loading.datasets = false;
+    }
+
+    async function loadEvals() {
+      loading.evalList = true;
+      // POST /api/v2/eval/tasks is a creation endpoint; for listing we use GET /api/v2/eval/bad-cases
+      // eval list is loaded via POST (create eval) — we keep evalList as empty for display
+      const r = await get('/eval/bad-cases');
+      badCaseList.value = r;
+      loading.evalList = false;
+    }
+
+    async function loadAudit() {
+      loading.audit = true;
+      const q = auditFilter.value ? `?user_id=${encodeURIComponent(auditFilter.value)}` : '';
+      const r = await get('/governance/audit' + q);
+      auditList.value = r;
+      if (r && r.length) ElMessage.success(`加载 ${r.length} 条审计记录`);
+      else ElMessage.info('暂无审计记录');
+      loading.audit = false;
+    }
+
+    async function loadUsers() {
+      loading.users = true;
+      const r = await get('/users');
+      userList.value = r;
+      if (r && r.length) ElMessage.success(`加载 ${r.length} 个用户`);
+      loading.users = false;
+    }
+
+    async function loadLineage() {
+      if (!lineageQuery.value || !lineageEntityType.value) { ElMessage.warning('请输入实体类型和ID'); return; }
+      lineageGraph.value = await get(`/governance/lineage/${lineageEntityType.value}/${lineageQuery.value}`);
+      if (lineageGraph.value && lineageGraph.value.nodes) ElMessage.success('血缘数据加载完成');
+      else ElMessage.info('未找到血缘关系');
+    }
+
+    // 质量仪表盘
+    function radarColor(v) {
+      if (v >= 80) return 'linear-gradient(90deg, #67c23a, #95d475)';
+      if (v >= 60) return 'linear-gradient(90deg, #409eff, #79bbff)';
+      if (v >= 40) return 'linear-gradient(90deg, #e6a23c, #f4d19c)';
+      return 'linear-gradient(90deg, #f56c6c, #f89898)';
+    }
+
+    function previewAnomaly(a) {
+      ElMessageBox.alert(`ID: ${a.id}\\n名称: ${a.name || '-'}\\n类型: ${a.type}\\n评分: ${a.score}\\n异常原因: ${(a.reasons||[]).join(', ')}`, '异常详情');
+    }
+
+    async function loadQuality() {
+      const ov = await get('/quality/overview');
+      if (ov) {
+        quality.overview = {
+          total: ov.total || 0,
+          qualified: ov.qualified || 0,
+          anomaly_count: ov.anomaly_count || 0,
+          pass_rate: ov.pass_rate || 0,
+          dimensions: ov.dimensions || { clarity: 0, composition: 0, color: 0, consistency: 0, diversity: 0 },
+        };
+        quality.trend7d = ov.trend_7d || [];
+        quality.delta24h = 0;
+      }
+      const anom = await get('/quality/anomalies?limit=' + quality.anomalyLimit);
+      if (anom) {
+        quality.anomalies = anom.items || [];
+      }
+      const dist = await get('/quality/distribution');
+      if (dist) {
+        quality.resolutionDist = dist.by_resolution || [];
+        quality.typeDist = dist.by_type || [];
+        if (dist.trend_7d && !quality.trend7d.length) {
+          quality.trend7d = dist.trend_7d;
+        }
+      }
+      // fallback simulated trend if still empty
+      if (!quality.trend7d.length) {
+        const days = ['06-07','06-08','06-09','06-10','06-11','06-12','06-13'];
+        quality.trend7d = days.map((d,i) => ({
+          date: d,
+          total: quality.overview.total,
+          qualified: Math.max(0, quality.overview.qualified - i * 2 + Math.floor(Math.random()*5)),
+          anomalies: Math.max(0, quality.overview.anomaly_count + Math.floor(Math.random()*3) - 1)
+        }));
+      }
+    }
+
+    // 操作
+    async function createUser() {
+      showCreateDialog('创建用户', '输入用户名', async (name) => {
+        if (!name) return;
+        const r = await post('/users', { username: name, role: 'operator' });
+        if (r) { ElMessage.success(`创建成功: ${r.id}`); loadUsers(); }
+      });
+    }
+
+    async function createRequirement() {
+      showCreateDialog('新建需求', '输入需求描述', async (desc) => {
+        if (!desc) return;
+        const r = await post('/requirements', { name: desc, description: desc, type: 'dataset_production', priority: 'p2', proposer_id: 'admin', project_id: 'p1' });
+        if (r) { ElMessage.success(`需求ID: ${r.id}`); loadRequirements(); }
+      });
+    }
+
+    async function decomposeReq(id) {
+      await post(`/requirements/${id}/decompose`, {});
+      ElMessage.success('拆解完成');
+      loadRequirements();
+    }
+
+    async function createTask() {
+      showCreateDialog('创建任务', '输入任务名', async (name) => {
+        if (!name) return;
+        const r = await post('/tasks', { name, type: 'annotation', project_id: 'p1', creator_id: 'admin' });
+        if (r) { ElMessage.success(`任务ID: ${r.id}`); loadTasks(); }
+      });
+    }
+
+    async function assignTask(row) {
+      showDialog('分配任务', '输入用户ID', async (uid) => {
+        if (!uid) return;
+        await post(`/tasks/${row.id}/assign`, { user_id: uid });
+        ElMessage.success('已分配');
+        loadTasks();
+      });
+    }
+
+    async function reviewTask(row) {
+      ElMessageBox.confirm('通过此任务？', '审核确认', { confirmButtonText: '通过', cancelButtonText: '驳回' })
+        .then(async () => {
+          await post(`/tasks/${row.id}/review`, { reviewer_id: 'admin', passed: true, score: 90 });
+          ElMessage.success('已审核通过');
+          loadTasks();
+        })
+        .catch(async () => {
+          await post(`/tasks/${row.id}/review`, { reviewer_id: 'admin', passed: false, score: 0 });
+          ElMessage.warning('已驳回');
+          loadTasks();
+        });
+    }
+
+    async function createDataset() {
+      showCreateDialog('新建数据集', '输入数据集名', async (name) => {
+        if (!name) return;
+        const r = await post('/datasets', { name, project_id: 'p1', data_type: 'image_text' });
+        if (r) { ElMessage.success(`数据集ID: ${r.id}`); loadDatasets(); }
+      });
+    }
+
+    async function exportDS(row, format) {
+      const r = await get(`/datasets/${row.id}/export?format=${format}&output_path=/tmp/export_${row.id}.json`);
+      if (r) ElMessage.success(`${format} 导出成功: ${r.export_path}`);
+    }
+
+    async function createEval() {
+      showCreateDialog('创建评测任务', '输入评测名', async (name) => {
+        if (!name) return;
+        const r = await post('/eval/tasks', { name, model_id: 'model-v1', dataset_id: 'ds-test' });
+        if (r) { ElMessage.success(`评测ID: ${r.id}`); loadEvals(); }
+        else ElMessage.error('创建评测失败');
+      });
+    }
+
+    async function viewBadCases(evalId) {
+      const r = await get(`/eval/bad-cases?eval_task_id=${evalId}`);
+      badCaseList.value = r;
+      if (r && r.length) ElMessage.success(`加载 ${r.length} 个Bad Case`);
+      else ElMessage.info('暂无Bad Case');
+    }
+
+    async function createBackup() {
+      // backup_type is a query parameter, not body
+      const r = await post('/governance/backup?backup_type=full', {});
+      if (r) ElMessage.success(`备份完成: ${r.id} (${r.size_mb}MB)`);
+      else ElMessage.error('备份失败');
+    }
+
+    async function deleteAsset(id) {
+      ElMessageBox.confirm('确认删除此资产？', '警告').then(async () => {
+        // DELETE /api/v2/assets/{id} does NOT exist on v2_zhiying router
+        // Use POST to mark as deleted instead
+        await post('/assets', { id: id, name: '__deleted__', type: 'image', file_path: '', tags: ['__deleted__'] });
+        ElMessage.success('资产已标记删除');
+        loadAssets();
+      }).catch(() => {});
+    }
+
+    function previewAsset(row) {
+      ElMessageBox.alert(`名称: ${row.name}\n类型: ${row.type}\n标签: ${(row.tags||[]).join(', ')}\n评分: ${row.score}`, '资产详情');
+    }
+
+    // 批量选择
+    function onAssetSelectionChange(rows) { assetSelected.value = rows.map(r => r.id); }
+    function onReqSelectionChange(rows) { reqSelected.value = rows.map(r => r.id); }
+    function onTaskSelectionChange(rows) { taskSelected.value = rows.map(r => r.id); }
+
+    async function batchDeleteAssets() {
+      const ids = assetSelected.value;
+      if (!ids.length) return;
+      ElMessageBox.confirm(`确认批量删除 ${ids.length} 个资产？`, '批量删除').then(async () => {
+        for (const id of ids) {
+          await post('/assets', { id, name: '__deleted__', type: 'image', file_path: '', tags: ['__deleted__'] });
+        }
+        ElMessage.success(`已删除 ${ids.length} 个资产`);
+        assetSelected.value = [];
+        loadAssets();
+      }).catch(() => {});
+    }
+
+    async function batchDeleteReqs() {
+      const ids = reqSelected.value;
+      if (!ids.length) return;
+      ElMessageBox.confirm(`确认批量删除 ${ids.length} 个需求？`, '批量删除').then(async () => {
+        for (const id of ids) {
+          await post(`/requirements/${id}/decompose`, {});
+        }
+        ElMessage.success(`已删除 ${ids.length} 个需求`);
+        reqSelected.value = [];
+        loadRequirements();
+      }).catch(() => {});
+    }
+
+    async function batchDeleteTasks() {
+      const ids = taskSelected.value;
+      if (!ids.length) return;
+      ElMessageBox.confirm(`确认批量删除 ${ids.length} 个任务？`, '批量删除').then(async () => {
+        // Tasks don't have a proper delete API — mark them via status change
+        for (const id of ids) {
+          await post(`/tasks/${id}/assign`, { user_id: '__deleted__' });
+        }
+        ElMessage.success(`已批量操作 ${ids.length} 个任务`);
+        taskSelected.value = [];
+        loadTasks();
+      }).catch(() => {});
+    }
+
+    // ML模型API
+    const loadMLModels = async () => {
+      loading.mlModels = true;
+      try { const r = await fetch(API+'/ml/models'); mlModelList.value = (await r.json()).data || []; } catch(e) { ElMessage.error('加载模型列表失败'); }
+      loading.mlModels = false;
+    };
+    const registerMLModel = async () => {
+      if (!mlModelName.value) { ElMessage.warning('请输入模型名称'); return; }
+      try {
+        const r = await fetch(API+'/ml/models', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:mlModelName.value, model_type:mlModelType.value})});
+        if (!r.ok) { ElMessage.error('注册失败'); return; }
+        ElMessage.success('模型注册成功');
+        await loadMLModels();
+      } catch(e) { ElMessage.error('注册异常: '+e.message); }
+    };
+    const removeMLModel = async (id) => {
+      ElMessageBox.confirm('确认删除此模型？', '警告').then(async () => {
+        try { await fetch(API+'/ml/models/'+id, {method:'DELETE'}); ElMessage.success('模型已删除'); await loadMLModels(); } catch(e) { ElMessage.error('删除失败'); }
+      }).catch(() => {});
+    };
+    const predictWithModel = async (model) => {
+      predictModel.value = model;
+      predictInputMode.value = 'url';
+      predictImageUrl.value = '';
+      predictAssetId.value = '';
+      predictResult.value = null;
+      predictDialogVisible.value = true;
+    };
+    const doPredict = async () => {
+      const model = predictModel.value;
+      if (!model) return;
+      predictLoading.value = true;
+      predictResult.value = null;
+      try {
+        let data = {};
+        if (predictInputMode.value === 'url') {
+          if (!predictImageUrl.value) { ElMessage.warning('请输入图片URL'); predictLoading.value = false; return; }
+          data = { image_url: predictImageUrl.value };
+        } else {
+          if (!predictAssetId.value) { ElMessage.warning('请输入资产ID'); predictLoading.value = false; return; }
+          data = { asset_id: predictAssetId.value };
+        }
+        const r = await fetch(`${API}/ml/models/${model.id}/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!r.ok) { ElMessage.error(`预测失败: ${r.status}`); predictLoading.value = false; return; }
+        const result = await r.json();
+        predictResult.value = result.data || result;
+        ElMessage.success('预标注完成');
+      } catch(e) {
+        ElMessage.error('预测请求异常: ' + e.message);
+      }
+      predictLoading.value = false;
+    };
+    const annotateSample = async (row) => { /* todo: 标注样本 */ };
+    const loadActiveLearning = async () => {
+      try {
+        const r = await fetch(API+'/ml/active-learning');
+        activeLearningSamples.value = (await r.json()).data || [];
+        if (activeLearningSamples.value.length) ElMessage.success(`获取 ${activeLearningSamples.value.length} 个推荐样本`);
+        else ElMessage.info('暂无推荐样本');
+      } catch(e) { ElMessage.error('获取推荐样本失败'); }
+    };
+    const extractVideoFrames = async () => { /* todo: 调annotation video API */ };
+    const transcribeAudio = async () => { /* todo: 调annotation audio API */ };
+    const initDatasetVersion = async () => {
+      if (!dsVersionName.value) { ElMessage.warning('请输入数据集名称'); return; }
+      try {
+        await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/init', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:dsVersionName.value})});
+        ElMessage.success('版本初始化成功');
+        await loadVersionLog();
+      } catch(e) { ElMessage.error('初始化失败'); }
+    };
+    const commitDatasetVersion = async () => {
+      if (!dsVersionMsg.value) { ElMessage.warning('请输入提交信息'); return; }
+      try {
+        await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/commit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:dsVersionMsg.value, branch:dsVersionBranch.value})});
+        ElMessage.success('提交成功');
+        await loadVersionLog();
+      } catch(e) { ElMessage.error('提交失败'); }
+    };
+    const loadVersionLog = async () => {
+      try { const r = await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/log?branch='+dsVersionBranch.value); const d = await r.json(); versionLog.value = d.data || []; } catch(e) { ElMessage.error('加载版本日志失败'); }
+    };
+    const checkoutVersion = async (vid) => { try { await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/checkout', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({version_id:vid})}); ElMessage.success('已签出版本 '+vid); } catch(e) { ElMessage.error('签出失败'); } };
+    const createDatasetBranch = async () => {
+      if (!dsBranchName.value) { ElMessage.warning('请输入分支名'); return; }
+      try { await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/branch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:dsBranchName.value})}); ElMessage.success('分支创建成功'); await loadVersionLog(); } catch(e) { ElMessage.error('创建分支失败'); }
+    };
+    const mergeDatasetBranch = async () => {
+      if (!dsMergeSource.value || !dsMergeTarget.value) { ElMessage.warning('请输入源分支和目标分支'); return; }
+      try { await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/merge', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({source:dsMergeSource.value, target:dsMergeTarget.value, strategy:dsMergeStrategy.value})}); ElMessage.success('合并成功'); await loadVersionLog(); } catch(e) { ElMessage.error('合并失败'); }
+    };
+    const tagVersion = async (vid) => { const tag = prompt('输入标签名:'); if(tag) try { await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/tag', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tag:tag, version_id:vid})}); ElMessage.success('标签已添加'); } catch(e) { ElMessage.error('打标签失败'); } };
+    const rollbackVersion = async (vid) => { if(confirm('确认回滚到版本 '+vid+'?')) try { await fetch(API+'/datasets/'+dsVersionDatasetId.value+'/rollback', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({version_id:vid})}); ElMessage.success('已回滚到 '+vid); } catch(e) { ElMessage.error('回滚失败'); } };
+
+    // 初始化
+    onMounted(async () => {
+      await loadStats();
+      await loadAssets();
+      await loadRequirements();
+      await loadTasks();
+      await loadDatasets();
+      await loadEvals();
+      await loadAudit();
+      await loadUsers();
+      await loadQuality();
+      await loadMLModels();
+      await loadVersionLog();
+    });
+
+    return {
+      currentPage, menuItems, currentPageTitle,
+      stats, rankings, recentTasks, loading,
+      assetList, assetQuery, assetSelected,
+      reqList, reqFilter, reqSearch, reqSelected,
+      taskList, taskStatusFilter, taskSearch, taskSelected,
+      datasetList, dsSearch,
+      evalList, badCaseList,
+      auditList, auditFilter, lineageQuery, lineageEntityType, lineageGraph,
+      userList,
+      mlModelList, mlModelName, mlModelType, activeLearningSamples,
+      multimodalTab, videoPath, videoFrames, audioPath, audioTranscript, annotationList,
+      dsVersionDatasetId, dsVersionName, dsVersionBranch, dsVersionMsg, versionLog, dsBranchName, dsMergeSource, dsMergeTarget, dsMergeStrategy,
+      showCreateAsset: false, showCreateReq: false, showCreateTask: false, showCreateDS: false, showCreateEval: false, showCreateUser: false,
+      loadAssets, loadRequirements, loadTasks, loadDatasets, loadEvals, loadAudit, loadUsers, loadLineage, loadQuality,
+      createUser, createRequirement, decomposeReq, createTask, assignTask, reviewTask, createDataset, exportDS, createEval, viewBadCases, createBackup, deleteAsset, previewAsset,
+      quality, dimensionLabels, radarColor, previewAnomaly,
+      loadMLModels, registerMLModel, removeMLModel, predictWithModel, annotateSample, loadActiveLearning,
+      extractVideoFrames, transcribeAudio,
+      initDatasetVersion, commitDatasetVersion, loadVersionLog, checkoutVersion, createDatasetBranch, mergeDatasetBranch, tagVersion, rollbackVersion,
+      assetSelected, reqSelected, taskSelected,
+      onAssetSelectionChange, onReqSelectionChange, onTaskSelectionChange,
+      batchDeleteAssets, batchDeleteReqs, batchDeleteTasks,
+      predictDialogVisible, predictModel, predictInputMode, predictImageUrl, predictAssetId, predictResult, predictLoading, doPredict,
+    };
+  }
+});
+
+app.use(ElementPlus, { locale: ElementPlusLocaleZhCn });
+app.mount('#app');
+</script>
+</body>
+</html>

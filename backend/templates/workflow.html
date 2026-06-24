@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nanobot Factory - 工作流编辑器</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#06b6d4;--primary-hover:#0891b2;--secondary:#8b5cf6;--bg:#0f172a;--surface:#1e293b;--surface-2:#334155;--surface-hover:#475569;--border:#334155;--text:#e2e8f0;--text-secondary:#94a3b8;--success:#22c55e;--error:#ef4444}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+.app-container{display:flex;height:calc(100vh-52px)}
+.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;padding:12px}
+.sidebar-title{font-size:13px;font-weight:600;color:var(--text-secondary);padding:8px 12px;text-transform:uppercase;letter-spacing:1px}
+.sidebar-category{margin-bottom:8px}
+.cat-header{padding:8px 12px;font-size:13px;font-weight:600;color:var(--primary);cursor:pointer;border-radius:6px;display:flex;justify-content:space-between}
+.cat-header:hover{background:var(--surface-hover)}
+.node-item{padding:6px 12px 6px 24px;font-size:12px;color:var(--text-secondary);cursor:grab;margin:2px 0;border-radius:4px}
+.node-item:hover{background:var(--surface-hover);color:var(--text)}
+
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:16px}
+.workflow-toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.btn-primary{background:var(--primary);color:white}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-secondary{background:var(--surface-hover);color:var(--text)}
+.btn-secondary:hover{background:var(--surface-2)}
+.btn-gradient{background:linear-gradient(135deg,var(--primary),var(--secondary));color:white}
+.btn-danger{background:var(--error);color:white}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+.steps-container{flex:1;overflow-y:auto}
+.step-card{background:var(--surface);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;overflow:hidden}
+.step-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(6,182,212,0.08);border-bottom:1px solid var(--border);cursor:move}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.step-name{flex:1;font-size:14px;font-weight:500}
+.step-remove{color:var(--error);cursor:pointer;font-size:16px;background:none;border:none}
+.step-body{padding:12px 14px;display:none}
+.step-body.open{display:block}
+.step-config{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.config-group{display:flex;flex-direction:column;gap:4px}
+.config-label{font-size:11px;color:var(--text-secondary)}
+.config-select,.config-input,.config-param{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px}
+.config-select:focus,.config-input:focus{outline:none;border-color:var(--primary)}
+.config-remove{background:none;border:1px solid var(--error);color:var(--error);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer}
+
+.template-section{margin-top:12px}
+.template-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.template-card{border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;text-align:center;transition:all 0.2s}
+.template-card:hover{border-color:var(--primary);background:rgba(6,182,212,0.05)}
+.template-icon{font-size:24px;margin-bottom:4px}
+.template-name{font-size:11px;color:var(--text-secondary)}
+
+.json-panel{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:8px;font-family:monospace;font-size:11px;line-height:1.5;overflow:auto;max-height:300px;color:var(--text-secondary)}
+
+.result-panel{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:8px;max-height:200px;overflow:auto}
+
+@media(max-width:768px){
+  .app-container{flex-direction:column}
+  .sidebar{width:100%;max-height:200px}
+  .step-config{grid-template-columns:1fr}
+}
+</style></head><body>
+<script>fetch('/templates/navbar.html').then(r=>r.text()).then(h=>document.body.insertAdjacentHTML('afterbegin',h))</script>
+<div class="header"><span class="logo">⚡ Nanobot Factory — 工作流编辑器</span></div>
+<div class="app-container">
+  <div class="sidebar">
+    <div class="sidebar-title">📦 节点库</div>
+    <div id="node-library"></div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
+      <div class="sidebar-title">📋 模板</div>
+      <div class="template-grid">
+        <div class="template-card" onclick="loadTemplate('clean')"><div class="template-icon">🧹</div><div class="template-name">数据清洗</div></div>
+        <div class="template-card" onclick="loadTemplate('generate')"><div class="template-icon">🎨</div><div class="template-name">AIGC生成</div></div>
+        <div class="template-card" onclick="loadTemplate('full')"><div class="template-icon">🏭</div><div class="template-name">全自动生产</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="main-area">
+    <div class="workflow-toolbar">
+      <input class="config-input" id="wf-name" placeholder="工作流名称" value="新工作流" style="width:200px">
+      <button class="btn btn-primary btn-sm" onclick="addStep()">➕ 添加步骤</button>
+      <button class="btn btn-gradient btn-sm" onclick="executeWorkflow()">🚀 执行</button>
+      <button class="btn btn-secondary btn-sm" onclick="saveWorkflow()">💾 保存</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadWorkflow()">📂 加载</button>
+      <button class="btn btn-danger btn-sm" onclick="clearSteps()">🗑️ 清空</button>
+    </div>
+    <div id="steps-container" class="steps-container"></div>
+    <div class="json-panel" id="json-panel">📄 工作流JSON将在此显示</div>
+    <div class="result-panel" id="result-panel" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+// ===== State =====
+let steps = [];
+let stepCounter = 0;
+let allNodes = [];
+
+// ===== Load Nodes from API =====
+async function loadNodes() {
+  try {
+    const resp = await fetch('/api/v2/nodes');
+    const data = await resp.json();
+    allNodes = data.data || data || [];
+    renderNodeLibrary();
+    loadTemplate('clean');
+  } catch(e) {
+    document.getElementById('node-library').innerHTML = '<div style="color:var(--error);padding:12px;font-size:12px">❌ 无法加载节点库: ' + e.message + '</div>';
+  }
+}
+
+function renderNodeLibrary() {
+  const lib = document.getElementById('node-library');
+  const cats = {};
+  allNodes.forEach(n => {
+    if (!cats[n.category]) cats[n.category] = [];
+    cats[n.category].push(n);
+  });
+  lib.innerHTML = Object.entries(cats).map(([cat, nodes]) => `
+    <div class="sidebar-category">
+      <div class="cat-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <span>${catIcon(cat)} ${cat}</span>
+        <span>${nodes.length}</span>
+      </div>
+      <div style="display:block">
+        ${nodes.map(n => `<div class="node-item" onclick="addStep('${n.node_id}')" title="${n.description}">${n.name}</div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function catIcon(cat) {
+  const icons = {source:'📂',filter:'🔍',label:'🏷️',score:'⭐',select:'🎯',export:'📥',generate:'🎨',quality:'✅',control:'🔀',output:'📤'};
+  return icons[cat] || '📦';
+}
+
+// ===== Step Management =====
+function addStep(presetNodeId) {
+  const stepId = 'step_' + (++stepCounter);
+  const nodeId = presetNodeId || '';
+  steps.push({id: stepId, node_id: nodeId, params: {}, inputs: {}});
+  renderSteps();
+}
+
+function removeStep(id) {
+  steps = steps.filter(s => s.id !== id);
+  renderSteps();
+}
+
+function updateStepNode(id, nodeId) {
+  const step = steps.find(s => s.id === id);
+  if (step) {
+    step.node_id = nodeId;
+    step.params = {};
+    step.inputs = {};
+  }
+  renderSteps();
+}
+
+function updateStepParam(id, name, value) {
+  const step = steps.find(s => s.id === id);
+  if (step) step.params[name] = value;
+  updateJsonPreview();
+}
+
+function updateStepInput(id, port, value) {
+  const step = steps.find(s => s.id === id);
+  if (step) step.inputs[port] = value;
+  updateJsonPreview();
+}
+
+function clearSteps() {
+  if (!confirm('清空所有步骤？')) return;
+  steps = [];
+  stepCounter = 0;
+  renderSteps();
+}
+
+// ===== Templates =====
+const TEMPLATES = {
+  clean: [
+    {node_id: 'source.local_file', params: {}, inputs: {}},
+    {node_id: 'filter.resolution', params: {min_width: 512, min_height: 512}, inputs: {}},
+    {node_id: 'filter.blur', params: {threshold: 0.3}, inputs: {}},
+    {node_id: 'filter.dedup.phash', params: {threshold: 0.9}, inputs: {}},
+    {node_id: 'label.caption', params: {}, inputs: {}},
+    {node_id: 'score.aesthetic', params: {}, inputs: {}},
+    {node_id: 'select.top_k', params: {k: 10000}, inputs: {}},
+    {node_id: 'export.jsonl', params: {}, inputs: {}}
+  ],
+  generate: [
+    {node_id: 'control.batch', params: {batch_size: 1}, inputs: {}},
+    {node_id: 'gen.text_to_image', params: {prompt: '输入提示词', width: 1024, height: 1024}, inputs: {}},
+    {node_id: 'gen.image_upscale', params: {scale: 2}, inputs: {}},
+    {node_id: 'export.local', params: {output_dir: './output'}, inputs: {}}
+  ],
+  full: [
+    {node_id: 'source.oss', params: {bucket: 'data'}, inputs: {}},
+    {node_id: 'filter.resolution', params: {min_width: 1024}, inputs: {}},
+    {node_id: 'filter.nsfw', params: {threshold: 0.8}, inputs: {}},
+    {node_id: 'label.caption', params: {}, inputs: {}},
+    {node_id: 'label.tagging', params: {}, inputs: {}},
+    {node_id: 'score.aesthetic', params: {}, inputs: {}},
+    {node_id: 'select.top_k', params: {k: 10000}, inputs: {}},
+    {node_id: 'export.llava', params: {}, inputs: {}}
+  ]
+};
+
+function loadTemplate(name) {
+  const template = TEMPLATES[name];
+  if (!template) return;
+  steps = template.map((t, i) => ({id: 'step_' + (++stepCounter), ...t}));
+  renderSteps();
+}
+
+// ===== Render =====
+function renderSteps() {
+  const container = document.getElementById('steps-container');
+  if (steps.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">📭 暂无步骤，点击"添加步骤"或选择模板</div>';
+    document.getElementById('json-panel').textContent = '📄 工作流JSON将在此显示';
+    return;
+  }
+  container.innerHTML = steps.map((s, i) => {
+    const nodeDef = allNodes.find(n => n.node_id === s.node_id);
+    const nodeOptions = allNodes.map(n => `<option value="${n.node_id}" ${n.node_id===s.node_id?'selected':''}>${n.name}</option>`).join('');
+    const paramFields = nodeDef ? nodeDef.params.map(p => {
+      const val = s.params[p.name] !== undefined ? s.params[p.name] : (p.default || '');
+      return `<div class="config-group"><span class="config-label">${p.name}</span>
+        <input class="config-param" value="${val}" onchange="updateStepParam('${s.id}','${p.name}',this.value)" placeholder="${p.type}"></div>`;
+    }).join('') : '';
+    return `<div class="step-card">
+      <div class="step-header" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="step-num">${i+1}</span>
+        <span class="step-name">${nodeDef ? nodeDef.name : '选择节点'}</span>
+        <button class="step-remove" onclick="event.stopPropagation();removeStep('${s.id}')">×</button>
+      </div>
+      <div class="step-body open">
+        <div class="step-config">
+          <div class="config-group"><span class="config-label">节点</span>
+            <select class="config-select" onchange="updateStepNode('${s.id}',this.value)">
+              <option value="">— 选择节点 —</option>
+              ${nodeOptions}
+            </select>
+          </div>
+          ${paramFields}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateJsonPreview();
+}
+
+function updateJsonPreview() {
+  const workflow = {id: 'wf_' + Date.now(), name: document.getElementById('wf-name').value, steps: steps.filter(s => s.node_id)};
+  document.getElementById('json-panel').textContent = '📄 工作流JSON:\n\n' + JSON.stringify(workflow, null, 2);
+}
+
+// ===== Save/Load =====
+function saveWorkflow() {
+  const name = document.getElementById('wf-name').value;
+  localStorage.setItem('wf_' + name, JSON.stringify(steps));
+  localStorage.setItem('wf_' + name + '_name', name);
+  showToast('✅ 工作流已保存', 'success');
+}
+
+function loadWorkflow() {
+  const name = prompt('输入要加载的工作流名称:', document.getElementById('wf-name').value);
+  if (!name) return;
+  const data = localStorage.getItem('wf_' + name);
+  if (!data) { showToast('❌ 未找到工作流: ' + name, 'error'); return; }
+  steps = JSON.parse(data);
+  document.getElementById('wf-name').value = name;
+  renderSteps();
+  showToast('✅ 已加载: ' + name, 'success');
+}
+
+// ===== Execute =====
+async function executeWorkflow() {
+  const validSteps = steps.filter(s => s.node_id);
+  if (validSteps.length === 0) { showToast('❌ 请至少添加一个步骤', 'error'); return; }
+  const workflow = {id: 'wf_' + Date.now(), name: document.getElementById('wf-name').value, steps: validSteps};
+  
+  const resultPanel = document.getElementById('result-panel');
+  resultPanel.style.display = 'block';
+  resultPanel.innerHTML = '<div style="color:var(--text-secondary)">⏳ 执行中...</div>';
+  
+  try {
+    const resp = await fetch('/api/v2/workflow/execute', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(workflow)
+    });
+    const result = await resp.json();
+    resultPanel.innerHTML = '<div style="font-size:12px;font-family:monospace;white-space:pre-wrap;color:var(--success)">✅ 执行完成\n\n' + JSON.stringify(result, null, 2) + '</div>';
+    showToast('✅ 工作流执行完毕', 'success');
+  } catch(e) {
+    resultPanel.innerHTML = '<div style="color:var(--error);font-size:12px">❌ 执行失败: ' + e.message + '</div>';
+    showToast('❌ 执行失败', 'error');
+  }
+}
+
+// ===== Toast =====
+function showToast(msg, type) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'var(--error)':'var(--success)')+';color:white;padding:10px 24px;border-radius:8px;font-size:14px;z-index:9999;transition:opacity 0.3s';
+  setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+// ===== Init =====
+loadNodes();
+</script>
+</body></html>

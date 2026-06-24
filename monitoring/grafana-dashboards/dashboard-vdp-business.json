@@ -1,0 +1,144 @@
+{
+  "title": "nanobot-factory Microservices",
+  "uid": "imdf-microservices",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-3h", "to": "now"},
+  "tags": ["imdf", "microservices"],
+  "templating": {
+    "list": [
+      {
+        "name": "microservice",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "Prometheus"},
+        "query": "label_values(imdf_requests_total, microservice)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Per-service overview",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Request rate (QPS) per microservice",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 1},
+      "targets": [
+        {
+          "expr": "sum by (microservice) (rate(imdf_requests_total{microservice=~\"$microservice\"}[1m]))",
+          "legendFormat": "{{microservice}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "reqps"}}
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "P50 latency per microservice",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 1},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le, microservice) (rate(imdf_request_latency_seconds_bucket{microservice=~\"$microservice\"}[5m])))",
+          "legendFormat": "{{microservice}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "P99 latency per microservice",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 1},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, microservice) (rate(imdf_request_latency_seconds_bucket{microservice=~\"$microservice\"}[5m])))",
+          "legendFormat": "{{microservice}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Errors & Saturation",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "5xx error rate per microservice",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 10},
+      "targets": [
+        {
+          "expr": "sum by (microservice) (rate(imdf_requests_total{microservice=~\"$microservice\", status_code=~\"5..\"}[5m])) / sum by (microservice) (rate(imdf_requests_total{microservice=~\"$microservice\"}[5m]))",
+          "legendFormat": "{{microservice}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit"}}
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Memory RSS per microservice",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 10},
+      "targets": [
+        {
+          "expr": "sum by (microservice) (imdf_memory_rss_bytes{microservice=~\"$microservice\"})",
+          "legendFormat": "{{microservice}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "bytes"}}
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Active connections per microservice",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 10},
+      "targets": [
+        {
+          "expr": "sum by (microservice) (imdf_active_connections{microservice=~\"$microservice\"})",
+          "legendFormat": "{{microservice}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "row",
+      "title": "Traces (Jaeger)",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 18}
+    },
+    {
+      "id": 10,
+      "type": "traces",
+      "title": "Recent traces for $microservice",
+      "datasource": {"type": "jaeger", "uid": "Jaeger"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 19},
+      "targets": [
+        {
+          "query": "$microservice",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "projects": [
+    {
+      "project_id": "6017bfe6-01d",
+      "name": "API测试项目",
+      "description": "API端点测试",
+      "labels": [],
+      "label_categories": {},
+      "annotation_types": [],
+      "keypoint_skeleton": [],
+      "keypoint_skeleton_names": [],
+      "quality_threshold": 0.8,
+      "require_review": true,
+      "allow_ai_preannotation": true,
+      "total_items": 0,
+      "annotated_items": 0,
+      "approved_items": 0,
+      "settings": {},
+      "created_by": "system",
+      "created_at": "2026-06-12T00:18:47.080590",
+      "updated_at": "2026-06-12T00:18:47.080600"
+    }
+  ],
+  "groups_count": 0,
+  "images_count": 0,
+  "updated_at": "2026-06-12T00:18:47.091998"
+}

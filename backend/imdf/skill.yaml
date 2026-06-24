@@ -1,0 +1,224 @@
+# ============================================================================
+# IMDF - Infinite Multimodal Data Foundry Hermes Skill
+# ============================================================================
+# Agent驱动的无限画布生产系统
+# 功能: 图片生成 | 视频生成 | 短剧 | PPT | 网页设计 | 信息图
+# ============================================================================
+
+name: imdf
+description: "Infinite Multimodal Data Foundry - Agent驱动的无限画布生产系统"
+version: "1.0.0"
+author: "IMDF Team"
+triggers:
+  keywords:
+    - "无限画布"
+    - "imdf"
+    - "图片生成"
+    - "视频生成"
+    - "短剧"
+    - "PPT"
+    - "网页设计"
+    - "海报"
+    - "信息图"
+    - "文章转视频"
+    - "视频制作"
+    - "canvas"
+    - "rendering"
+
+# ============================================================================
+# 前置检查
+# ============================================================================
+prerequisites:
+  - name: "NanoBot Factory可用性"
+    description: "检查NanoBot Factory服务是否在线,提供ComfyUI/生成API能力"
+    check: "curl -s http://127.0.0.1:8899/health | grep -q 'healthy'"
+    fallback: "NanoBot Factory未运行,部分ComfyUI和批量生成功能不可用"
+
+  - name: "html-video CLI"
+    description: "html-video渲染引擎(信息/科普视频)"
+    check: "which html-video 2>/dev/null || npx html-video --help 2>/dev/null"
+    fallback: "html-video CLI不可用,将使用HTML截图fallback"
+
+  - name: "npx hyperframes"
+    description: "HyperFrames渲染引擎(品牌/UI动画)"
+    check: "npx hyperframes --help 2>/dev/null"
+    fallback: "HyperFrames不可用,将使用html-video或截图fallback"
+
+  - name: "garden-web-video CLI"
+    description: "Garden Web Video引擎(文章转视频)"
+    check: "which garden-web-video 2>/dev/null"
+    fallback: "Garden Video不可用,将使用html-video替代"
+
+  - name: "ffmpeg"
+    description: "视频合成工具"
+    check: "which ffmpeg 2>/dev/null"
+    fallback: "ffmpeg未安装,视频合成功能受限"
+
+# ============================================================================
+# 引擎列表
+# ============================================================================
+engines:
+  - id: html-video
+    name: "html-video"
+    description: "信息/科普/文章类视频,Content-Graph多场景"
+    cli: "html-video render --template <id> --vars-file <path> --format mp4 --output <path>"
+    params:
+      template_id: "article-intro, data-point, quote-card, summary, transition"
+      vars_file: "JSON变量文件(标题/内容/字幕/风格)"
+    type: video
+    stars: 2368
+    repo: "https://github.com/nexu-io/html-video"
+
+  - id: hyperframes
+    name: "HyperFrames"
+    description: "品牌/UI演示,像素级精确动画,GSAP timeline控制"
+    cli: "npx hyperframes render (在包含index.html的目录执行)"
+    params:
+      html_content: "带data-hf属性的HTML动画内容"
+      output_dir: "输出目录(自动搜索MP4)"
+    type: video
+    stars: 9600
+    repo: "https://github.com/heygen-com/hyperframes"
+
+  - id: garden-video
+    name: "Garden Web Video"
+    description: "文章转视频,22套主题模板,可插拔TTS"
+    cli: "garden-web-video --article <path> --template <id> --output <path>"
+    params:
+      article_text: "文章文本内容"
+      template_id: "演讲风/科技架构/数据报告/科普讲解/终端CLI/杂志特稿/B2B路演/包豪斯/赛博朋克/双色对比/时尚杂志/自然人文"
+    type: video
+    stars: 7000
+    repo: "https://github.com/ConardLi/garden-skills"
+
+  - id: comfyui
+    name: "ComfyUI"
+    description: "最高质量创意视频,通过NanoBot API调用,支持35个视频节点"
+    api: "POST /api/generate (generator=comfyui)"
+    params:
+      prompt: "生成提示词"
+      width: 1024
+      height: 1024
+      steps: 25
+      duration: "视频时长(秒)"
+    type: video/image
+    cost: gpu
+
+  - id: frontend-slides
+    name: "Frontend Slides"
+    description: "PPT/网页设计,34套顶美模板,零依赖HTML"
+    type: ppt/web
+    stars: 20500
+    repo: "https://github.com/zarazhangrui/frontend-slides"
+
+  - id: html-screenshot
+    name: "HTML Screenshot"
+    description: "通用HTML截图引擎,像素级精确输出图片"
+    type: image
+
+  - id: gpt-image-2
+    name: "GPT Image-2"
+    description: "OpenAI图像生成,Arena第一"
+    type: image
+    cost: api
+
+# ============================================================================
+# Master Agent 决策链
+# ============================================================================
+master_agent_flow:
+  description: >
+    Master Agent负责任务理解,拆解,引擎选择,Worker调度,质量审计,交付
+
+  steps:
+    1: "ContentAnalyzer.analyze(user_input) - 分析用户输入意图和内容类型,返回 content_type/style/params/confidence"
+    2: "MasterAgent.plan(analysis) - 根据内容类型创建ProductionPlan,确定primary_engine和fallback_engine,拆解为WorkerTask列表"
+    3: "EngineRouter.decide(plan) - 综合内容类型/质量偏好/成本约束,选择最优引擎组合"
+    4: "WorkerScheduler调度各Worker - LLM任务生成剧本/口播稿,渲染任务调用具体引擎CLI,审核任务QualityGate验收"
+    5: "WorkerTask执行 - 根据engine字段调度到对应引擎,采集结果到CanvasState"
+    6: "QualityGate.review_output - 根据content_type定义验收清单,检查输出质量/完整性,返回分数和判定"
+    7: "ErrorRecovery(若失败) - 记录失败历史,尝试fallback引擎,或报告人工处理"
+
+  decision_tree:
+    - type: "图片/海报"
+      chain: "html-screenshot -> gpt-image-2 -> comfyui"
+    - type: "PPT/演示"
+      chain: "frontend-slides -> html-screenshot"
+    - type: "视频(信息)"
+      chain: "html-video -> garden-video -> html-screenshot"
+    - type: "视频(品牌)"
+      chain: "hyperframes -> html-video"
+    - type: "视频(创意)"
+      chain: "comfyui -> html-video"
+    - type: "视频(数学)"
+      chain: "manim -> html-screenshot"
+    - type: "短剧"
+      chain: "story-arc -> gpt-image-2 -> seedance -> ffmpeg"
+    - type: "网页"
+      chain: "frontend-slides -> html-screenshot"
+    - type: "信息图"
+      chain: "html-screenshot -> gpt-image-2"
+
+# ============================================================================
+# 使用示例
+# ============================================================================
+examples:
+  - title: "制作科普视频"
+    user_input: "把这篇量子计算的文章做成科普短视频"
+    steps:
+      - "master.plan(user_input) -> ProductionPlan(content_type=video, engine=html-video)"
+      - "engine.select_best_engine(project) -> primary: html-video"
+      - "engine.render_segments(project) -> 逐段调用render_with_html_video()"
+      - "engine.compose(project) -> ffmpeg拼接+配音"
+      - "engine.review(project) -> 质量评分"
+
+  - title: "生成演示PPT"
+    user_input: "帮我做一个AI技术分享的PPT"
+    steps:
+      - "master.plan(user_input) -> ProductionPlan(content_type=ppt, engine=frontend-slides)"
+      - "调用Frontend Slides引擎生成HTML幻灯片"
+      - "转换为PDF/PPTX格式交付"
+
+  - title: "制作品牌动画"
+    user_input: "给新产品做个30秒品牌展示视频"
+    steps:
+      - "master.plan(user_input) -> ProductionPlan(content_type=video_brand, engine=hyperframes)"
+      - "构建带GSAP动画的HTML内容"
+      - "调用render_with_hyperframes()渲染"
+      - "合成输出MP4"
+
+  - title: "生成海报"
+    user_input: "设计一张科技风格的活动海报"
+    steps:
+      - "master.plan(user_input) -> ProductionPlan(content_type=poster, engine=html-screenshot)"
+      - "构建海报HTML布局"
+      - "截图输出PNG/WebP"
+
+# ============================================================================
+# API端点(NanoBot Factory)
+# ============================================================================
+api_endpoints:
+  nanobot:
+    base_url: "http://127.0.0.1:8899"
+    health: "GET /health"
+    generate: "POST /api/generate"
+    generate_status: "GET /api/generate/{task_id}"
+    agents: "GET /api/agents"
+    chat: "POST /api/ai/chat"
+    files: "POST /api/files/upload"
+
+# ============================================================================
+# 目录结构
+# ============================================================================
+directory_structure:
+  root: "/mnt/d/Hermes/infinite-multimodal-data-foundry"
+  files:
+    - "agent/master_agent.py: Master Agent - 任务规划调度"
+    - "api/nanobot_adapter.py: NanoBot Factory API适配器"
+    - "core/canvas_core.py: 无限画布核心(CanvasState/History/SceneGraph)"
+    - "engines/video_engine.py: 5合一视频引擎(真实CLI调用层)"
+    - "engines/engine_router.py: 引擎路由选择"
+    - "engines/ppt_engine.py: PPT生成引擎"
+    - "engines/drama_engine.py: 短剧引擎"
+    - "engines/web_engine.py: 网页设计引擎"
+    - "engines/story_arc_engine.py: 故事弧线引擎"
+    - "api/canvas_web.py: Web UI画布界面(FastAPI)"

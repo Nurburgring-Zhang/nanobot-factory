@@ -1,0 +1,36 @@
+# ============================================================================
+# promtail.service — IMDF log shipper (journald → Loki)
+# ============================================================================
+[Unit]
+Description=IMDF Promtail (journald → Loki shipper)
+After=network-online.target loki.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=promtail
+Group=promtail
+ExecStart=/usr/local/bin/promtail \
+    --config.file=/etc/promtail/config.yaml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+# Promtail tails journald — give it file descriptors for /var/log/journal
+LimitNOFILE=131072
+MemoryMax=1G
+MemoryHigh=768M
+CPUQuota=100%
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/promtail
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=promtail
+
+[Install]
+WantedBy=multi-user.target

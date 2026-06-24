@@ -1,0 +1,60 @@
+# ============================================================================
+# imdf-celery.service — async task worker (rendering, scoring, vector index)
+# ============================================================================
+[Unit]
+Description=IMDF celery worker (5 queues: default/video/cpu/index/network)
+After=network-online.target postgresql.service redis-server.service minio.service
+Wants=network-online.target
+Requires=redis-server.service postgresql.service
+
+[Service]
+Type=simple
+User=imdf
+Group=imdf
+WorkingDirectory=/opt/nanobot-factory
+EnvironmentFile=/etc/imdf/imdf.env
+
+# Broker queue list comes from CELERY_QUEUES in /etc/imdf/imdf.env
+ExecStart=/opt/nanobot-factory/venv/bin/celery \
+    -A backend.imdf.celery_app:celery_app \
+    worker \
+    --loglevel=${CELERY_LOG_LEVEL} \
+    --concurrency=${CELERY_CONCURRENCY} \
+    --queues=${CELERY_QUEUES} \
+    --hostname=imdf-celery@%h \
+    --max-tasks-per-child=200 \
+    --time-limit=600 \
+    --soft-time-limit=540 \
+    -O fair
+
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+ReadWritePaths=/opt/nanobot-factory/data /opt/nanobot-factory/logs /opt/nanobot-factory/data/celery
+
+# Celery worker may load large ONNX/Whisper models
+LimitNOFILE=131072
+LimitNPROC=8192
+MemoryMax=8G
+MemoryHigh=6G
+CPUQuota=400%
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=imdf-celery
+
+[Install]
+WantedBy=multi-user.target

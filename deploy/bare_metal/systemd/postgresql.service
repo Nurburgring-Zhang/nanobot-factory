@@ -1,0 +1,42 @@
+# ============================================================================
+# postgresql.service — wraps the apt-provided postgres service for IMDF.
+# ----------------------------------------------------------------------------
+# Note: if the apt package `postgresql-15` already provides a service unit at
+# /lib/systemd/system/postgresql.service, do NOT install this file — instead
+# enable the package unit. install.sh uses `cp -n` to avoid clobbering.
+# ============================================================================
+[Unit]
+Description=IMDF PostgreSQL 15 + pgvector (override)
+Documentation=https://www.postgresql.org/docs/15/
+After=network.target
+Before=imdf-gateway.service imdf-user.service imdf-asset.service imdf-annotation.service \
+      imdf-cleaning.service imdf-scoring.service imdf-dataset.service imdf-evaluation.service \
+      imdf-agent.service imdf-workflow.service imdf-notification.service imdf-search.service \
+      imdf-collection.service imdf-celery.service imdf-celery-beat.service
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+Environment=PG_OOM_ADJUST_FILE=/proc/self/oom_score_adj
+Environment=PG_OOM_ADJUST_VALUE=0
+Environment=PGDATA=/var/lib/postgresql/15/main
+ExecStart=/usr/lib/postgresql/15/bin/postgres -D /var/lib/postgresql/15/main \
+          -c config_file=/etc/postgresql/15/main/postgresql.conf
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutSec=300
+
+# Allow huge shared_buffers (16 GB)
+LimitNOFILE=65536
+MemoryMax=20G
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+NoSockets=true
+
+[Install]
+WantedBy=multi-user.target

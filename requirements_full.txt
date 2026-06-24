@@ -1,0 +1,68 @@
+# IMDF + nanobot-factory + 智影 统一依赖
+# 安装: pip install -r requirements.txt
+
+# Web框架
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+starlette>=0.30.0
+
+# 数据 & 图像
+pillow>=10.0.0
+numpy>=1.24.0
+
+# 认证 & 安全
+argon2-cffi>=23.0.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# HTTP & API
+httpx>=0.24.0
+aiohttp>=3.8.0
+aiofiles>=23.0.0
+python-multipart>=0.0.6
+requests>=2.28.0
+
+# 数据库
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# 任务调度
+apscheduler>=3.10.0
+
+# P2-1-W2: Celery + Redis async queue
+celery[redis]==5.3.6
+redis==5.0.1
+
+# 日志 & 监控
+structlog>=23.0.0
+prometheus-client>=0.17.0
+
+# 限流
+slowapi>=0.1.9
+
+# AI/ML (轻量)
+scikit-learn>=1.3.0
+rank-bm25>=0.2.0
+
+# 文本处理
+python-dotenv>=1.0.0
+
+# 数据格式
+pyyaml>=6.0
+lxml>=4.9.0
+beautifulsoup4>=4.12.0
+chardet>=5.0.0
+
+# 工具
+psutil>=5.9.0
+
+# P2-3-W3: OWASP A06 依赖扫描 (safety + pip-audit, CI/CD 用)
+# 注: safety 2.3.5 是 last-free-version, 3.x 需要 API key; pip-audit 用 PyPA 官方 advisory DB
+# 两个版本约束有 packaging 冲突, CI 用两个独立 job 各自安装; 本地二选一安装.
+safety==2.3.5
+pip-audit>=2.7.0  # 避免 packaging<22 约束, 与 safety 2.3.5 兼容
+
+# AI模型(可选,首次运行自动下载)
+# torch>=2.0.0 (ComfyUI需要,建议单独安装)
+# sentence-transformers>=2.2.0 (语义搜索)
+# transformers>=4.30.0 (NLP)

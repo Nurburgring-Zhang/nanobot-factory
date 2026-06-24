@@ -1,0 +1,6 @@
+/**
+ * R3.5-W2 stub: 全局样式入口
+ *
+ * 真实主题样式由 styles/imdf-theme-*.css 提供；本文件作为聚合入口。
+ */
+@import './imdf-theme-core.css';

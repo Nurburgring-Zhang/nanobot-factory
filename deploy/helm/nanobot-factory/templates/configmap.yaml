@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nanobot-factory.fullname" . }}-config
+  namespace: {{ .Values.namespace.name | default (include "nanobot-factory.fullname" .) }}
+  labels:
+    {{- include "nanobot-factory.labels" . | nindent 4 }}
+data:
+  # ---- Server ----
+  NANOBOT_HOST: {{ .Values.config.nanobotHost | quote }}
+  NANOBOT_PORT: {{ .Values.config.nanobotPort | quote }}
+  UVICORN_WORKERS: {{ .Values.config.uvicornWorkers | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+
+  # ---- CORS ----
+  ALLOWED_ORIGINS: {{ .Values.config.allowedOrigins | quote }}
+  CORS_ALLOW_ALL: {{ .Values.config.corsAllowAll | quote }}
+
+  # ---- Rate limiting ----
+  RATE_LIMIT_REQUESTS: {{ .Values.config.rateLimitRequests | quote }}
+  RATE_LIMIT_WINDOW: {{ .Values.config.rateLimitWindow | quote }}
+
+  # ---- Storage ----
+  IMDF_DATA_DIR: {{ .Values.config.imdfDataDir | quote }}
+  IMDF_LOGS_DIR: {{ .Values.config.imdfLogsDir | quote }}
+  DATABASE_PATH: {{ .Values.config.databasePath | quote }}
+
+  # ---- App behaviour ----
+  DEV_MODE: {{ .Values.config.devMode | quote }}
+  ENABLE_ROBUSTNESS_MIDDLEWARE: {{ .Values.config.enableRobustnessMiddleware | quote }}
+  MAX_CONCURRENT_REQUESTS: {{ .Values.config.maxConcurrentRequests | quote }}
+  REQUEST_TIMEOUT_SECONDS: {{ .Values.config.requestTimeoutSeconds | quote }}
+  MAX_BODY_SIZE_MB: {{ .Values.config.maxBodySizeMb | quote }}
+
+  # ---- /readyz checks ----
+  READYZ_DB_CHECK: "true"
+  READYZ_DISK_CHECK: "true"
+  READYZ_REDIS_CHECK: "true"

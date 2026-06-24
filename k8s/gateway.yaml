@@ -1,0 +1,260 @@
+# =====================================================================
+# Nanobot Factory - API Gateway
+# =====================================================================
+# Single entrypoint for all 12 microservices.  Routes are loaded at
+# startup from the routes.yaml ConfigMap.  JWT auth + per-IP rate limit
+# + per-service circuit breaker (in-process).
+#
+# Exposed as:
+#   - ClusterIP service (cluster-internal)
+#   - NodePort 30800 (external, used by Ingress upstream)
+# =====================================================================
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-routes
+  namespace: nanobot-factory
+  labels:
+    app: gateway
+data:
+  routes.yaml: |
+    gateway:
+      host: "0.0.0.0"
+      port: 8000
+      upstream_timeout_seconds: 30
+      rate_limit:
+        capacity: 100
+        refill_per_second: 50
+      circuit_breaker:
+        failure_threshold: 5
+        reset_timeout_seconds: 30
+    services:
+      - name: user-service
+        prefix: /api/v1/auth
+        upstream: http://user-service.nanobot-factory.svc.cluster.local:8001
+        require_auth: false
+      - name: user-service
+        prefix: /api/v1/users
+        upstream: http://user-service.nanobot-factory.svc.cluster.local:8001
+        require_auth: true
+      - name: user-service
+        prefix: /api/v1/roles
+        upstream: http://user-service.nanobot-factory.svc.cluster.local:8001
+        require_auth: true
+      - name: asset-service
+        prefix: /api/v1/assets
+        upstream: http://asset-service.nanobot-factory.svc.cluster.local:8002
+        require_auth: true
+      - name: asset-service
+        prefix: /api/v1/items
+        upstream: http://asset-service.nanobot-factory.svc.cluster.local:8002
+        require_auth: true
+      - name: annotation-service
+        prefix: /api/v1/annotations
+        upstream: http://annotation-service.nanobot-factory.svc.cluster.local:8003
+        require_auth: true
+      - name: annotation-service
+        prefix: /api/v1/tasks
+        upstream: http://annotation-service.nanobot-factory.svc.cluster.local:8003
+        require_auth: true
+      - name: cleaning-service
+        prefix: /api/v1/clean
+        upstream: http://cleaning-service.nanobot-factory.svc.cluster.local:8004
+        require_auth: true
+      - name: scoring-service
+        prefix: /api/v1/score
+        upstream: http://scoring-service.nanobot-factory.svc.cluster.local:8005
+        require_auth: true
+      - name: dataset-service
+        prefix: /api/v1/datasets
+        upstream: http://dataset-service.nanobot-factory.svc.cluster.local:8006
+        require_auth: true
+      - name: evaluation-service
+        prefix: /api/v1/evaluations
+        upstream: http://evaluation-service.nanobot-factory.svc.cluster.local:8007
+        require_auth: true
+      - name: evaluation-service
+        prefix: /api/v1/bad_cases
+        upstream: http://evaluation-service.nanobot-factory.svc.cluster.local:8007
+        require_auth: true
+      - name: agent-service
+        prefix: /api/v1/agents
+        upstream: http://agent-service.nanobot-factory.svc.cluster.local:8008
+        require_auth: true
+      - name: agent-service
+        prefix: /api/v1/agent_tasks
+        upstream: http://agent-service.nanobot-factory.svc.cluster.local:8008
+        require_auth: true
+      - name: workflow-service
+        prefix: /api/v1/workflows
+        upstream: http://workflow-service.nanobot-factory.svc.cluster.local:8009
+        require_auth: true
+      - name: notification-service
+        prefix: /api/v1/notifications
+        upstream: http://notification-service.nanobot-factory.svc.cluster.local:8010
+        require_auth: true
+      - name: search-service
+        prefix: /api/v1/search
+        upstream: http://search-service.nanobot-factory.svc.cluster.local:8011
+        require_auth: true
+      - name: collection-service
+        prefix: /api/v1/collections
+        upstream: http://collection-service.nanobot-factory.svc.cluster.local:8012
+        require_auth: true
+    default:
+      upstream: http://app.nanobot-factory.svc.cluster.local:8765/internal
+      require_auth: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+  labels:
+    app: gateway
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+        app.kubernetes.io/component: gateway
+    spec:
+      serviceAccountName: gateway
+      containers:
+        - name: gateway
+          image: ghcr.io/minimax-ai/nanobot-factory:v0.8.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/venv/bin/uvicorn
+            - backend.gateway.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --log-level
+            - info
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: GATEWAY_ROUTES_PATH
+              value: /etc/gateway/routes.yaml
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nanobot-secrets
+                  key: JWT_SECRET
+            - name: GATEWAY_UPSTREAM
+              value: http://app.nanobot-factory.svc.cluster.local:8765/internal
+            - name: GATEWAY_LOG_LEVEL
+              value: INFO
+          envFrom:
+            - configMapRef:
+                name: nanobot-config
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /_gw/healthz
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /_gw/healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: gateway-routes
+              mountPath: /etc/gateway
+              readOnly: true
+      volumes:
+        - name: gateway-routes
+          configMap:
+            name: gateway-routes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+  labels:
+    app: gateway
+    app.kubernetes.io/component: gateway
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      nodePort: 30800
+      protocol: TCP
+  selector:
+    app: gateway
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway
+  namespace: nanobot-factory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gateway
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60

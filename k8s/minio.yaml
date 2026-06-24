@@ -1,0 +1,161 @@
+# =====================================================================
+# Nanobot Factory - MinIO (S3-compatible object storage)
+# =====================================================================
+# MinIO replaces local /data asset storage.  Used by:
+#   - asset-service (upload/download)
+#   - dataset-service (export)
+#   - evaluation-service (bad-case export)
+#
+# 50GB PVC (expandable).  Single replica (distributed mode out of scope).
+# =====================================================================
+
+# ---------- Service (internal API) ----------
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: nanobot-factory
+  labels:
+    app: minio
+    app.kubernetes.io/component: object-storage
+spec:
+  type: ClusterIP
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+    - name: console
+      port: 9001
+      targetPort: 9001
+      protocol: TCP
+  selector:
+    app: minio
+---
+# ---------- PersistentVolumeClaim ----------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+  namespace: nanobot-factory
+  labels:
+    app: minio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
+---
+# ---------- Deployment ----------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: nanobot-factory
+  labels:
+    app: minio
+    app.kubernetes.io/component: object-storage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+        app.kubernetes.io/component: object-storage
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - /data
+            - --console-address
+            - ":9001"
+          envFrom:
+            - secretRef:
+                name: minio-credentials
+          ports:
+            - name: api
+              containerPort: 9000
+              protocol: TCP
+            - name: console
+              containerPort: 9001
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+              claimName: minio-data
+---
+# ---------- Job: create default buckets on first boot ----------
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bucket-init
+  namespace: nanobot-factory
+  labels:
+    app: minio
+    app.kubernetes.io/component: object-storage
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: minio
+        job: bucket-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: minio-credentials
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              mc alias set local http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+              mc mb --ignore-existing local/nanobot-assets
+              mc mb --ignore-existing local/nanobot-exports
+              mc anonymous set download local/nanobot-exports || true
+              echo "MinIO buckets ready"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: minio
+  namespace: nanobot-factory

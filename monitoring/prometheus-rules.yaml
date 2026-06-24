@@ -1,0 +1,303 @@
+# =============================================================================
+# P5-W2: Prometheus Alerting Rules — 24 rules
+# =============================================================================
+# 分 4 类: 12 service-level (high-error-rate / high-latency / low-throughput)
+#         + 5 资源 (PG/Redis/Celery/OSS)
+#         + 5 业务 (流水线失败 / 计费异常 / 工单 SLA / MemoryPalace / Skill)
+#         + 3 安全 (登录失败 / 限流 / 审计链断链)
+# 严重级别: critical / warning / info
+# 通过 `promtool check rules` 校验
+# =============================================================================
+groups:
+  # ──────────────────────────────────────────────────────────────────────
+  # 1. Service-level alerts (12 svc × 3 metric = 36 potential, top 12 组合)
+  # ──────────────────────────────────────────────────────────────────────
+  - name: imdf_service_alerts
+    interval: 30s
+    rules:
+      - alert: ImdfServiceHighErrorRate
+        expr: |
+          (
+            sum by (microservice) (rate(imdf_requests_total{status_code=~"5.."}[5m]))
+            / sum by (microservice) (rate(imdf_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: service
+        annotations:
+          summary: '{{ $labels.microservice }} 5xx 错误率 {{ $value | humanizePercentage }}'
+          description: |
+            服务 {{ $labels.microservice }} 在过去 5 分钟内 HTTP 5xx 错误率超过 5%。
+            阈值: 5%, 持续 5 分钟。
+            处置: 检查服务日志 + 上游依赖 + 数据库连接。
+          runbook_url: https://wiki.imdf.example.com/runbook/high-error-rate
+
+      - alert: ImdfServiceHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, microservice) (rate(imdf_request_latency_seconds_bucket[5m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          category: service
+        annotations:
+          summary: '{{ $labels.microservice }} P99 延迟 {{ $value | humanizeDuration }}'
+          description: 'P99 延迟超过 2 秒, 持续 10 分钟。'
+          runbook_url: https://wiki.imdf.example.com/runbook/high-latency
+
+      - alert: ImdfServiceLowThroughput
+        expr: |
+          (
+            sum by (microservice) (rate(imdf_requests_total[10m]))
+            < 0.1
+          )
+          and
+          (sum by (microservice) (rate(imdf_requests_total[1h] offset 1d)) > 1)
+        for: 15m
+        labels:
+          severity: warning
+          category: service
+        annotations:
+          summary: '{{ $labels.microservice }} 流量骤降'
+          description: 'QPS < 0.1, 同比昨天 1h 持续 15 分钟, 可能是服务卡死。'
+          runbook_url: https://wiki.imdf.example.com/runbook/low-throughput
+
+      - alert: ImdfGatewayDown
+        expr: up{job="imdf-gateway"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: service
+        annotations:
+          summary: 'imdf-gateway 不可用'
+          description: 'imdf-gateway 心跳丢失 ≥ 2 分钟, 所有流量入口中断。'
+          runbook_url: https://wiki.imdf.example.com/runbook/gateway-down
+
+      - alert: ImdfServiceDown
+        expr: up{job=~"imdf-.*"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          category: service
+        annotations:
+          summary: '{{ $labels.job }} 探活失败'
+          description: '微服务 {{ $labels.job }} 探活失败 ≥ 3 分钟。'
+
+      - alert: ImdfServiceRestartLoop
+        expr: increase(kube_pod_container_status_restarts_total{pod=~"imdf-.*"}[15m]) > 3
+        for: 5m
+        labels:
+          severity: critical
+          category: service
+        annotations:
+          summary: '{{ $labels.pod }} 频繁重启 {{ $value }} 次/15m'
+          description: 'Pod 在 15 分钟内重启超过 3 次, 可能是 OOM / panic 循环。'
+          runbook_url: https://wiki.imdf.example.com/runbook/restart-loop
+
+      - alert: ImdfServiceHighMemory
+        expr: |
+          (
+            container_memory_working_set_bytes{pod=~"imdf-.*"}
+            / container_spec_memory_limit_bytes{pod=~"imdf-.*"}
+          ) > 0.90
+        for: 10m
+        labels:
+          severity: warning
+          category: service
+        annotations:
+          summary: '{{ $labels.pod }} 内存 {{ $value | humanizePercentage }}'
+          description: 'Pod 内存使用率 > 90% 限制, 持续 10 分钟, 即将 OOM。'
+
+  # ──────────────────────────────────────────────────────────────────────
+  # 2. Resource alerts (PG / Redis / Celery / OSS)
+  # ──────────────────────────────────────────────────────────────────────
+  - name: imdf_resource_alerts
+    interval: 30s
+    rules:
+      - alert: PostgresConnectionsHigh
+        expr: |
+          (sum(pg_stat_activity_count) by (datname)
+           / on(datname) pg_settings_max_connections) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: 'PostgreSQL {{ $labels.datname }} 连接使用率 {{ $value | humanizePercentage }}'
+          description: 'PG 连接数 > 85% 阈值, 持续 5 分钟。'
+
+      - alert: PostgresReplicationLag
+        expr: pg_replication_lag_seconds > 60
+        for: 5m
+        labels:
+          severity: critical
+          category: resource
+        annotations:
+          summary: 'PG 副本延迟 {{ $value }}s'
+          description: 'PostgreSQL 副本落后主库超过 60 秒。'
+
+      - alert: RedisMemoryHigh
+        expr: |
+          (redis_memory_used_bytes / redis_memory_max_bytes) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: 'Redis 内存使用率 {{ $value | humanizePercentage }}'
+          description: 'Redis 内存 > 80%, 持续 10 分钟。考虑 LRU 清理或扩容。'
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: resource
+        annotations:
+          summary: 'Redis 不可用'
+          description: 'Redis 心跳丢失 ≥ 1 分钟, Celery broker + 缓存全断。'
+
+      - alert: CeleryQueueBacklog
+        expr: |
+          celery_queue_length{queue="default"} > 10000
+        for: 15m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: 'Celery 队列积压 {{ $value }} 条'
+          description: 'default 队列 > 10000 任务积压 15 分钟。'
+
+      - alert: OSSBucketSizeAnomaly
+        expr: |
+          (
+            increase(oss_bucket_size_bytes{bucket="imdf-assets"}[1h])
+            > 50 * 1024 * 1024 * 1024
+          )
+        for: 30m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: 'OSS 资产桶 1h 增长 > 50 GB'
+          description: 'imdf-assets 桶 1h 增长超过 50 GB, 检查是否有失控上传。'
+
+  # ──────────────────────────────────────────────────────────────────────
+  # 3. Business alerts (流水线 / 计费 / SLA / MemoryPalace / Skill)
+  # ──────────────────────────────────────────────────────────────────────
+  - name: imdf_business_alerts
+    interval: 60s
+    rules:
+      - alert: PipelineFailureRateHigh
+        expr: |
+          (
+            sum(rate(imdf_pipeline_failures_total[10m]))
+            / sum(rate(imdf_pipeline_executions_total[10m]))
+          ) > 0.10
+        for: 10m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: '流水线失败率 {{ $value | humanizePercentage }}'
+          description: '数据流水线失败率 > 10% 持续 10 分钟。'
+
+      - alert: BillingAnomaly
+        expr: |
+          (
+            sum(rate(imdf_billing_charges_usd_total[1h]))
+            > 5 * sum(rate(imdf_billing_charges_usd_total[1h] offset 7d))
+          )
+        for: 30m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: '计费异常激增'
+          description: '当前 1h 计费是过去 7 天同期 5 倍, 持续 30 分钟。'
+
+      - alert: TicketSLABreach
+        expr: |
+          (
+            sum(imdf_tickets_sla_breach_count) by (priority)
+            > 10
+          )
+        for: 5m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: '工单 SLA 违约 ≥ 10 ({{ $labels.priority }})'
+          description: '优先级 {{ $labels.priority }} 工单 SLA 违约数超过 10, 持续 5 分钟。'
+
+      - alert: MemoryPalaceCapacityHigh
+        expr: |
+          (imdf_memory_palace_size_bytes / imdf_memory_palace_quota_bytes) > 0.90
+        for: 30m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: 'MemoryPalace 容量 {{ $value | humanizePercentage }}'
+          description: 'MemoryPalace 记忆存储 > 90% 配额, 持续 30 分钟。'
+
+      - alert: SkillMarketplaceAnomaly
+        expr: |
+          (
+            abs(
+              sum(rate(imdf_skill_invocations_total[1h]))
+              - sum(rate(imdf_skill_invocations_total[1h] offset 1d))
+            )
+            / sum(rate(imdf_skill_invocations_total[1h] offset 1d))
+          ) > 2.0
+        for: 30m
+        labels:
+          severity: info
+          category: business
+        annotations:
+          summary: 'Skill Marketplace 调用波动 > 200%'
+          description: 'Skill 调用量同比昨天偏离超过 200%。'
+
+  # ──────────────────────────────────────────────────────────────────────
+  # 4. Security alerts (登录失败 / 限流 / 审计链)
+  # ──────────────────────────────────────────────────────────────────────
+  - name: imdf_security_alerts
+    interval: 30s
+    rules:
+      - alert: LoginFailureBurst
+        expr: |
+          sum(rate(imdf_auth_login_failures_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: '登录失败激增 {{ $value }} 次/秒'
+          description: '5 分钟平均登录失败 > 5 次/秒, 可能是撞库攻击。'
+          runbook_url: https://wiki.imdf.example.com/runbook/brute-force
+
+      - alert: RateLimitTriggered
+        expr: |
+          sum(rate(imdf_rate_limit_triggered_total[5m])) > 10
+        for: 10m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: '限流触发激增 {{ $value }} 次/秒'
+          description: 'IP / 用户限流触发 > 10 次/秒, 持续 10 分钟。'
+
+      - alert: AuditChainBroken
+        expr: |
+          (imdf_audit_chain_last_block_index
+           - on() group_left imdf_audit_chain_expected_index) > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: '审计链断链 {{ $value }} 块未提交'
+          description: '审计链落后预期 ≥ 5 块, 持续 5 分钟, OWASP A08 数据完整性告警。'
+          runbook_url: https://wiki.imdf.example.com/runbook/audit-chain

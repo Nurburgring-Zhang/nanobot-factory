@@ -1,0 +1,70 @@
+
+/* === Dashboard v4 增强样式 === */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+/* 质量趋势条形图 */
+.quality-bars { display:flex; flex-direction:column; gap:6px; }
+.qbar-row { display:flex; align-items:center; gap:8px; font-size:11px; }
+.qbar-label { width:90px; text-align:right; color:var(--text-secondary); flex-shrink:0; }
+.qbar-track { flex:1; height:14px; background:var(--bg-primary); border-radius:7px; overflow:hidden; }
+.qbar-fill { height:100%; border-radius:7px; transition:width 0.6s; }
+.qbar-fill.green { background:var(--green); }
+.qbar-fill.blue { background:var(--blue); }
+.qbar-fill.orange { background:var(--orange); }
+.qbar-fill.red { background:var(--red); }
+.qbar-val { width:35px; font-size:11px; color:var(--text-primary); }
+/* 管线状态 */
+.pipeline-list { display:flex; flex-direction:column; gap:6px; }
+.pipeline-item { display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--bg-primary); border-radius:4px; font-size:12px; }
+.pipe-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.pipe-dot.green { background:var(--green); }
+.pipe-dot.blue { background:var(--blue); }
+.pipe-dot.orange { background:var(--orange); }
+.pipe-name { flex:1; color:var(--text-primary); }
+.pipe-status { color:var(--text-secondary); font-size:10px; }
+.pipe-value { color:var(--text-secondary); font-size:10px; }
+/* 快捷操作 */
+.shortcuts { display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:8px; }
+.shortcut-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 8px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.2s; }
+.shortcut-btn:hover { border-color:var(--border-active); transform:translateY(-2px); }
+.shortcut-icon { font-size:22px; }
+.shortcut-label { font-size:11px; color:var(--text-secondary); }
+/* 告警列表 */
+.alerts-list { display:flex; flex-direction:column; gap:4px; }
+.alert-item { padding:8px 10px; border-radius:4px; font-size:11px; display:flex; gap:6px; align-items:flex-start; }
+.alert-item.warn { background:rgba(255,165,0,0.1); border-left:3px solid var(--orange); color:#ffb86c; }
+.alert-item.err { background:rgba(255,80,80,0.1); border-left:3px solid var(--red); color:#ff6b6b; }
+.alert-item.info { background:rgba(100,150,255,0.05); border-left:3px solid var(--blue); color:var(--text-secondary); }
+/* 指标增强 */
+.metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.metric-card { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:4px; }
+.metric-icon { font-size:20px; }
+.metric-label { font-size:11px; color:var(--text-secondary); }
+.metric-value { font-size:22px; font-weight:700; }
+.metric-value.green { color:var(--green); }
+.metric-value.blue { color:var(--blue); }
+.metric-value.orange { color:var(--orange); }
+.metric-value.purple { color:#a78bfa; }
+.metric-sub { font-size:10px; color:var(--text-secondary); }
+/* 底栏 */
+.footer-bar { display:flex; gap:8px; align-items:center; justify-content:center; padding:10px 0; margin-top:16px; border-top:1px solid var(--border); font-size:10px; color:var(--text-secondary); }
+.footer-bar span { opacity:0.6; }

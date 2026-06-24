@@ -1,0 +1,35 @@
+apiVersion: v2
+name: nanobot-factory
+description: |
+  AIGC production platform — FastAPI backend + Vue 3 web UI for the
+  "智影数据工场" / "nanobot-factory" multimedia annotation, rendering
+  and orchestration suite.
+type: application
+
+# Chart version
+version: 0.1.0
+
+# Application version (matches the image tag)
+appVersion: "1.0.0"
+
+kubeVersion: ">=1.25.0-0"
+
+home: https://github.com/MiniMax-AI/nanobot-factory
+sources:
+  - https://github.com/MiniMax-AI/nanobot-factory
+
+keywords:
+  - aigc
+  - annotation
+  - fastapi
+  - vue
+  - multimodal
+  - ai-orchestration
+
+maintainers:
+  - name: MiniMax Agent
+    email: dev@example.com
+
+annotations:
+  category: AI/ML
+  licenses: MIT

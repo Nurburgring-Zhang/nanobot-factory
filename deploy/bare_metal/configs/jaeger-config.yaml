@@ -1,0 +1,59 @@
+# ============================================================================
+# jaeger-config.yaml — IMDF Jaeger v1.55 (all-in-one, single host)
+# ----------------------------------------------------------------------------
+# In production swap to a collector+query split with Kafka between agent→collector.
+# ============================================================================
+
+# Span storage
+span_storage_type: badger   # local file-backed; for ES/BDB swap to "elasticsearch"
+badger:
+  ephemeral: false
+  directory: /var/lib/jaeger/badger
+  history: 1024
+
+# Collector (OTLP gRPC + Jaeger thrift + Zipkin)
+collector:
+  enabled: true
+  http_server:
+    host_port: :14268
+  grpc_server:
+    host_port: :14250
+  zipkin:
+    host_port: :9411
+  otlp:
+    enabled: true
+    grpc:
+      host_port: :4317
+    http:
+      host_port: :4318
+  max_payload_size: 16777216   # 16 MiB
+  num_workers: 50
+
+# Query
+query:
+  enabled: true
+  base_url: http://127.0.0.1:16686
+  http_server:
+    host_port: :16686
+  grpc_server:
+    host_port: :16685
+  max_clock_skew_adjustment: 30s
+  log_level: info
+
+# Sampling (const = 100% in dev; in prod lower to 0.1 and add tail-based via collector)
+sampling:
+  type: const
+  param: 1
+
+# Metrics emission (for Prometheus)
+metrics:
+  backend: prometheus
+  prometheus:
+    host_port: :8888
+  reporter:
+    disable: false
+
+# Logging
+log_level: info
+logger:
+  format: json

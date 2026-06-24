@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nanobot-factory.fullname" . }}-config
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "config") | nindent 4 }}
+data:
+  LOG_LEVEL: {{ .Values.logging.level | quote }}
+  DEV_MODE: "false"
+  PYTHONUNBUFFERED: "1"
+  TZ: "UTC"
+
+  POSTGRES_HOST: "postgres.nanobot-factory.svc.cluster.local"
+  POSTGRES_PORT: {{ .Values.postgres.port | quote }}
+  POSTGRES_DB: {{ .Values.postgres.database | quote }}
+  POSTGRES_USER: {{ .Values.postgres.user | quote }}
+  PG_DSN: "postgresql://{{ .Values.postgres.user }}:{{ .Values.secrets.postgresPassword }}@postgres.nanobot-factory.svc.cluster.local:{{ .Values.postgres.port }}/{{ .Values.postgres.database }}"
+
+  REDIS_HOST: "redis.nanobot-factory.svc.cluster.local"
+  REDIS_PORT: "6379"
+  REDIS_URL: "redis://redis.nanobot-factory.svc.cluster.local:6379/0"
+  CELERY_BROKER_URL: "redis://redis.nanobot-factory.svc.cluster.local:6379/0"
+  CELERY_RESULT_BACKEND: "redis://redis.nanobot-factory.svc.cluster.local:6379/1"
+
+  MINIO_ENDPOINT: "minio.nanobot-factory.svc.cluster.local:{{ .Values.minio.apiPort }}"
+  S3_ENDPOINT_URL: "http://minio.nanobot-factory.svc.cluster.local:{{ .Values.minio.apiPort }}"
+  S3_BUCKET_ASSETS: "nanobot-assets"
+  S3_BUCKET_EXPORTS: "nanobot-exports"
+
+  ALLOWED_ORIGINS: "https://app.nanobot-factory.com,https://admin.nanobot-factory.com"
+  CORS_ALLOW_ALL: "false"
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+
+  GATEWAY_HOST: "0.0.0.0"
+  GATEWAY_PORT: "8000"
+  GATEWAY_UPSTREAM: "http://app.nanobot-factory.svc.cluster.local:8001"
+  GATEWAY_LOG_LEVEL: {{ .Values.logging.level | quote }}
+
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.logging.otelEndpoint | quote }}
+  OTEL_SERVICE_NAME: "nanobot-factory"
+
+  FEATURE_PGVECTOR_ENABLED: {{ .Values.features.pgvector | quote }}
+  FEATURE_CELERY_ENABLED: {{ .Values.features.celery | quote }}
+  FEATURE_S3_ENABLED: {{ .Values.features.s3 | quote }}

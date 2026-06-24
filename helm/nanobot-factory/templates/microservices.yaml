@@ -1,0 +1,38 @@
+{{- /* Renders the 12 microservice deployments via the _microservice.tpl helper. */ -}}
+{{- $ctx := . -}}
+{{- if eq (int $ctx.Values.services.user.port) 8001 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "user-service" "module" "backend.services.user_service.main" "port" 8001 "heavy" false) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.asset.port) 8002 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "asset-service" "module" "backend.services.asset_service.main" "port" 8002 "heavy" false) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.annotation.port) 8003 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "annotation-service" "module" "backend.services.annotation_service.main" "port" 8003 "heavy" false) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.cleaning.port) 8004 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "cleaning-service" "module" "backend.services.cleaning_service.main" "port" 8004 "heavy" true) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.scoring.port) 8005 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "scoring-service" "module" "backend.services.scoring_service.main" "port" 8005 "heavy" true) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.dataset.port) 8006 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "dataset-service" "module" "backend.services.dataset_service.main" "port" 8006 "heavy" true) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.evaluation.port) 8007 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "evaluation-service" "module" "backend.services.evaluation_service.main" "port" 8007 "heavy" true) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.agent.port) 8008 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "agent-service" "module" "backend.services.agent_service.main" "port" 8008 "heavy" true) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.workflow.port) 8009 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "workflow-service" "module" "backend.services.workflow_service.main" "port" 8009 "heavy" true) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.notification.port) 8010 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "notification-service" "module" "backend.services.notification_service.main" "port" 8010 "heavy" false) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.search.port) 8011 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "search-service" "module" "backend.services.search_service.main" "port" 8011 "heavy" true) }}
+{{- end }}
+{{- if eq (int $ctx.Values.services.collection.port) 8012 }}
+{{- include "nanobot-factory.microservice" (dict "ctx" $ctx "name" "collection-service" "module" "backend.services.collection_service.main" "port" 8012 "heavy" false) }}
+{{- end }}

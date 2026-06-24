@@ -1,0 +1,858 @@
+[
+  {
+    "severity": "P1",
+    "category": "DICT_TYPING",
+    "file": "api/api_key_routes.py",
+    "line": 160,
+    "description": "Parameter 'current_user' uses bare 'dict' instead of 'Dict[str, Any]'",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "DICT_TYPING",
+    "file": "api/auth_routes.py",
+    "line": 296,
+    "description": "Parameter 'current_user' uses bare 'dict' instead of 'Dict[str, Any]'",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "DICT_TYPING",
+    "file": "api/canvas_web.py",
+    "line": 2595,
+    "description": "Parameter 'req' uses bare 'dict' instead of 'Dict[str, Any]'",
+    "detail": ""
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 4,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageStat, ImageFilter"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 25,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 26,
+    "description": "Module-level import of 'transformers' may crash at import time",
+    "detail": "from transformers import AutoModel, AutoProcessor"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 36,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 37,
+    "description": "Module-level import of 'transformers' may crash at import time",
+    "detail": "from transformers import CLIPModel, CLIPProcessor"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 50,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 66,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 91,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_engine.py",
+    "line": 130,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch, tempfile, os"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/aesthetic_scorer.py",
+    "line": 18,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageStat, ImageFilter, ImageEnhance"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/collection_quality.py",
+    "line": 305,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/collection_quality.py",
+    "line": 315,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/dam_engine.py",
+    "line": 417,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/data/data_edit.py",
+    "line": 12,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageDraw, ImageFilter"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/data/data_t2i.py",
+    "line": 135,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageFilter"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/data/data_t2i.py",
+    "line": 138,
+    "description": "Module-level import of 'cv2' may crash at import time",
+    "detail": "import cv2"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/data_pipeline.py",
+    "line": 226,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageEnhance, ImageOps, ImageFilter"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/drama_engine.py",
+    "line": 582,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageDraw, ImageFont"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 43,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 53,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 69,
+    "description": "Module-level import of 'transformers' may crash at import time",
+    "detail": "from transformers import CLIPModel, CLIPProcessor"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 70,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 414,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch, librosa"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 415,
+    "description": "Module-level import of 'transformers' may crash at import time",
+    "detail": "from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2Processor"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 502,
+    "description": "Module-level import of 'torch' may crash at import time",
+    "detail": "import torch"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 503,
+    "description": "Module-level import of 'transformers' may crash at import time",
+    "detail": "from transformers import VideoMAEForVideoClassification, VideoMAEImageProcessor"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/enhanced_engines.py",
+    "line": 512,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/local_models.py",
+    "line": 66,
+    "description": "Module-level import of 'transformers' may crash at import time",
+    "detail": "from sentence_transformers import SentenceTransformer"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/local_models.py",
+    "line": 80,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/local_models.py",
+    "line": 120,
+    "description": "Module-level import of 'transformers' may crash at import time",
+    "detail": "from sentence_transformers import SentenceTransformer"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/local_models.py",
+    "line": 139,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/local_models.py",
+    "line": 156,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import ImageStat"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/local_models.py",
+    "line": 168,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import ImageFilter"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/preview_engine.py",
+    "line": 107,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/preview_engine.py",
+    "line": 169,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/preview_engine.py",
+    "line": 306,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/preview_engine.py",
+    "line": 371,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/provider_registry.py",
+    "line": 19,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/vector_retrieval.py",
+    "line": 61,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/vector_retrieval.py",
+    "line": 79,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "engines/vector_retrieval.py",
+    "line": 109,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/admin_routes.py",
+    "line": 26,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/aesthetic_routes.py",
+    "line": 15,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/aesthetic_routes.py",
+    "line": 267,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/annotation_history_routes.py",
+    "line": 15,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/annotation_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/api_key_routes.py",
+    "line": 31,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/api_key_routes.py",
+    "line": 43,
+    "description": "Module-level import of 'bcrypt' may crash at import time",
+    "detail": "import bcrypt"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/api_key_routes.py",
+    "line": 48,
+    "description": "Module-level import of 'passlib' may crash at import time",
+    "detail": "from passlib.hash import bcrypt as passlib_bcrypt"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/api_key_routes.py",
+    "line": 48,
+    "description": "Module-level import of 'bcrypt' may crash at import time",
+    "detail": "from passlib.hash import bcrypt as passlib_bcrypt"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/audio_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/auth_routes.py",
+    "line": 9,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/auth_routes.py",
+    "line": 12,
+    "description": "Module-level import of 'passlib' may crash at import time",
+    "detail": "from passlib.context import CryptContext"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/batch_routes.py",
+    "line": 16,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/board_manager.py",
+    "line": 15,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/book_routes.py",
+    "line": 17,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/canvas_3d.py",
+    "line": 32,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/canvas_web.py",
+    "line": 62,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/canvas_web.py",
+    "line": 2688,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageDraw, ImageFont"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/canvas_web.py",
+    "line": 2825,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import ImageFont"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/canvas_web.py",
+    "line": 3259,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageDraw, ImageFont"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/canvas_web.py",
+    "line": 3615,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageDraw, ImageFont"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/classify_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/cloud_storage.py",
+    "line": 37,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/delivery_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/discovery_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/drama_routes.py",
+    "line": 14,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/enhanced_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/export_enhanced_routes.py",
+    "line": 20,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/export_enhanced_routes.py",
+    "line": 161,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageDraw, ImageFont"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/export_routes.py",
+    "line": 16,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/external_providers.py",
+    "line": 17,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/external_routes.py",
+    "line": 17,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/figma_bridge.py",
+    "line": 14,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/image_processor.py",
+    "line": 17,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/image_processor.py",
+    "line": 18,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image, ImageDraw, ImageFont, ImageFilter"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/local_model_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/media_manager.py",
+    "line": 19,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/media_manager.py",
+    "line": 240,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/media_manager.py",
+    "line": 337,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/model_routes.py",
+    "line": 13,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/pe_routes.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/personnel_routes.py",
+    "line": 17,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/prelabel_router.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/quality_routes.py",
+    "line": 43,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/quality_v2_routes.py",
+    "line": 6,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/resource_library.py",
+    "line": 18,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/resource_library.py",
+    "line": 438,
+    "description": "Module-level import of 'PIL' may crash at import time",
+    "detail": "from PIL import Image"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/routes_extended.py",
+    "line": 3,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/scheduler_routes.py",
+    "line": 21,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/search_routes.py",
+    "line": 23,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/sharing_routes.py",
+    "line": 21,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/system_config.py",
+    "line": 15,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/template_routes.py",
+    "line": 23,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/theme_manager.py",
+    "line": 13,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel, Field"
+  },
+  {
+    "severity": "P2",
+    "category": "RISKY_IMPORT",
+    "file": "api/transfer_routes.py",
+    "line": 23,
+    "description": "Module-level import of 'pydantic' may crash at import time",
+    "detail": "from pydantic import BaseModel"
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "engines/event_engine.py",
+    "line": 241,
+    "description": "Sync function 'publish_sync' calls async function 'publish' without await",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "engines/event_engine.py",
+    "line": 244,
+    "description": "Sync function 'publish_sync' calls async function 'publish' without await",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "engines/event_engine.py",
+    "line": 246,
+    "description": "Sync function 'publish_sync' calls async function 'publish' without await",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "engines/scheduler_engine.py",
+    "line": 431,
+    "description": "Sync function 'run_job_now' calls async function '_run_scheduled_job' without await",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "engines/scheduler_engine.py",
+    "line": 433,
+    "description": "Sync function 'run_job_now' calls async function '_run_scheduled_job' without await",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "engines/scheduler_engine.py",
+    "line": 435,
+    "description": "Sync function 'run_job_now' calls async function '_run_scheduled_job' without await",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "api/resource_library.py",
+    "line": 427,
+    "description": "Sync function '_resolve_source' calls async function '_fetch_remote' without await",
+    "detail": ""
+  },
+  {
+    "severity": "P1",
+    "category": "SYNC_CALLS_ASYNC",
+    "file": "api/resource_library.py",
+    "line": 431,
+    "description": "Sync function '_resolve_source' calls async function '_fetch_remote' without await",
+    "detail": ""
+  }
+]

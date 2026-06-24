@@ -1,0 +1,137 @@
+# =====================================================================
+# user-service (port 8001) - P3-2-W1
+# =====================================================================
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user-service
+  namespace: nanobot-factory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: nanobot-factory
+  labels:
+    app: user-service
+    app.kubernetes.io/component: microservice
+    app.kubernetes.io/version: "v0.8.0"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        app.kubernetes.io/component: microservice
+    spec:
+      serviceAccountName: user-service
+      containers:
+        - name: user-service
+          image: ghcr.io/minimax-ai/nanobot-factory:v0.8.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/venv/bin/uvicorn
+            - backend.services.user_service.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8001"
+            - --log-level
+            - info
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+          env:
+            - name: NANOBOT_PORT
+              value: "8001"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nanobot-secrets
+                  key: JWT_SECRET
+          envFrom:
+            - configMapRef:
+                name: nanobot-config
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8001
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: nanobot-factory
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+  selector:
+    app: user-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user-service
+  namespace: nanobot-factory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300

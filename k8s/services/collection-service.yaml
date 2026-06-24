@@ -1,0 +1,127 @@
+# =====================================================================
+# collection-service (port 8012) - P3-5-W2
+# =====================================================================
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collection-service
+  namespace: nanobot-factory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collection-service
+  namespace: nanobot-factory
+  labels:
+    app: collection-service
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: collection-service
+  template:
+    metadata:
+      labels:
+        app: collection-service
+        app.kubernetes.io/component: microservice
+    spec:
+      serviceAccountName: collection-service
+      containers:
+        - name: collection-service
+          image: ghcr.io/minimax-ai/nanobot-factory:v0.8.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /opt/venv/bin/uvicorn
+            - backend.services.collection_service.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8012"
+            - --log-level
+            - info
+          ports:
+            - name: http
+              containerPort: 8012
+              protocol: TCP
+          env:
+            - name: NANOBOT_PORT
+              value: "8012"
+            - name: COLLECTION_SERVICE_URL
+              value: http://collection-service.nanobot-factory.svc.cluster.local:8012
+          envFrom:
+            - configMapRef:
+                name: nanobot-config
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8012
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8012
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collection-service
+  namespace: nanobot-factory
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8012
+      targetPort: 8012
+      protocol: TCP
+  selector:
+    app: collection-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: collection-service
+  namespace: nanobot-factory
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: collection-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300

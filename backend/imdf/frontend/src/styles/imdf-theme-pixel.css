@@ -1,0 +1,747 @@
+/**
+ * Pixel Candy 像素风主题
+ * 触发条件: html[data-theme-style="pixel"]
+ * 设计语言: 奶油底 + 黑描边 + 糖果色块 + 大圆角胶囊 + 硬阴影(neo-brutalism)
+ *
+ * 变量分:
+ *   data-theme-mode="light" 浅色像素
+ *   data-theme-mode="dark"  深色像素
+ */
+
+html[data-theme-style="pixel"][data-theme-mode="light"] {
+  /* 底色 */
+  --px-bg: #FAF3E7;
+  --px-surface: #FFFFFF;
+  --px-muted: #F1E8D5;
+  --px-overlay: rgba(26, 20, 16, 0.45);
+
+  /* 主黑 / 副棕 */
+  --px-ink: #1A1410;
+  --px-ink-soft: #5C4D3E;
+  --px-ink-dim: #8B7B68;
+
+  /* Accent 糖果色 */
+  --px-mint: #A8E6C9;
+  --px-mint-deep: #4ECDC4;
+  --px-pink: #FFB5C5;
+  --px-pink-deep: #FF89A7;
+  --px-yellow: #FFE08A;
+  --px-violet: #C7B8F0;
+  --px-peach: #FFCBA4;
+  --px-sky: #B8DCEC;
+
+  /* 状态 */
+  --px-danger: #FF6B6B;
+  --px-success: #6FD49A;
+}
+
+html[data-theme-style="pixel"][data-theme-mode="dark"] {
+  --px-bg: #1F1A14;
+  --px-surface: #2A2218;
+  --px-muted: #38301F;
+  --px-overlay: rgba(0, 0, 0, 0.7);
+
+  --px-ink: #F5EBD7;
+  --px-ink-soft: #C8B89A;
+  --px-ink-dim: #8B7B68;
+
+  --px-mint: #4ECDC4;
+  --px-mint-deep: #A8E6C9;
+  --px-pink: #FF89A7;
+  --px-pink-deep: #FFB5C5;
+  --px-yellow: #E5C462;
+  --px-violet: #9F8CD4;
+  --px-peach: #E5A878;
+  --px-sky: #7DB6CF;
+
+  --px-danger: #FF8A8A;
+  --px-success: #7FE0AB;
+}
+
+/* ===========================================
+ * 通用度量
+ * =========================================== */
+html[data-theme-style="pixel"] {
+  --px-radius-pill: 9999px;
+  --px-radius-card: 16px;
+  --px-radius-chip: 12px;
+  --px-radius-sm: 8px;
+  --px-on-candy: #1A1410;
+  --px-candy-mint: #A8E6C9;
+  --px-candy-mint-deep: #4ECDC4;
+  --px-candy-pink: #FFB5C5;
+  --px-candy-yellow: #FFE08A;
+  --px-candy-violet: #C7B8F0;
+  --px-candy-peach: #FFCBA4;
+  --px-candy-sky: #B8DCEC;
+  --px-border-w: 2px;
+  --px-shadow-hard: 3px 3px 0 var(--px-ink);
+  --px-shadow-hard-lg: 5px 5px 0 var(--px-ink);
+  --px-shadow-press: 1px 1px 0 var(--px-ink);
+  --px-shadow-soft: 0 2px 0 var(--px-ink);
+  --t8-cut-cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' shape-rendering='crispEdges'><path fill='%23FFE066' stroke='%231A1410' stroke-width='2' d='M11 2h4v4h3v4h-3v3h-3v9H8v-9H5v-3h3V6h3z'/><path fill='%231A1410' d='M10 4h6v2h-6zM8 12h8v2H8z'/></svg>") 14 14, crosshair;
+  --t8-cut-color: var(--px-pink-deep, #c73b6b);
+  --t8-cut-track: var(--px-ink, #1a1410);
+  --t8-cut-button-bg: var(--px-surface, #ffffff);
+  --t8-cut-button-fg: var(--px-pink-deep, #c73b6b);
+  --t8-cut-button-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' shape-rendering='crispEdges'><path fill='black' d='M11 2h4v4h3v4h-3v3h-3v9H8v-9H5v-3h3V6h3z'/></svg>");
+
+  /* 字体 */
+  /* 中文优先：将日文像素字体(DotGothic16)与英文像素字体(Press Start 2P)置于末位， */
+  /* 避免中文逐字回退造成字号参差不齐问题。 */
+  --px-font-display: "M PLUS Rounded 1c", "Noto Sans SC", "PingFang SC",
+    "Microsoft YaHei", system-ui, "DotGothic16", sans-serif;
+  --px-font-pixel: "M PLUS Rounded 1c", "Noto Sans SC", "PingFang SC",
+    "Microsoft YaHei", "DotGothic16", "Press Start 2P", monospace;
+}
+
+/* ===========================================
+ * 全局基底
+ * =========================================== */
+html[data-theme-style="pixel"] body,
+html[data-theme-style="pixel"] #root {
+  font-family: var(--px-font-display);
+  background: var(--px-bg);
+  color: var(--px-ink);
+}
+
+html[data-theme-style="pixel"] {
+  /* 让滚动条简单一点 */
+  scrollbar-width: thin;
+}
+
+/* 选区颜色 */
+html[data-theme-style="pixel"] ::selection {
+  background: var(--px-pink);
+  color: var(--px-ink);
+}
+
+/* ===========================================
+ * 像素风全局兜底：所有节点容器禁用 backdrop-filter blur
+ * -------------------------------------------
+ * 多数节点容器使用了 `style={{ backdropFilter: 'blur(8px)' }}`（inline 样式），
+ * 在像素风（半透明背景 + 模糊滤镜 + GPU 子像素渲染）下会让节点内文字看起来发虚 / 模糊。
+ * 此处用 `!important` 全局覆盖 inline style，无需逐个节点改 tsx 文件。
+ * 影响范围：所有 react-flow 节点 + 行内带 backdrop-filter 的容器；不影响科技风。
+ * =========================================== */
+html[data-theme-style="pixel"] .react-flow__node,
+html[data-theme-style="pixel"] .react-flow__node > div,
+html[data-theme-style="pixel"] .react-flow__node * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ===========================================
+ * 实用类(在组件中通过 className="px-*" 启用)
+ * =========================================== */
+
+/* 卡片容器 */
+html[data-theme-style="pixel"] .px-card {
+  background: var(--px-surface) !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: var(--px-radius-card) !important;
+  box-shadow: var(--px-shadow-hard) !important;
+  color: var(--px-ink) !important;
+}
+
+html[data-theme-style="pixel"] .px-panel {
+  background: var(--px-bg) !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  color: var(--px-ink) !important;
+}
+
+/* 胶囊按钮 */
+html[data-theme-style="pixel"] .px-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: var(--px-border-w) solid var(--px-ink);
+  border-radius: var(--px-radius-pill);
+  background: var(--px-surface);
+  color: var(--px-ink);
+  font-weight: 600;
+  font-size: 12px;
+  box-shadow: var(--px-shadow-hard);
+  transition: transform 80ms ease, box-shadow 80ms ease;
+  cursor: pointer;
+}
+
+html[data-theme-style="pixel"] .px-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--px-ink);
+}
+
+html[data-theme-style="pixel"] .px-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--px-shadow-press);
+}
+
+html[data-theme-style="pixel"] .px-btn--mint,
+html[data-theme-style="pixel"] .px-btn--pink,
+html[data-theme-style="pixel"] .px-btn--yellow,
+html[data-theme-style="pixel"] .px-btn--violet,
+html[data-theme-style="pixel"] .px-btn--peach,
+html[data-theme-style="pixel"] .px-btn--sky {
+  color: var(--px-on-candy) !important;
+}
+html[data-theme-style="pixel"] .px-btn--mint { background: var(--px-candy-mint); }
+html[data-theme-style="pixel"] .px-btn--pink { background: var(--px-candy-pink); }
+html[data-theme-style="pixel"] .px-btn--yellow { background: var(--px-candy-yellow); }
+html[data-theme-style="pixel"] .px-btn--violet { background: var(--px-candy-violet); }
+html[data-theme-style="pixel"] .px-btn--peach { background: var(--px-candy-peach); }
+html[data-theme-style="pixel"] .px-btn--sky { background: var(--px-candy-sky); }
+html[data-theme-style="pixel"] .px-btn--ink {
+  background: var(--px-ink);
+  color: var(--px-bg);
+}
+html[data-theme-style="pixel"] .px-btn--ghost {
+  background: transparent;
+  box-shadow: none;
+}
+html[data-theme-style="pixel"] .px-btn--ghost:hover {
+  background: var(--px-muted);
+  color: var(--px-ink) !important;
+  box-shadow: var(--px-shadow-press);
+}
+
+html[data-theme-style="pixel"] .px-btn--sm {
+  padding: 3px 10px;
+  font-size: 11px;
+}
+
+html[data-theme-style="pixel"] .px-btn--icon {
+  padding: 6px;
+  border-radius: var(--px-radius-pill);
+}
+
+/* Chip / Tag */
+html[data-theme-style="pixel"] .px-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1.5px solid var(--px-ink);
+  border-radius: var(--px-radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--px-surface);
+  color: var(--px-ink);
+}
+html[data-theme-style="pixel"] .px-chip--mint,
+html[data-theme-style="pixel"] .px-chip--pink,
+html[data-theme-style="pixel"] .px-chip--yellow,
+html[data-theme-style="pixel"] .px-chip--violet {
+  color: var(--px-on-candy) !important;
+}
+html[data-theme-style="pixel"] .px-chip--mint { background: var(--px-candy-mint); }
+html[data-theme-style="pixel"] .px-chip--pink { background: var(--px-candy-pink); }
+html[data-theme-style="pixel"] .px-chip--yellow { background: var(--px-candy-yellow); }
+html[data-theme-style="pixel"] .px-chip--violet { background: var(--px-candy-violet); }
+html[data-theme-style="pixel"] .px-chip--muted { background: var(--px-muted); }
+html[data-theme-style="pixel"] .px-chip--ink {
+  background: var(--px-ink);
+  color: var(--px-bg);
+}
+
+/* 输入框 */
+html[data-theme-style="pixel"] .px-input {
+  background: var(--px-surface) !important;
+  border: 1.5px solid var(--px-ink) !important;
+  border-radius: 10px !important;
+  color: var(--px-ink) !important;
+  font-family: var(--px-font-display) !important;
+}
+html[data-theme-style="pixel"] .px-input::placeholder {
+  color: var(--px-ink-dim) !important;
+}
+html[data-theme-style="pixel"] .px-input:focus {
+  outline: none !important;
+  border-color: var(--px-mint-deep) !important;
+  box-shadow: 2px 2px 0 var(--px-ink) !important;
+}
+
+/* 列表条目 */
+html[data-theme-style="pixel"] .px-row {
+  border-radius: var(--px-radius-chip) !important;
+  border: 1.5px solid transparent !important;
+  background: transparent !important;
+  color: var(--px-ink) !important;
+  transition: transform 80ms ease, box-shadow 80ms ease,
+    border-color 80ms ease, background-color 80ms ease;
+}
+html[data-theme-style="pixel"] .px-row:hover {
+  background: var(--px-muted) !important;
+  border-color: var(--px-ink) !important;
+}
+html[data-theme-style="pixel"] .px-row.is-active {
+  background: var(--px-candy-mint) !important;
+  border-color: var(--px-ink) !important;
+  box-shadow: var(--px-shadow-press) !important;
+  color: var(--px-on-candy) !important;
+}
+html[data-theme-style="pixel"] .px-row.is-active * {
+  color: var(--px-on-candy) !important;
+}
+
+/* 分组标题 */
+html[data-theme-style="pixel"] .px-group-title {
+  color: var(--px-ink-soft) !important;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* 节点壳层(NodeFrame 替换) */
+html[data-theme-style="pixel"] .px-node {
+  background: var(--px-surface) !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: var(--px-radius-card) !important;
+  box-shadow: var(--px-shadow-hard) !important;
+  color: var(--px-ink) !important;
+}
+html[data-theme-style="pixel"] .px-node.is-selected {
+  outline: 3px dashed var(--px-pink-deep) !important;
+  outline-offset: 3px;
+}
+html[data-theme-style="pixel"] .px-node-header {
+  border-bottom: var(--px-border-w) solid var(--px-ink) !important;
+  font-weight: 700;
+}
+html[data-theme-style="pixel"] .px-node-header--image,
+html[data-theme-style="pixel"] .px-node-header--video,
+html[data-theme-style="pixel"] .px-node-header--audio,
+html[data-theme-style="pixel"] .px-node-header--llm,
+html[data-theme-style="pixel"] .px-node-header--rh,
+html[data-theme-style="pixel"] .px-node-header--text {
+  color: var(--px-on-candy) !important;
+}
+html[data-theme-style="pixel"] .px-node-header--image { background: var(--px-candy-pink); }
+html[data-theme-style="pixel"] .px-node-header--video { background: var(--px-candy-sky); }
+html[data-theme-style="pixel"] .px-node-header--audio { background: var(--px-candy-yellow); }
+html[data-theme-style="pixel"] .px-node-header--llm { background: var(--px-candy-mint); }
+html[data-theme-style="pixel"] .px-node-header--rh { background: var(--px-candy-violet); }
+html[data-theme-style="pixel"] .px-node-header--text { background: var(--px-candy-peach); }
+html[data-theme-style="pixel"] .px-node-header--utility { background: var(--px-muted); }
+
+/* ===========================================
+ * 节点全局兼容层(不改各节点代码,CSS 接管)
+ * 思路:节点根 div 强制覆盖背景与边框,并让内部表单变奥利白底
+ * =========================================== */
+html[data-theme-style="pixel"] .react-flow__node:not(.react-flow__node-groupBox) > div:first-child {
+  background: var(--px-surface) !important;
+  background-color: var(--px-surface) !important;
+  background-image: none !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: var(--px-radius-card) !important;
+  box-shadow: var(--px-shadow-hard) !important;
+  backdrop-filter: none !important;
+  color: var(--px-ink) !important;
+  font-family: var(--px-font-display) !important;
+}
+
+/* 选中节点 */
+html[data-theme-style="pixel"] .react-flow__node.selected:not(.react-flow__node-groupBox) > div:first-child {
+  outline: 3px dashed var(--px-pink-deep) !important;
+  outline-offset: 3px !important;
+  box-shadow: var(--px-shadow-hard-lg) !important;
+}
+
+/* LLM 节点右侧会话面板(像素风适配) */
+html[data-theme-style="pixel"] .react-flow__node-llm .llm-chat-panel {
+  background: var(--px-surface) !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: var(--px-radius-card) !important;
+  box-shadow: var(--px-shadow-hard) !important;
+  backdrop-filter: none !important;
+  color: var(--px-ink) !important;
+}
+/* LLM 节点主体面板(像素风适配 —— flex wrapper 下的子 div，排除 Handle) */
+html[data-theme-style="pixel"] .react-flow__node-llm > div:first-child > div:not(.react-flow__handle) {
+  background: var(--px-surface) !important;
+  background-color: var(--px-surface) !important;
+  background-image: none !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: var(--px-radius-card) !important;
+  box-shadow: var(--px-shadow-hard) !important;
+  backdrop-filter: none !important;
+  color: var(--px-ink) !important;
+  font-family: var(--px-font-display) !important;
+}
+
+/* 节点内部文本颜色多重保底(text-white 、 text-zinc-*、 text-white/x ) */
+html[data-theme-style="pixel"] .react-flow__node .text-white,
+html[data-theme-style="pixel"] .react-flow__node .text-zinc-100,
+html[data-theme-style="pixel"] .react-flow__node .text-zinc-200,
+html[data-theme-style="pixel"] .react-flow__node .text-zinc-300,
+html[data-theme-style="pixel"] .react-flow__node .text-zinc-400,
+html[data-theme-style="pixel"] .react-flow__node .text-zinc-500,
+html[data-theme-style="pixel"] .react-flow__node .text-zinc-600 {
+  color: var(--px-ink) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node [class*="text-white/"] {
+  color: var(--px-ink-soft) !important;
+}
+
+/* 节点内部 input / textarea / select 变奥利白底 */
+html[data-theme-style="pixel"] .react-flow__node input,
+html[data-theme-style="pixel"] .react-flow__node textarea,
+html[data-theme-style="pixel"] .react-flow__node select {
+  background: var(--px-bg) !important;
+  background-color: var(--px-bg) !important;
+  color: var(--px-ink) !important;
+  border: 1.5px solid var(--px-ink) !important;
+  border-radius: 8px !important;
+  font-family: var(--px-font-display) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node input::placeholder,
+html[data-theme-style="pixel"] .react-flow__node textarea::placeholder {
+  color: var(--px-ink-dim) !important;
+  opacity: 1 !important;
+}
+html[data-theme-style="pixel"] .react-flow__node input:focus,
+html[data-theme-style="pixel"] .react-flow__node textarea:focus,
+html[data-theme-style="pixel"] .react-flow__node select:focus {
+  outline: none !important;
+  border-color: var(--px-mint-deep) !important;
+  box-shadow: 2px 2px 0 var(--px-ink) !important;
+}
+
+/* select 下拉打开后的 option(浏览器默认会用系统深色,导致像素风下黑底看不清)
+ * 强制奶油底 + 黑字,选中态用 mint 高亮 */
+html[data-theme-style="pixel"] .react-flow__node select option,
+html[data-theme-style="pixel"] select option {
+  background: var(--px-bg) !important;
+  background-color: var(--px-bg) !important;
+  color: var(--px-ink) !important;
+  font-family: var(--px-font-display) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node select option:checked,
+html[data-theme-style="pixel"] .react-flow__node select option:hover,
+html[data-theme-style="pixel"] select option:checked,
+html[data-theme-style="pixel"] select option:hover {
+  background: var(--px-mint) !important;
+  background-color: var(--px-mint) !important;
+  color: var(--px-ink) !important;
+}
+/* 工具栏/全局非节点内 select 也兜底 */
+html[data-theme-style="pixel"] select {
+  background: var(--px-bg) !important;
+  color: var(--px-ink) !important;
+  border: 1.5px solid var(--px-ink) !important;
+  border-radius: 8px !important;
+  font-family: var(--px-font-display) !important;
+}
+
+/* 节点内 button 默认折中:变胶囊 + 像素黑边 */
+html[data-theme-style="pixel"] .react-flow__node button {
+  font-family: var(--px-font-display) !important;
+}
+
+/* 节点内主操作按钮(全宽 / 主要 CTA)统一像素胶囊 mint 风格,
+   修复 bg-orange-500/20 text-orange-200 等浅色按钮在奶油底上对比度过低问题 */
+html[data-theme-style="pixel"] .react-flow__node button.w-full,
+html[data-theme-style="pixel"] .react-flow__node button.flex-1 {
+  background: var(--px-candy-mint) !important;
+  background-image: none !important;
+  color: var(--px-on-candy) !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: var(--px-radius-pill) !important;
+  box-shadow: 2px 2px 0 var(--px-ink) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px !important;
+  transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s !important;
+}
+html[data-theme-style="pixel"] .react-flow__node button.w-full:hover:not(:disabled),
+html[data-theme-style="pixel"] .react-flow__node button.flex-1:hover:not(:disabled) {
+  background: var(--px-candy-mint-deep) !important;
+  color: var(--px-on-candy) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node button.w-full:active:not(:disabled),
+html[data-theme-style="pixel"] .react-flow__node button.flex-1:active:not(:disabled) {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 0 0 0 var(--px-ink) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node button.w-full:disabled,
+html[data-theme-style="pixel"] .react-flow__node button.flex-1:disabled {
+  background: var(--px-muted) !important;
+  color: var(--px-ink-dim) !important;
+  opacity: 1 !important;
+  box-shadow: 2px 2px 0 var(--px-ink-dim) !important;
+  cursor: not-allowed !important;
+}
+html[data-theme-style="pixel"] .react-flow__node button.w-full svg,
+html[data-theme-style="pixel"] .react-flow__node button.flex-1 svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+html[data-theme-style="pixel"] .react-flow__node button.w-full *,
+html[data-theme-style="pixel"] .react-flow__node button.flex-1 * {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* 节点内浅色文字(text-orange-200/cyan-200/emerald-200/red-300 等)统一变 ink */
+html[data-theme-style="pixel"] .react-flow__node [class*="text-orange-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-amber-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-yellow-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-cyan-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-sky-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-blue-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-emerald-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-green-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-purple-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-violet-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-pink-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-rose-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="text-red-"] {
+  color: var(--px-ink) !important;
+}
+
+/* 节点内浅色半透明色块背景(bg-orange-500/20 等)统一变 muted,避免与奶油底糊一起 */
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-orange-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-amber-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-yellow-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-cyan-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-sky-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-blue-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-emerald-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-green-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-purple-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-violet-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-pink-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-rose-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-red-"] {
+  background-color: var(--px-muted) !important;
+  background-image: none !important;
+}
+
+/* 主操作按钮强制覆盖颜色背景(优先级高于上面的 bg-* 兜底) */
+html[data-theme-style="pixel"] .react-flow__node button.w-full[class*="bg-"],
+html[data-theme-style="pixel"] .react-flow__node button.flex-1[class*="bg-"] {
+  background-color: var(--px-candy-mint) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node button.w-full[class*="bg-"]:hover:not(:disabled),
+html[data-theme-style="pixel"] .react-flow__node button.flex-1[class*="bg-"]:hover:not(:disabled) {
+  background-color: var(--px-candy-mint-deep) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node button.w-full[class*="bg-"]:disabled,
+html[data-theme-style="pixel"] .react-flow__node button.flex-1[class*="bg-"]:disabled {
+  background-color: var(--px-muted) !important;
+}
+
+/* 节点内部 bg-zinc-*/bg-white/* 背景调为浅奥利 */
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-zinc-"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-white/"],
+html[data-theme-style="pixel"] .react-flow__node [class*="bg-black/"] {
+  background-color: var(--px-bg) !important;
+  background-image: none !important;
+}
+
+/* 节点内部 border-white/* / border-black/* 十陆黑边 */
+html[data-theme-style="pixel"] .react-flow__node [class*="border-white/"],
+html[data-theme-style="pixel"] .react-flow__node [class*="border-black/"],
+html[data-theme-style="pixel"] .react-flow__node .border-white\/10,
+html[data-theme-style="pixel"] .react-flow__node .border-zinc-700,
+html[data-theme-style="pixel"] .react-flow__node .border-zinc-800 {
+  border-color: var(--px-ink) !important;
+}
+
+/* 节点内部 hover 严重变色调成 muted */
+html[data-theme-style="pixel"] .react-flow__node .hover\:bg-white\/10:hover,
+html[data-theme-style="pixel"] .react-flow__node .hover\:bg-black\/5:hover,
+html[data-theme-style="pixel"] .react-flow__node .hover\:bg-white\/5:hover {
+  background-color: var(--px-muted) !important;
+}
+
+/* xyflow Handle 接口圆点变方块 */
+html[data-theme-style="pixel"] .react-flow__handle {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 2px !important;
+  border: 2px solid var(--px-ink) !important;
+  background: var(--px-candy-yellow) !important;
+  /* 像素风专属光标: cell (方格+十字), 比 crosshair 更贴近像素肉眼 */
+  cursor: cell !important;
+}
+html[data-theme-style="pixel"] .react-flow__handle:hover {
+  cursor: cell !important;
+}
+/* 像素风下 hit area 扩散改方形升级 (区别于科技风圆形) */
+html[data-theme-style="pixel"] .react-flow__handle::before {
+  border-radius: 0 !important;
+}
+
+/* === 像素风 SHIFT 剩刀模式 === */
+/* 黄色填充+黑边 8-bit 剩刀 */
+html[data-theme-style="pixel"] body.cut-mode,
+html[data-theme-style="pixel"] body.cut-mode * {
+  cursor: var(--t8-cut-cursor, crosshair) !important;
+}
+/* 预览态(仅按住 SHIFT) 也同步走黄色 8-bit 剩刀 */
+html[data-theme-style="pixel"] body.shift-mode .react-flow__pane,
+html[data-theme-style="pixel"] body.shift-mode .react-flow__node-groupBox {
+  cursor: var(--t8-cut-cursor, crosshair) !important;
+}
+/* 像素风待切 edge: 使用 粉色(px-pink) 高亮 + 均匀虚线 */
+html[data-theme-style="pixel"] .react-flow__edge.cut-marked .react-flow__edge-path {
+  stroke: var(--px-pink-deep, #C73B6B) !important;
+  stroke-width: 3.5 !important;
+  stroke-dasharray: 4 4 !important;
+  stroke-linecap: square !important;
+}
+/* 像素风轨迹: 黑色方虚线 */
+html[data-theme-style="pixel"] .cut-overlay-svg .cut-overlay-path {
+  stroke: var(--px-ink, #1A1410);
+  stroke-width: 2.5;
+  stroke-dasharray: 4 4;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+html[data-theme-style="pixel"] .react-flow__handle.target {
+  background: var(--px-candy-mint) !important;
+}
+html[data-theme-style="pixel"] .react-flow__handle.source {
+  background: var(--px-candy-pink) !important;
+}
+
+/* 连线 */
+html[data-theme-style="pixel"] .react-flow__edge-path {
+  stroke: var(--px-ink) !important;
+  stroke-width: 2.5 !important;
+  stroke-linecap: square !important;
+}
+html[data-theme-style="pixel"] .react-flow__edge.selected .react-flow__edge-path,
+html[data-theme-style="pixel"] .react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--px-pink-deep) !important;
+}
+
+/* 画布背景:点变方块 */
+html[data-theme-style="pixel"] .react-flow__background {
+  background-color: var(--px-bg) !important;
+}
+html[data-theme-style="pixel"] .react-flow__background-pattern circle {
+  fill: var(--px-ink-dim) !important;
+  opacity: 0.35;
+}
+
+/* 选区框 */
+html[data-theme-style="pixel"] .react-flow__nodesselection-rect,
+html[data-theme-style="pixel"] .react-flow__selection {
+  background: rgba(168, 230, 201, 0.18) !important;
+  border: 1.5px dashed var(--px-ink) !important;
+}
+
+/* 控制器 */
+html[data-theme-style="pixel"] .react-flow__controls {
+  background: var(--px-surface) !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--px-shadow-hard) !important;
+  overflow: hidden;
+}
+html[data-theme-style="pixel"] .react-flow__controls-button {
+  background: var(--px-surface) !important;
+  border-bottom: 1.5px solid var(--px-ink) !important;
+  color: var(--px-ink) !important;
+}
+html[data-theme-style="pixel"] .react-flow__controls-button:hover {
+  background: var(--px-candy-mint) !important;
+}
+
+/* MiniMap */
+html[data-theme-style="pixel"] .react-flow__minimap {
+  background: var(--px-surface) !important;
+  border: var(--px-border-w) solid var(--px-ink) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--px-shadow-hard) !important;
+}
+
+/* 模态遮罩 */
+html[data-theme-style="pixel"] .px-modal-mask {
+  background-color: var(--px-overlay) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-theme-style="pixel"][data-theme-mode="dark"] .px-modal-mask {
+  background-color: rgba(7, 5, 4, 0.78) !important;
+}
+
+/* 滚动条 */
+html[data-theme-style="pixel"] .react-flow__node ::-webkit-scrollbar,
+html[data-theme-style="pixel"] .react-flow__node *::-webkit-scrollbar { width: 2px !important; height: 2px !important; }
+html[data-theme-style="pixel"] .react-flow__node ::-webkit-scrollbar-track,
+html[data-theme-style="pixel"] .react-flow__node *::-webkit-scrollbar-track { background: transparent !important; }
+html[data-theme-style="pixel"] .react-flow__node ::-webkit-scrollbar-thumb,
+html[data-theme-style="pixel"] .react-flow__node *::-webkit-scrollbar-thumb {
+  background: var(--px-ink-dim) !important;
+  border-radius: 9999px !important;
+}
+html[data-theme-style="pixel"] .react-flow__node ::-webkit-scrollbar-thumb:hover,
+html[data-theme-style="pixel"] .react-flow__node *::-webkit-scrollbar-thumb:hover {
+  background: var(--px-ink) !important;
+}
+html[data-theme-style="pixel"] .react-flow__node ::-webkit-scrollbar-button,
+html[data-theme-style="pixel"] .react-flow__node *::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; }
+html[data-theme-style="pixel"] .react-flow__node,
+html[data-theme-style="pixel"] .react-flow__node * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--px-ink-dim) transparent;
+}
+html[data-theme-style="pixel"] .px-scroll::-webkit-scrollbar { width: 2px !important; height: 2px !important; }
+html[data-theme-style="pixel"] .px-scroll::-webkit-scrollbar-thumb {
+  background: var(--px-ink-dim) !important;
+  border-radius: 9999px !important;
+}
+
+/* 标题块 */
+html[data-theme-style="pixel"] .px-title {
+  font-family: var(--px-font-pixel);
+  letter-spacing: 0.5px;
+}
+
+/* 进度条(像素方格) */
+html[data-theme-style="pixel"] .px-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border: 1.5px solid var(--px-ink);
+  border-radius: var(--px-radius-pill);
+  background: var(--px-surface);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--px-font-pixel);
+}
+
+/* 通用过渡 */
+html[data-theme-style="pixel"] button,
+html[data-theme-style="pixel"] .px-clickable {
+  transition: transform 80ms ease, box-shadow 80ms ease,
+    background-color 120ms ease, color 120ms ease;
+}
+
+/* === 图像编辑弹窗 · 像素风重塪 === */
+html[data-theme-style="pixel"] .img-edit-overlay {
+  background: rgba(26, 20, 16, 0.55);
+  backdrop-filter: none;
+}
+html[data-theme-style="pixel"] .img-edit-modal {
+  font-family: var(--px-font-display);
+  border-radius: 0 !important;
+}
+html[data-theme-style="pixel"] .img-edit-stage img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 2px solid var(--px-ink);
+  border-radius: 0 !important;
+}
+html[data-theme-style="pixel"] .img-edit-stage .crop-box {
+  border-radius: 0 !important;
+  box-shadow: 0 0 0 9999px rgba(26, 20, 16, 0.55), 2px 2px 0 var(--px-ink) !important;
+}
+html[data-theme-style="pixel"] .img-edit-stage .crop-handle {
+  border-radius: 0 !important;
+  box-shadow: 1px 1px 0 var(--px-ink);
+}

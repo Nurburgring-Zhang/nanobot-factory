@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: blob:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*">
+<title>IMDF 无限数据工场</title>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/pages.css">
+<link rel="stylesheet" href="/css/tertiary.css">
+<link rel="stylesheet" href="/css/deep-modal.css">
+</head>
+<body>
+<div id="app">
+  <!-- 顶栏 -->
+  <header id="topbar">
+    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="菜单">☰</button>
+    <div class="logo">IMDF <span class="logo-sub">无限数据工场</span></div>
+    <div class="search-bar">
+      <input id="globalSearch" placeholder="🔍 多模态搜索 数据集/图片/文档..." onkeydown="if(event.key==='Enter')globalSearch()">
+      <span id="searchModeBadge" class="search-mode-badge" onclick="cycleSearchMode()" title="点击切换搜索模式">🔀混合</span>
+    </div>
+    <div class="top-actions">
+      <span class="theme-toggle" onclick="toggleTheme()" title="切换明/暗主题">
+        <span class="theme-icon-light">☀️</span>
+        <span class="theme-icon-dark">🌙</span>
+      </span>
+      <span class="top-icon" onclick="showNotifications()" title="通知">🔔<span class="badge" id="notifBadge">3</span></span>
+      <span class="top-icon" onclick="showSettings()" title="设置">⚙️</span>
+      <span class="top-icon" onclick="showUserMenu()" title="用户">👤 <span id="userName">admin</span></span>
+    </div>
+  </header>
+
+  <div id="main">
+    <!-- 左侧导航 — 6组31项 -->
+    <nav id="sidebar">
+      <div class="nav-section-title">📋 工作台</div>
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><span class="nav-icon">📊</span> 今日概览</div>
+      <div class="nav-item" data-page="tasks" onclick="navigate('tasks')"><span class="nav-icon">📋</span> 我的任务 <span class="nav-badge" id="taskBadge">3</span></div>
+      <div class="nav-item" data-page="personal-workspace" onclick="navigate('personal-workspace')"><span class="nav-icon">👤</span> 个人工作台</div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">📦 数据管理</div>
+      <div class="nav-item" data-page="datasets" onclick="navigate('datasets')"><span class="nav-icon">📁</span> 数据集</div>
+      <div class="nav-item" data-page="data-browser-grid" onclick="navigate('data-browser-grid')"><span class="nav-icon">🔍</span> 数据浏览器</div>
+      <div class="nav-item" data-page="data-viewer" onclick="navigate('data-viewer')"><span class="nav-icon">📊</span> 多视图查阅</div>
+      <div class="nav-item" data-page="lifecycle-pipeline" onclick="navigate('lifecycle-pipeline')"><span class="nav-icon">🔄</span> 生命周期</div>
+      <div class="nav-item" data-page="data-collection" onclick="navigate('data-collection')"><span class="nav-icon">📥</span> 数据采集</div>
+      <div class="nav-item" data-page="oss-storage" onclick="navigate('oss-storage')"><span class="nav-icon">☁️</span> OSS存储</div>
+      <div class="nav-item" data-page="dam-viewer" onclick="navigate('dam-viewer')"><span class="nav-icon">🗄️</span> 资产管理</div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">✏️ 标注与审核</div>
+      <div class="nav-item" data-page="annotate" onclick="navigate('annotate')"><span class="nav-icon">🏷️</span> AI标注</div>
+      <div class="nav-item" data-page="image-editor" onclick="navigate('image-editor')"><span class="nav-icon">🖌️</span> 图片标注</div>
+      <div class="nav-item" data-page="review" onclick="navigate('review')"><span class="nav-icon">📋</span> 审核管理</div>
+      <div class="nav-item" data-page="eval-review" onclick="navigate('eval-review')"><span class="nav-icon">📊</span> 评测审核</div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">🎯 质量体系</div>
+      <div class="nav-item" data-page="pipeline" onclick="navigate('pipeline')"><span class="nav-icon">🔧</span> 质量管线</div>
+      <div class="nav-item" data-page="quality-center" onclick="navigate('quality-center')"><span class="nav-icon">🛡️</span> 质量中心</div>
+      <div class="nav-item" data-page="template-pipeline" onclick="navigate('template-pipeline')"><span class="nav-icon">📋</span> PE模板系统</div>
+      <div class="nav-item" data-page="model-manager" onclick="navigate('model-manager')"><span class="nav-icon">🧠</span> 模型管理</div>
+      <div class="nav-item" data-page="stats" onclick="navigate('stats')"><span class="nav-icon">📈</span> 统计分析</div>
+      <div class="nav-item" data-page="scheduler-center" onclick="navigate('scheduler-center')"><span class="nav-icon">⏰</span> 调度中心</div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">🏭 生产</div>
+      <div class="nav-item" data-page="workflow" onclick="navigate('workflow')"><span class="nav-icon">🚀</span> 工作流画布</div>
+      <div class="nav-item" data-page="media-production" onclick="navigate('media-production')"><span class="nav-icon">🎨</span> 媒体生产</div>
+      <div class="nav-item" data-page="zhiying" onclick="navigate('zhiying')"><span class="nav-icon">🏭</span> 智影工厂</div>
+      <div class="nav-item" data-page="audio-tools" onclick="navigate('audio-tools')"><span class="nav-icon">🎤</span> 音频工具</div>
+      <div class="nav-item" data-page="enhanced-tools" onclick="navigate('enhanced-tools')"><span class="nav-icon">🔬</span> 增强工具</div>
+      <div class="nav-item" data-page="drama-studio" onclick="navigate('drama-studio')"><span class="nav-icon">📺</span> 短剧工坊</div>
+      <div class="nav-item" data-page="aesthetic-center" onclick="navigate('aesthetic-center')"><span class="nav-icon">⭐</span> 审美评分</div>
+      <div class="nav-item" data-page="picture-book" onclick="navigate('picture-book')"><span class="nav-icon">📚</span> 绘本工坊</div>
+      <div class="nav-item" data-page="template-market" onclick="navigate('template-market')"><span class="nav-icon">🧩</span> 模板市场</div>
+      <div class="nav-item" data-page="llm-training" onclick="navigate('llm-training')"><span class="nav-icon">🧠</span> LLM管线</div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">⚙️ 管理</div>
+      <div class="nav-item" data-page="crowd-platform" onclick="navigate('crowd-platform')"><span class="nav-icon">👥</span> 众包平台</div>
+      <div class="nav-item" data-page="team" onclick="navigate('team')"><span class="nav-icon">👥</span> 团队管理</div>
+      <div class="nav-item" data-page="transfer-center" onclick="navigate('transfer-center')"><span class="nav-icon">🔗</span> 传输共享</div>
+      <div class="nav-item" data-page="delivery" onclick="navigate('delivery')"><span class="nav-icon">📦</span> 交付管理</div>
+      <div class="nav-item" data-page="audit-logs" onclick="navigate('audit-logs')"><span class="nav-icon">📋</span> 审计日志</div>
+      <div class="nav-item" data-page="settings" onclick="navigate('settings')"><span class="nav-icon">⚙️</span> 系统设置</div>
+    </nav>
+
+    <!-- 移动端侧边栏遮罩 -->
+    <div id="sidebar-mobile-backdrop" onclick="toggleMobileSidebar()"></div>
+
+    <!-- 主工作区 -->
+    <main id="content">
+      <div id="page-content" style="transition: opacity 0.2s ease, transform 0.2s ease"></div>
+    </main>
+  </div>
+
+  <!-- 状态栏 -->
+  <footer id="statusbar">
+    <span class="status-item status-ok">🟢 系统正常</span>
+    <span class="status-item">📊 运行中: <strong id="sRunning">0</strong></span>
+    <span class="status-item">⏱ 队列: <strong id="sQueue">0</strong></span>
+    <span class="status-item">✅ 今日完成: <strong id="sToday">--</strong></span>
+    <span class="status-item">⏳ 待审核: <strong id="sReview">--</strong></span>
+    <span class="status-item" style="margin-left:auto;color:#666">v2.0.0</span>
+  </footer>
+</div>
+
+<!-- 模态框 -->
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-inner" id="modalContent"></div>
+</div>
+
+<!-- 通知面板 -->
+<div id="notifPanel" class="popup-panel" style="display:none">
+  <div class="popup-header">通知 <span style="float:right;font-size:11px;cursor:pointer" onclick="closeNotif()">✕</span></div>
+  <div id="notifList"><div style="padding:12px;color:#888;font-size:12px">暂无新通知</div></div>
+<script src="/js/lib/api.js"></script>
+<script src="/js/lib/modal.js"></script>
+<script src="/js/lib/deep-modal.js"></script>
+<!-- P1-C-W2: shared HTTP client + utils (must load BEFORE pages that use httpGet/httpPost) -->
+<script src="/js/client.js"></script>
+<script src="/js/utils/error.js"></script>
+<script src="/js/pages/dashboard.js"></script>
+<script src="/js/pages/datasets.js"></script>
+<script src="/js/pages/annotate.js"></script>
+<script src="/js/pages/image-editor.js"></script>
+<script src="/js/pages/review.js"></script>
+<script src="/js/pages/business.js"></script>
+<!-- P1-C-W2: tasks.js loaded AFTER business.js to override legacy renderTasks/loadTasks -->
+<script src="/js/pages/tasks.js"></script>
+<script src="/js/pages/canvas.js"></script>
+<script src="/js/pages/data-browser-grid.js"></script>
+<script src="/js/pages/lifecycle-pipeline.js"></script>
+<script src="/js/pages/personal-workspace.js"></script>
+<script src="/js/pages/template-pipeline.js"></script>
+<script src="/js/pages/media-production.js"></script>
+<script src="/js/pages/llm-training-pipeline.js"></script>
+<script src="/js/pages/pipeline.js"></script>
+<script src="/js/pages/zhiying.js"></script>
+<script src="/js/pages/drama-studio.js"></script>
+<script src="/js/pages/data-collection.js"></script>
+<script src="/js/pages/eval-review.js"></script>
+<script src="/js/pages/picture-book.js"></script>
+<script src="/js/pages/data-viewer.js"></script>
+<script src="/js/pages/dam-viewer.js"></script>
+<script src="/js/pages/template-market.js"></script>
+<script src="/js/pages/stats.js"></script>
+<script src="/js/pages/team.js"></script>
+<script src="/js/pages/delivery.js"></script>
+<script src="/js/pages/settings.js"></script>
+<script src="/js/pages/quality-center.js"></script>
+<script src="/js/pages/model-manager.js"></script>
+<script src="/js/pages/scheduler-center.js"></script>
+<script src="/js/pages/enhanced-tools.js"></script>
+<script src="/js/pages/aesthetic-center.js"></script>
+<script src="/js/pages/transfer-center.js"></script>
+<script src="/js/pages/audio-tools.js"></script>
+<script src="/js/pages/audit-logs.js"></script>
+<script src="/js/pages/crowd-platform.js"></script>
+<script src="/js/pages/oss-storage.js"></script>
+<script src="/js/pages/assets.js"></script>
+<script src="/js/pages/projects.js"></script>
+<script src="/js/pages/users.js"></script>
+<script src="/js/app.js"></script>
+
+<!-- 登录状态检查：未登录跳转 login.html -->
+<script>
+(function() {
+  // Skip check if we already have a token (api.js was loaded above)
+  if (!localStorage.getItem('imdf_token')) {
+    // Try cookie-based session first (browser auto-sends), then redirect
+    fetch('/auth/me').then(function(r) {
+      if (!r.ok) {
+        window.location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname);
+      }
+    }).catch(function() {
+      // If /auth/me is unreachable, assume dev mode (no auth required yet)
+      // Don't redirect in dev to avoid lockout
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+virtualenv/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Data
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Test output
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+*.coverage.*
+.noseids
+
+# Uploads / storage
+storage/
+uploads/
+temp/
+tmp/
+
+# Node
+node_modules/
+
+# Docker
+.docker/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# OmniGen Studio generated files
+omni_gen_studio/+++*+++.py
+omni_gen_studio/*.bak
+omni_gen_studio/backend_api/*.bak

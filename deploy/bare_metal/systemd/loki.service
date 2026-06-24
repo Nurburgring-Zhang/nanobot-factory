@@ -1,0 +1,37 @@
+# ============================================================================
+# loki.service — IMDF Loki log aggregation
+# ============================================================================
+[Unit]
+Description=IMDF Loki (log aggregation :3100)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=loki
+Group=loki
+ExecStart=/usr/local/bin/loki \
+    --config.file=/etc/loki/config.yaml \
+    --ingester.wal-enabled=true \
+    --ingester.checkpoint-duration=5m
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+LimitNOFILE=65536
+MemoryMax=4G
+MemoryHigh=3G
+CPUQuota=200%
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/loki
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=loki
+
+[Install]
+WantedBy=multi-user.target

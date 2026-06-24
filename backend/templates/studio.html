@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nanobot Factory - AIGC全功能管理系统</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #06b6d4;
+      --primary-hover: #0891b2;
+      --secondary: #8b5cf6;
+      --secondary-hover: #7c3aed;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #334155;
+      --surface-hover: #475569;
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --pink: #ec4899;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+    /* Header */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-sub { font-size: 11px; color: var(--text-secondary); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-dot.online { background: var(--success); }
+    .status-dot.offline { background: var(--error); }
+
+    /* Layout */
+    .app-container { display: flex; height: calc(100vh - 52px); overflow: hidden; }
+
+    /* Left sidebar */
+    .sidebar { width: 200px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; margin: 4px 8px;
+      border-radius: 10px; color: var(--text-secondary);
+      cursor: pointer; transition: all 0.2s; font-size: 14px;
+    }
+    .nav-item:hover { background: var(--surface-hover); color: var(--text); }
+    .nav-item.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+    .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+
+    /* Main content area */
+    .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .page-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+    /* --- OmniGen Workshop styles --- */
+    h1 { margin-bottom: 20px; font-size: 24px; font-weight: 700; }
+    h2 { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
+    h3 { font-size: 16px; margin-bottom: 12px; font-weight: 600; }
+    .card { background: var(--surface); border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+
+    .btn {
+      padding: 10px 20px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 14px; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 6px; font-weight: 500;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: var(--surface-hover); color: var(--text); }
+    .btn-secondary:hover { background: var(--surface-2); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-gradient { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+    .btn-gradient:hover { opacity: 0.9; }
+    .btn-gradient:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; color: var(--text);
+      font-size: 14px; margin-top: 6px;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
+    .form-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-top: 12px; }
+    .form-group { margin-bottom: 12px; }
+    label { font-size: 13px; color: var(--text-secondary); }
+
+    /* Omnigen mode tabs */
+    .omnigen-mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .omnigen-mode-tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 15px; background: var(--surface); border-radius: 12px;
+      cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;
+    }
+    .omnigen-mode-tab:hover { background: var(--surface-hover); }
+    .omnigen-mode-tab.active { border-color: var(--primary); background: rgba(139, 92, 246, 0.1); }
+    .omnigen-mode-tab .tab-icon { font-size: 28px; margin-bottom: 8px; }
+    .omnigen-mode-tab .tab-name { font-size: 14px; font-weight: 500; }
+
+    /* Main container */
+    .omnigen-main-container { display: grid; grid-template-columns: 1fr 400px; gap: 20px; }
+    .omnigen-modules { display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 200px); overflow-y: auto; }
+    .omnigen-module { background: var(--surface); border-radius: 12px; overflow: hidden; }
+    .module-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; background: rgba(139, 92, 246, 0.1);
+      border-bottom: 1px solid var(--border);
+    }
+    .module-icon { font-size: 20px; }
+    .module-title { font-size: 14px; font-weight: 600; }
+    .module-content { padding: 12px; }
+
+    .model-select-group { display: flex; gap: 8px; margin-bottom: 10px; }
+    .model-select-group select { flex: 1; }
+    .model-files { display: flex; flex-direction: column; gap: 6px; }
+    .file-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+
+    .prompt-tools { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+    .negative-prompt, .style-presets { margin-top: 8px; }
+    .sub-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+
+    .lora-slots { display: flex; flex-direction: column; gap: 10px; }
+    .lora-slot { display: grid; grid-template-columns: 60px 1fr 80px 40px; gap: 8px; align-items: center; }
+    .slot-label { font-size: 12px; color: var(--text-secondary); }
+    .lora-weight { width: 100%; }
+    .weight-value { font-size: 12px; text-align: right; }
+
+    .param-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .param-row .param-label { min-width: 80px; font-size: 13px; }
+    .param-row .slider { flex: 1; }
+    .param-row .param-value { min-width: 40px; text-align: right; font-size: 13px; }
+    .seed-input { width: 100px; }
+    .slider {
+      width: 100%; height: 6px; -webkit-appearance: none;
+      background: var(--surface-2); border-radius: 3px; outline: none;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      background: var(--primary); border-radius: 50%;
+      cursor: pointer; box-shadow: 0 2px 8px rgba(6, 182, 212, 0.4);
+    }
+
+    .resolution-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .res-preset {
+      padding: 10px; background: var(--surface-hover);
+      border: 2px solid transparent; border-radius: 8px;
+      cursor: pointer; text-align: center; font-size: 11px;
+      transition: all 0.2s ease;
+    }
+    .res-preset:hover { border-color: var(--primary); }
+    .res-preset.active { border-color: var(--primary); background: rgba(139, 92, 246, 0.2); }
+    .custom-resolution { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .custom-resolution input { width: 80px; }
+
+    .optimize-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+    .checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }
+
+    /* Preview panel */
+    .omnigen-preview-panel { display: flex; flex-direction: column; gap: 15px; }
+    .preview-area {
+      background: var(--surface); border-radius: 12px;
+      min-height: 350px; display: flex; align-items: center;
+      justify-content: center; position: relative; overflow: hidden;
+    }
+    .preview-placeholder { text-align: center; color: var(--text-secondary); }
+    .preview-image, .preview-video { max-width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; }
+
+    .reference-upload { background: var(--surface); border-radius: 12px; padding: 15px; }
+    .upload-area {
+      border: 2px dashed var(--border); border-radius: 8px;
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .upload-area:hover { border-color: var(--primary); background: rgba(139, 92, 246, 0.05); }
+
+    .output-settings { background: var(--surface); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+
+    .btn-generate { padding: 16px; font-size: 16px; width: 100%; }
+    .generation-progress { background: var(--surface); border-radius: 12px; padding: 15px; }
+    .progress-bar {
+      height: 8px; background: var(--surface-hover);
+      border-radius: 4px; overflow: hidden; margin-bottom: 8px;
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary));
+      width: 0%; transition: width 0.3s ease;
+    }
+    .progress-text { font-size: 13px; color: var(--text-secondary); }
+
+    /* Toast notification */
+    .toast {
+      position: fixed; top: 20px; right: 20px;
+      padding: 12px 20px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); z-index: 9999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: none; max-width: 400px;
+    }
+    .toast.error { border-color: var(--error); }
+    .toast.success { border-color: var(--success); }
+    .toast.show { display: block; }
+
+    /* Spinner */
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid var(--surface-2);
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin 1s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error detail */
+    .error-detail { margin-top: 8px; padding: 8px; background: rgba(239,68,68,0.1); border-radius: 6px; font-size: 12px; color: var(--error); word-break: break-all; }
+
+    @media (max-width: 1100px) {
+      .omnigen-main-container { grid-template-columns: 1fr; }
+      .omnigen-modules { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+
+<script>fetch('/templates/navbar.html').then(r=>r.text()).then(h=>document.body.insertAdjacentHTML('afterbegin',h))</script>
+
+<div class="header">
+  <div>
+    <div class="logo">⚡ Nanobot Factory</div>
+    <div class="logo-sub">AIGC全功能管理系统</div>
+  </div>
+  <div class="header-right">
+    <a href="/" style="font-size:13px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-right:12px;">🏠 返回首页</a>
+    <span style="font-size:12px;color:var(--text-secondary);">API状态:</span>
+    <span class="status-dot online" id="api-status-dot"></span>
+    <span style="font-size:12px;color:var(--text-secondary);" id="api-status-text">检查中...</span>
+  </div>
+</div>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-item active" data-page="omnigen" onclick="navigateTo('omnigen')">
+      <span class="nav-icon">🎨</span> Omnigen工坊
+    </div>
+    <div class="nav-item" data-page="gallery" onclick="navigateTo('gallery')">
+      <span class="nav-icon">📁</span> 历史生成 <span id="gallery-badge" style="display:none;margin-left:auto;background:var(--primary);color:white;font-size:10px;border-radius:10px;padding:0 6px;line-height:18px;min-width:18px;text-align:center;"></span>
+    </div>
+    <div class="nav-item" data-page="comfyui" onclick="navigateTo('comfyui')">
+      <span class="nav-icon">🔧</span> ComfyUI
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-area">
+    <div class="page-content">
+      <!-- ========== Omnigen工坊页面 ========== -->
+      <div id="page-omnigen">
+        <h1>🎨 Omnigen工坊</h1>
+
+        <div id="provider-status" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;font-size:11px"></div>
+
+        <div class="omnigen-mode-tabs">
+          <div class="omnigen-mode-tab active" data-mode="image" onclick="switchMode('image')">
+            <span class="tab-icon">🖼️</span>
+            <span class="tab-name">图片生成</span>
+          </div>
+          <div class="omnigen-mode-tab" data-mode="edit" onclick="switchMode('edit')">
+            <span class="tab-icon">✏️</span>
+            <span class="tab-name">图片编辑</span>
+          </div>
+          <div class="omnigen-mode-tab" data-mode="video" onclick="switchMode('video')">
+            <span class="tab-icon">🎬</span>
+            <span class="tab-name">视频生成</span>
+          </div>
+          <div class="omnigen-mode-tab" data-mode="3d" onclick="switchMode('3d')">
+            <span class="tab-icon">🎲</span>
+            <span class="tab-name">3D生成</span>
+          </div>
+        </div>
+
+        <div class="omnigen-main-container">
+          <!-- Left: Modules -->
+          <div class="omnigen-modules">
+            <!-- Module 1: Model -->
+            <div class="omnigen-module" id="module-model">
+              <div class="module-header"><span class="module-icon">🤖</span><span class="module-title">1. 模型选择</span></div>
+              <div class="module-content">
+                <div class="model-select-group">
+                  <select class="form-select" id="model-select">
+                    <optgroup label="图片生成模型">
+                      <option value="omni_gen_local">Omni Gen Studio (本地)</option>
+                      <option value="comfyui_local">ComfyUI (本地)</option>
+                      <option value="z_image">Z Image</option>
+                      <option value="qwen_image">Qwen Image</option>
+                      <option value="flux2_klein">Flux.2 Klein</option>
+                    </optgroup>
+                    <optgroup label="视频生成模型">
+                      <option value="wan22">Wan 2.2</option>
+                      <option value="ltx2">LTX-2</option>
+                      <option value="kling">可灵</option>
+                    </optgroup>
+                    <optgroup label="3D生成模型">
+                      <option value="hy3d">Hunyuan3D</option>
+                      <option value="trellis2">Trellis-2</option>
+                    </optgroup>
+                    <optgroup label="图像编辑模型">
+                      <option value="qwen_edit">Qwen Edit</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 2: Prompt -->
+            <div class="omnigen-module" id="module-prompt">
+              <div class="module-header"><span class="module-icon">💬</span><span class="module-title">2. 提示词</span></div>
+              <div class="module-content">
+                <textarea class="form-textarea" rows="3" id="prompt-input" placeholder="输入你的提示词..."></textarea>
+                <div class="prompt-tools">
+                  <button class="btn btn-sm btn-secondary" onclick="optimizePrompt()">✨ 优化</button>
+                  <button class="btn btn-sm btn-secondary" onclick="translatePrompt()">🌐 翻译</button>
+                  <button class="btn btn-sm btn-primary" onclick="toggleBatchMode()" id="btn-batch-toggle">📋 批量</button>
+                  <button class="btn btn-sm btn-secondary" onclick="clearPrompt()">🗑️ 清空</button>
+                </div>
+                <div class="negative-prompt">
+                  <span class="sub-label">负面提示词:</span>
+                  <textarea class="form-textarea" rows="2" id="negative-prompt" placeholder="不想出现的元素..."></textarea>
+                </div>
+                <div class="style-presets">
+                  <span class="sub-label">风格预设:</span>
+                  <select class="form-select" id="style-preset">
+                    <option value="">无</option>
+                    <option value="realistic">写实风格</option>
+                    <option value="anime">动漫风格</option>
+                    <option value="cyberpunk">赛博朋克</option>
+                    <option value="watercolor">水彩画</option>
+                    <option value="oil">油画风格</option>
+                    <option value="sketch">素描风格</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Batch Mode area -->
+              <div id="batch-area" class="card" style="display:none;">
+                <div class="module-header"><span class="module-icon">📋</span><span class="module-title">批量生成</span></div>
+                <div class="module-content">
+                  <span class="sub-label">每行一个提示词（支持1-20个）:</span>
+                  <textarea class="form-textarea" id="batch-prompts" rows="5" placeholder="a cute cat&#10;a beautiful landscape&#10;cyberpunk city&#10;watercolor portrait"></textarea>
+                  <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                    <button class="btn btn-primary btn-sm" onclick="startBatchGeneration()">🚀 批量生成</button>
+                    <span id="batch-progress" style="font-size:13px;color:var(--text-secondary);"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 3: LoRA -->
+            <div class="omnigen-module" id="module-lora">
+              <div class="module-header"><span class="module-icon">🎀</span><span class="module-title">3. LoRA</span></div>
+              <div class="module-content">
+                <div class="lora-slots">
+                  <div class="lora-slot">
+                    <span class="slot-label">LoRA 1:</span>
+                    <select class="form-select" id="lora1-select"><option value="">无</option><option value="anime_lora">动漫风格</option><option value="realistic_lora">写实风格</option></select>
+                    <input type="range" class="lora-weight" id="lora1-weight" min="0" max="1" step="0.1" value="0.8" oninput="document.getElementById('lora1-val').textContent=this.value">
+                    <span class="weight-value" id="lora1-val">0.8</span>
+                  </div>
+                  <div class="lora-slot">
+                    <span class="slot-label">LoRA 2:</span>
+                    <select class="form-select" id="lora2-select"><option value="">无</option><option value="style1">风格增强</option></select>
+                    <input type="range" class="lora-weight" id="lora2-weight" min="0" max="1" step="0.1" value="0.5" oninput="document.getElementById('lora2-val').textContent=this.value">
+                    <span class="weight-value" id="lora2-val">0.5</span>
+                  </div>
+                  <div class="lora-slot">
+                    <span class="slot-label">LoRA 3:</span>
+                    <select class="form-select" id="lora3-select"><option value="">无</option><option value="detail1">细节增强</option></select>
+                    <input type="range" class="lora-weight" id="lora3-weight" min="0" max="1" step="0.1" value="0.5" oninput="document.getElementById('lora3-val').textContent=this.value">
+                    <span class="weight-value" id="lora3-val">0.5</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 4: Parameters -->
+            <div class="omnigen-module" id="module-params">
+              <div class="module-header"><span class="module-icon">⚙️</span><span class="module-title">4. 生成参数</span></div>
+              <div class="module-content">
+                <div class="param-row">
+                  <span class="param-label">Steps:</span>
+                  <input type="range" class="slider" id="param-steps" min="1" max="100" value="30" oninput="document.getElementById('steps-val').textContent=this.value">
+                  <span class="param-value" id="steps-val">30</span>
+                </div>
+                <div class="param-row">
+                  <span class="param-label">CFG Scale:</span>
+                  <input type="range" class="slider" id="param-cfg" min="1" max="20" step="0.5" value="7" oninput="document.getElementById('cfg-val').textContent=this.value">
+                  <span class="param-value" id="cfg-val">7.0</span>
+                </div>
+                <div class="param-row">
+                  <span class="param-label">Seed:</span>
+                  <input type="number" class="form-input seed-input" id="param-seed" value="-1" placeholder="-1">
+                  <button class="btn btn-sm btn-secondary" onclick="document.getElementById('param-seed').value=Math.floor(Math.random()*2147483647)">🎲</button>
+                </div>
+                <div class="param-row">
+                  <span class="param-label">采样器:</span>
+                  <select class="form-select" id="param-sampler">
+                    <option>Euler a</option>
+                    <option selected>Euler</option>
+                    <option>DPM++ 2M</option>
+                    <option>DPM++ SDE</option>
+                    <option>DDIM</option>
+                    <option>UniPC</option>
+                    <option>LCM</option>
+                  </select>
+                </div>
+                <div class="param-row">
+                  <span class="param-label">调度器:</span>
+                  <select class="form-select" id="param-scheduler">
+                    <option selected>normal</option>
+                    <option>simple</option>
+                    <option>karras</option>
+                    <option>exponential</option>
+                  </select>
+                </div>
+                <div class="param-row">
+                  <span class="param-label">批量数:</span>
+                  <input type="number" class="form-input seed-input" id="param-batch" value="1" min="1" max="8">
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 5: Resolution -->
+            <div class="omnigen-module" id="module-resolution">
+              <div class="module-header"><span class="module-icon">📐</span><span class="module-title">5. 分辨率</span></div>
+              <div class="module-content">
+                <div class="resolution-presets" id="resolution-presets">
+                  <button class="res-preset active" data-w="1024" data-h="1024">1:1<br>1024×1024</button>
+                  <button class="res-preset" data-w="1152" data-h="896">4:3<br>1152×896</button>
+                  <button class="res-preset" data-w="896" data-h="1152">3:4<br>896×1152</button>
+                  <button class="res-preset" data-w="1344" data-h="768">16:9<br>1344×768</button>
+                  <button class="res-preset" data-w="768" data-h="1344">9:16<br>768×1344</button>
+                  <button class="res-preset" data-w="1536" data-h="640">21:9<br>1536×640</button>
+                  <button class="res-preset" data-w="1920" data-h="1080">16:9<br>1920×1080</button>
+                  <button class="res-preset" data-w="1080" data-h="1920">9:16<br>1080×1920</button>
+                </div>
+                <div class="custom-resolution">
+                  <span class="sub-label">自定义:</span>
+                  <input type="number" class="form-input" id="custom-width" placeholder="宽" value="1024">
+                  <span>×</span>
+                  <input type="number" class="form-input" id="custom-height" placeholder="高" value="1024">
+                  <button class="btn btn-sm btn-secondary" onclick="applyCustomRes()">应用</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 6: Optimize -->
+            <div class="omnigen-module" id="module-optimize">
+              <div class="module-header"><span class="module-icon">🚀</span><span class="module-title">6. 优化增强</span></div>
+              <div class="module-content">
+                <div class="optimize-options">
+                  <label class="checkbox-label"><input type="checkbox" id="opt-hires"> <span>高清修复 (Hires Fix)</span></label>
+                  <label class="checkbox-label"><input type="checkbox" id="opt-tiled"> <span>Tiled Diffusion</span></label>
+                  <label class="checkbox-label"><input type="checkbox" id="opt-face"> <span>面部增强</span></label>
+                </div>
+                <div class="param-row">
+                  <span class="param-label">放大倍数:</span>
+                  <select class="form-select" id="opt-upscale">
+                    <option value="1">1x (不放大)</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2" selected>2x</option>
+                    <option value="4">4x</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Preview & Output -->
+          <div class="omnigen-preview-panel">
+            <div class="preview-area" id="preview-area">
+              <div class="preview-placeholder" id="preview-placeholder">
+                <div style="font-size: 80px; margin-bottom: 16px;">🎨</div>
+                <p>预览区域</p>
+                <p style="font-size: 12px; color: var(--text-secondary);">生成的图像/视频将在这里显示</p>
+              </div>
+              <img id="preview-image" style="display:none;" class="preview-image" alt="Generated">
+              <video id="preview-video" style="display:none;" controls class="preview-video"></video>
+            </div>
+
+            <div class="reference-upload" id="reference-upload">
+              <div class="upload-area" onclick="document.getElementById('ref-image-input').click()">
+                <div style="font-size: 40px; margin-bottom: 8px;">📷</div>
+                <span>点击上传参考图</span>
+                <div style="font-size: 12px; color: var(--text-secondary);">支持图生图、编辑</div>
+              </div>
+              <input type="file" id="ref-image-input" style="display:none;" accept="image/*">
+            </div>
+
+            <div class="output-settings">
+              <div class="param-row">
+                <span class="param-label">输出格式:</span>
+                <select class="form-select" id="output-format">
+                  <option>PNG</option>
+                  <option>JPG</option>
+                  <option>WebP</option>
+                </select>
+              </div>
+              <label class="checkbox-label"><input type="checkbox" id="opt-save-prompt" checked> <span>保存提示词</span></label>
+            </div>
+
+            <button class="btn btn-gradient btn-generate" id="btn-generate" onclick="startGeneration()">
+              🚀 开始生成
+            </button>
+
+            <div class="generation-progress" id="generation-progress" style="display:none;">
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+              <div class="progress-text" id="progress-text">准备中...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== ComfyUI 页面 ========== -->
+      <div id="page-comfyui" style="display:none;">
+        <h1>🔧 ComfyUI工作流</h1>
+        <div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="alert('请在Omnigen工坊页面使用生成功能')">🚀 启动ComfyUI</button>
+          <button class="btn btn-secondary" onclick="alert('外部浏览器打开功能')">🌐 在浏览器中打开</button>
+        </div>
+        <div class="card" style="min-height:300px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);">
+          <div style="text-align:center;">
+            <div style="font-size:60px;margin-bottom:16px;">🔄</div>
+            <p>ComfyUI界面 - 请使用独立的ComfyUI页面</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- ===== Page 3: History Gallery ===== -->
+<div id="page-gallery" class="page-content" style="display:none;">
+  <h1>📁 历史生成</h1>
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+    <button class="btn btn-primary btn-sm" onclick="refreshGallery()">🔄 刷新</button>
+    <button class="btn btn-secondary btn-sm" onclick="clearGallery()">🗑️ 清空</button>
+    <span id="gallery-count" style="font-size:13px;color:var(--text-secondary);"></span>
+  </div>
+  <div id="gallery-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
+  <div id="gallery-empty" style="display:none;text-align:center;padding:60px 20px;">
+    <div style="font-size:60px;margin-bottom:16px;">📭</div>
+    <p style="color:var(--text-secondary);font-size:16px;">暂无生成历史</p>
+    <p style="color:var(--text-secondary);font-size:13px;margin-top:8px;">点击"Omnigen工坊"开始生成</p>
+  </div>
+</div>
+
+<!-- ===== Modal: Image Detail ===== -->
+<div id="detail-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="detail-title">图片详情</h3>
+      <button onclick="closeDetail()" style="background:none;border:none;color:var(--text-secondary);font-size:24px;cursor:pointer;">×</button>
+    </div>
+    <div class="modal-body">
+      <img id="detail-image" src="" style="max-width:100%;border-radius:8px;margin-bottom:16px;" alt="生成结果"/>
+      <div id="detail-info" style="font-size:13px;color:var(--text-secondary);line-height:1.8;"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* History Gallery */
+.gallery-card {
+  background: var(--surface); border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border); transition: all 0.2s;
+  cursor: pointer;
+}
+.gallery-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(6,182,212,0.15); }
+.gallery-card-img {
+  width: 100%; height: 180px; object-fit: cover;
+  background: var(--surface-2);
+}
+.gallery-card-info { padding: 12px; }
+.gallery-card-prompt {
+  font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 8px; color: var(--text);
+}
+.gallery-card-meta {
+  font-size: 11px; color: var(--text-secondary);
+  display: flex; justify-content: space-between;
+}
+
+/* Detail Modal */
+.modal-overlay {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+}
+.modal-content {
+  background: var(--surface); border-radius: 16px; border: 1px solid var(--border);
+  max-width: 700px; max-height: 85vh; overflow-y: auto;
+  padding: 24px; width: 90%;
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.modal-body { overflow-y: auto; }
+</style>
+
+<script>
+// ===== State =====
+let currentMode = 'image';
+let generatedImageData = null;
+
+// ===== Navigation =====
+function navigateTo(page) {
+  document.getElementById('page-omnigen').style.display = page === 'omnigen' ? 'block' : 'none';
+  document.getElementById('page-comfyui').style.display = page === 'comfyui' ? 'block' : 'none';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+}
+
+// ===== Mode Switching =====
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.omnigen-mode-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === mode);
+  });
+  // Show/hide modules based on mode
+  const moduleModel = document.getElementById('module-model');
+  const moduleLora = document.getElementById('module-lora');
+  if (mode === 'edit') {
+    moduleModel.style.display = 'block';
+    moduleLora.style.display = 'none';
+  } else if (mode === 'video') {
+    moduleModel.style.display = 'block';
+    moduleLora.style.display = 'none';
+  } else if (mode === '3d') {
+    moduleModel.style.display = 'block';
+    moduleLora.style.display = 'none';
+  } else {
+    moduleModel.style.display = 'block';
+    moduleLora.style.display = 'block';
+  }
+}
+
+// ===== Prompt tools =====
+function optimizePrompt() {
+  const input = document.getElementById('prompt-input');
+  if (!input.value.trim()) { showToast('请先输入提示词', 'error'); return; }
+  input.value = input.value.trim() + ', highly detailed, 8k resolution, professional lighting';
+  showToast('✨ 提示词已优化', 'success');
+}
+
+function translatePrompt() {
+  const input = document.getElementById('prompt-input');
+  if (!input.value.trim()) { showToast('请先输入提示词', 'error'); return; }
+  showToast('🌐 翻译功能: 请在提示词中使用英文', 'success');
+}
+
+function clearPrompt() {
+  document.getElementById('prompt-input').value = '';
+  document.getElementById('negative-prompt').value = '';
+  showToast('已清空', 'success');
+}
+
+// ===== Resolution presets =====
+document.getElementById('resolution-presets').addEventListener('click', function(e) {
+  const btn = e.target.closest('.res-preset');
+  if (!btn) return;
+  document.querySelectorAll('.res-preset').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('custom-width').value = btn.dataset.w;
+  document.getElementById('custom-height').value = btn.dataset.h;
+});
+
+function applyCustomRes() {
+  const w = document.getElementById('custom-width').value;
+  const h = document.getElementById('custom-height').value;
+  if (w && h) {
+    document.querySelectorAll('.res-preset').forEach(b => b.classList.remove('active'));
+    showToast(`分辨率已设为 ${w}×${h}`, 'success');
+  }
+}
+
+// ===== Check API Status =====
+async function checkApiStatus() {
+  try {
+    const resp = await fetch('/health');
+    if (resp.ok) {
+      const data = await resp.json();
+      document.getElementById('api-status-dot').className = 'status-dot online';
+      document.getElementById('api-status-text').textContent = `已连接 | ${data.agents_count || '?'} Agents`;
+    } else {
+      throw new Error('not ok');
+    }
+  } catch(e) {
+    document.getElementById('api-status-dot').className = 'status-dot offline';
+    document.getElementById('api-status-text').textContent = 'API不可用';
+  }
+}
+
+// ===== Check Provider Status =====
+async function checkProviders() {
+  const div = document.getElementById('provider-status');
+  if (!div) return;
+  try {
+    const resp = await fetch('/api/v2/ml/models');
+    const data = await resp.json();
+    const models = data.data || data || [];
+    if (Array.isArray(models) && models.length > 0) {
+      div.innerHTML = models.map(m =>
+        `<span style="background:${m.status==='ready'?'#065f46':'#451a03'};color:${m.status==='ready'?'#6ee7b7':'#fdba74'};padding:2px 8px;border-radius:4px;font-size:11px">${m.name}: ${m.status}</span>`
+      ).join('') + ' <span style="color:var(--text-secondary);font-size:11px;padding:2px 8px;">— 点击「开始生成」自动使用默认模型</span>';
+    } else {
+      // Try providers API as fallback
+      try {
+        const resp2 = await fetch('/api/keys/providers');
+        if (resp2.ok) {
+          const data2 = await resp2.json();
+          const providers = data2.providers || data2.data || [];
+          if (Array.isArray(providers) && providers.length > 0) {
+            div.innerHTML = providers.map(p =>
+              `<span style="background:${p.configured?'#065f46':'#451a03'};color:${p.configured?'#6ee7b7':'#fdba74'};padding:2px 8px;border-radius:4px;font-size:11px">${p.name || p.provider}: ${p.configured ? '已配置' : '未配置'}</span>`
+            ).join('');
+            return;
+          }
+        }
+      } catch(_) {}
+      div.innerHTML = '<span style="color:var(--text-secondary);font-size:11px;">ℹ️ 未检测到模型/Provider信息</span>';
+    }
+  } catch(e) {
+    div.innerHTML = '<span style="color:var(--text-secondary);font-size:11px;">ℹ️ 无法检测Provider状态</span>';
+  }
+}
+
+// ===== Show Toast =====
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + (type || '') + ' show';
+  setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+// ===== Main: Start Generation =====
+async function startGeneration() {
+  const btn = document.getElementById('btn-generate');
+  const prompt = document.getElementById('prompt-input').value.trim();
+  if (!prompt) {
+    showToast('⚠️ 请输入提示词', 'error');
+    document.getElementById('prompt-input').focus();
+    return;
+  }
+
+  // Disable button
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中...';
+
+  // Show progress
+  const progressDiv = document.getElementById('generation-progress');
+  const progressFill = document.getElementById('progress-fill');
+  const progressText = document.getElementById('progress-text');
+  progressDiv.style.display = 'block';
+  progressFill.style.width = '5%';
+  progressText.textContent = '正在提交生成请求...';
+
+  // Get parameters
+  const model = document.getElementById('model-select').value;
+  const negativePrompt = document.getElementById('negative-prompt').value.trim();
+  const width = parseInt(document.getElementById('custom-width').value) || 1024;
+  const height = parseInt(document.getElementById('custom-height').value) || 1024;
+  const steps = parseInt(document.getElementById('param-steps').value);
+  const cfgScale = parseFloat(document.getElementById('param-cfg').value);
+  const seed = parseInt(document.getElementById('param-seed').value) || -1;
+  const sampler = document.getElementById('param-sampler').value;
+  const scheduler = document.getElementById('param-scheduler').value;
+  const batchCount = parseInt(document.getElementById('param-batch').value) || 1;
+  const stylePreset = document.getElementById('style-preset').value;
+
+  // Map mode to generation_type
+  const modeToGenType = { image: 'image', edit: 'image_edit', video: 'video', '3d': 'text_to_3d' };
+  const generationType = modeToGenType[currentMode] || 'image';
+
+  // LoRA configs
+  const loraConfigs = [];
+  for (let i = 1; i <= 3; i++) {
+    const sel = document.getElementById('lora' + i + '-select');
+    const wgt = document.getElementById('lora' + i + '-weight');
+    if (sel && sel.value) {
+      loraConfigs.push({ name: sel.value, weight: parseFloat(wgt.value) });
+    }
+  }
+
+  const payload = {
+    prompt: prompt,
+    negative_prompt: negativePrompt,
+    model: model,
+    width: width,
+    height: height,
+    steps: steps,
+    cfg_scale: cfgScale,
+    seed: seed,
+    sampler: sampler.toLowerCase().replace(/\s+/g, '_'),
+    scheduler: scheduler.toLowerCase(),
+    batch_count: batchCount,
+    style_preset: stylePreset,
+    generation_type: generationType,
+    lora_configs: loraConfigs,
+    hires_fix: document.getElementById('opt-hires').checked,
+    tiled_diffusion: document.getElementById('opt-tiled').checked,
+    face_enhance: document.getElementById('opt-face').checked,
+    upscale_factor: parseInt(document.getElementById('opt-upscale').value) || 1,
+  };
+
+  console.log('Generating with payload:', payload);
+
+  try {
+    progressFill.style.width = '10%';
+    progressText.textContent = '正在提交到生成队列...';
+
+    const resp = await fetch('/api/v2/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) {
+      let errMsg = 'API请求失败';
+      try {
+        const errData = await resp.json();
+        errMsg = errData.detail || errMsg;
+      } catch(_) {}
+      throw new Error(errMsg);
+    }
+
+    progressFill.style.width = '30%';
+    progressText.textContent = '已加入队列，等待执行...';
+
+    const result = await resp.json();
+    console.log('Queue result:', result);
+
+    // 异步任务 - 开始轮询
+    const taskId = result.task_id;
+    if (!taskId) {
+      throw new Error('未获取到task_id');
+    }
+
+    progressText.textContent = `⏳ 队列中... (ID: ${taskId.substring(0, 8)}...)`;
+
+    // 开始轮询任务状态
+    const pollResult = await pollTaskStatus(taskId, progressFill, progressText);
+    
+    if (pollResult.success) {
+      // Show images if any
+      if (pollResult.images && pollResult.images.length > 0) {
+        const img = pollResult.images[0];
+        const imgEl = document.getElementById('preview-image');
+        const placeholder = document.getElementById('preview-placeholder');
+        const videoEl = document.getElementById('preview-video');
+        placeholder.style.display = 'none';
+        videoEl.style.display = 'none';
+        imgEl.style.display = 'block';
+        imgEl.src = img;
+        generatedImageData = pollResult.images;
+        progressFill.style.width = '100%';
+        progressText.textContent = '✅ 生成完成！';
+        showToast('✅ 图片生成成功！', 'success');
+      } else if (pollResult.videos && pollResult.videos.length > 0) {
+        const imgEl = document.getElementById('preview-image');
+        const placeholder = document.getElementById('preview-placeholder');
+        const videoEl = document.getElementById('preview-video');
+        placeholder.style.display = 'none';
+        imgEl.style.display = 'none';
+        videoEl.style.display = 'block';
+        videoEl.src = pollResult.videos[0];
+        progressFill.style.width = '100%';
+        progressText.textContent = '✅ 视频生成完成！';
+        showToast('✅ 视频生成成功！', 'success');
+      } else {
+        progressFill.style.width = '100%';
+        progressText.textContent = '✅ 生成完成';
+        showToast('✅ 生成完成！', 'success');
+      }
+    } else {
+      throw new Error(pollResult.error || '生成失败');
+    }
+  } catch(e) {
+    console.error('Generation error:', e);
+    progressFill.style.width = '100%';
+    progressText.textContent = '❌ 生成失败';
+    showToast('❌ ' + e.message, 'error');
+
+    // Show error in preview area
+    const placeholder = document.getElementById('preview-placeholder');
+    placeholder.style.display = 'block';
+    placeholder.innerHTML = `
+      <div style="font-size:50px;margin-bottom:12px;">❌</div>
+      <p style="color:var(--error);">生成失败</p>
+      <div class="error-detail">${e.message}</div>
+    `;
+
+    // 添加重试按钮
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn btn-primary btn-sm';
+    retryBtn.textContent = '🔄 重试';
+    retryBtn.style.marginLeft = '8px';
+    retryBtn.onclick = startGeneration;
+    progressDiv.appendChild(retryBtn);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 开始生成';
+    // Hide progress after a delay
+    setTimeout(() => {
+      if (!generatedImageData) {
+        progressDiv.style.display = 'none';
+      }
+    }, 5000);
+  }
+}
+
+// ===== 轮询任务状态 =====
+async function pollTaskStatus(taskId, progressFill, progressText) {
+  const maxAttempts = 120;  // 最多等10分钟 (120 * 5s)
+  const retryDelay = 3000; // 初始3秒
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await sleep(retryDelay);
+    
+    try {
+      const resp = await fetch(`/api/v2/generate/queue/status?task_id=${taskId}`);
+      if (!resp.ok) continue;
+      
+      const data = await resp.json();
+      const status = data.status;
+      
+      progressText.textContent = `⏳ ${status}... (${attempt + 1}/${maxAttempts})`;
+      
+      if (status === 'completed') {
+        progressFill.style.width = '100%';
+        progressText.textContent = '✅ 生成完成！';
+        // Check if result is embedded
+        if (data.result) {
+          return data.result;
+        }
+        return { success: true };
+      }
+      
+      if (status === 'failed') {
+        progressFill.style.width = '100%';
+        progressText.textContent = '❌ 生成失败';
+        return { success: false, error: data.error || '生成失败' };
+      }
+      
+      if (status === 'cancelled') {
+        return { success: false, error: '任务已取消' };
+      }
+      
+      // running / queued / retrying - continue polling
+      if (status === 'running') {
+        progressText.textContent = '⏳ 生成中...';
+      } else if (status === 'retrying') {
+        progressText.textContent = `🔄 重试中 (${data.retry_count}/${data.max_retries})...`;
+      } else if (status === 'queued') {
+        progressText.textContent = '⏳ 队列中...';
+      }
+      
+    } catch(e) {
+      // 网络错误时继续轮询
+      console.warn('Poll error:', e);
+    }
+  }
+  
+  return { success: false, error: '轮询超时' };
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ===== Navigation with Gallery =====
+function navigateTo(page) {
+  document.getElementById('page-omnigen').style.display = page === 'omnigen' ? 'block' : 'none';
+  document.getElementById('page-gallery').style.display = page === 'gallery' ? 'block' : 'none';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nav = document.querySelector(`[data-page="${page}"]`);
+  if (nav) nav.classList.add('active');
+  if (page === 'gallery') refreshGallery();
+  if (page === 'omnigen') checkProviders();
+}
+
+// Gallery state
+let galleryData = [];
+
+async function refreshGallery() {
+  const grid = document.getElementById('gallery-grid');
+  const empty = document.getElementById('gallery-empty');
+  const count = document.getElementById('gallery-count');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);">🔄 加载中...</div>';
+  empty.style.display = 'none';
+  count.textContent = '';
+
+  // Helper to parse items from various API response shapes
+  function extractItems(data) {
+    if (Array.isArray(data)) return data;
+    if (data.assets) return data.assets;
+    if (data.data && data.data.assets) return data.data.assets;
+    if (data.data && Array.isArray(data.data)) return data.data;
+    if (data.results && Array.isArray(data.results)) return data.results;
+    if (data.items && Array.isArray(data.items)) return data.items;
+    return null;
+  }
+
+  // Try APIs in order: /api/generate first, then /api/assets
+  const apis = ['/api/generate?limit=50&offset=0', '/api/assets?limit=50&offset=0'];
+
+  let items = null;
+  for (const url of apis) {
+    try {
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const data = await resp.json();
+        items = extractItems(data);
+        if (items && items.length > 0) break;
+        // If we got items but it's empty, try next API
+        if (items !== null) items = null;
+      }
+    } catch(e) {
+      console.warn('Gallery API failed:', url, e);
+    }
+  }
+
+  // Fallback: if no API returned data, also try /api/v2/generate/queue/list
+  if (!items) {
+    try {
+      const resp = await fetch('/api/v2/generate/queue/list');
+      if (resp.ok) {
+        const data = await resp.json();
+        items = extractItems(data);
+      }
+    } catch(e) {
+      console.warn('Fallback queue list API failed:', e);
+    }
+  }
+
+  galleryData = items || [];
+
+  if (!items || items.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    count.textContent = '暂无数据';
+    return;
+  }
+
+  count.textContent = `${items.length} 条记录`;
+  // Update sidebar badge
+  const badge = document.getElementById('gallery-badge');
+  if (badge) badge.textContent = items.length;
+
+  grid.innerHTML = items.map((item, idx) => {
+    const prompt = item.prompt || item.metadata?.prompt || item.name || '未知';
+    const imgUrl = item.thumbnail || item.path || item.url || (item.images && item.images[0]) || '';
+    const time = item.created_at || item.updated_at || '';
+    const shortPrompt = prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt;
+    return `<div class="gallery-card" onclick='showDetail(${JSON.stringify(item).replace(/'/g,"&#39;")})'>
+      <div class="gallery-card-img" style="${imgUrl ? `background-image:url('${imgUrl}');background-size:cover;background-position:center;` : 'display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text-secondary);'}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">${imgUrl ? '' : '🖼️'}</div>
+      <div class="gallery-card-info">
+        <div class="gallery-card-prompt">${shortPrompt}</div>
+        <div class="gallery-card-meta">
+          <span>${item.type || item.asset_type || item.generation_type || '图片'}</span>
+          <span>${time ? new Date(time).toLocaleString() : ''}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== Sidebar badge update =====
+function updateSidebarBadge() {
+  const badge = document.getElementById('gallery-badge');
+  if (badge && galleryData.length > 0) {
+    badge.textContent = galleryData.length;
+  }
+}
+
+function showDetail(item) {
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-title').textContent = `📷 ${item.name || item.type || '生成结果'}`;
+  const imgUrl = item.thumbnail || item.path || item.url || '';
+  document.getElementById('detail-image').src = imgUrl || '';
+  const infoLines = [];
+  if (item.prompt) infoLines.push(`<b>提示词:</b> ${item.prompt}`);
+  if (item.metadata?.prompt) infoLines.push(`<b>提示词:</b> ${item.metadata.prompt}`);
+  if (item.metadata?.model) infoLines.push(`<b>模型:</b> ${item.metadata.model}`);
+  if (item.metadata?.steps) infoLines.push(`<b>步数:</b> ${item.metadata.steps}`);
+  if (item.metadata?.cfg_scale) infoLines.push(`<b>CFG:</b> ${item.metadata.cfg_scale}`);
+  if (item.metadata?.seed) infoLines.push(`<b>Seed:</b> ${item.metadata.seed}`);
+  if (item.width && item.height) infoLines.push(`<b>分辨率:</b> ${item.width}×${item.height}`);
+  if (item.file_size || item.size) infoLines.push(`<b>大小:</b> ${Math.round((item.file_size || item.size)/1024)}KB`);
+  if (item.created_at) infoLines.push(`<b>时间:</b> ${new Date(item.created_at).toLocaleString()}`);
+  if (item.dataset_id) infoLines.push(`<b>数据集:</b> ${item.dataset_id}`);
+  document.getElementById('detail-info').innerHTML = infoLines.join('<br>');
+  modal.style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('detail-modal').style.display = 'none';
+}
+
+function clearGallery() {
+  if (!confirm('确认清空历史记录？')) return;
+  galleryData = [];
+  document.getElementById('gallery-grid').innerHTML = '';
+  document.getElementById('gallery-empty').style.display = 'block';
+  document.getElementById('gallery-count').textContent = '0 条记录';
+  showToast('已清空', 'success');
+}
+
+// ===== Batch Generation =====
+let batchRunning = false;
+
+async function startBatchGeneration() {
+  if (batchRunning) { showToast('批量生成进行中', 'error'); return; }
+  const textarea = document.getElementById('batch-prompts');
+  const lines = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (lines.length === 0) { showToast('请输入提示词', 'error'); return; }
+  if (lines.length > 20) { showToast('最多20个提示词', 'error'); return; }
+
+  batchRunning = true;
+  const progress = document.getElementById('batch-progress');
+  const btn = document.querySelector('#batch-area .btn-primary');
+  btn.disabled = true;
+
+  let completed = 0;
+  for (const prompt of lines) {
+    progress.textContent = `⏳ ${completed + 1}/${lines.length} 生成中...`;
+    try {
+      const resp = await fetch('/api/v2/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: prompt,
+          model: document.getElementById('model-select').value,
+          width: parseInt(document.getElementById('custom-width').value) || 1024,
+          height: parseInt(document.getElementById('custom-height').value) || 1024,
+          steps: parseInt(document.getElementById('param-steps').value),
+          cfg_scale: parseFloat(document.getElementById('param-cfg').value),
+          generation_type: 'image'
+        })
+      });
+      if (resp.ok) completed++;
+    } catch(e) {
+      console.error('Batch item failed:', prompt, e);
+    }
+    progress.textContent = `✅ ${completed}/${lines.length} 完成`;
+  }
+
+  batchRunning = false;
+  btn.disabled = false;
+  showToast(`✅ 批量生成完成: ${completed}/${lines.length}`, 'success');
+  progress.textContent = '';
+  textarea.value = '';
+}
+
+// ===== Progress Polling for async tasks =====
+let pollingInterval = null;
+
+function startProgressPolling(taskId) {
+  if (pollingInterval) clearInterval(pollingInterval);
+  pollingInterval = setInterval(async () => {
+    try {
+      const resp = await fetch(`/api/generate/${taskId}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const fill = document.getElementById('progress-fill');
+        const text = document.getElementById('progress-text');
+        if (data.progress !== undefined) {
+          fill.style.width = Math.min(data.progress, 95) + '%';
+        }
+        if (data.status === 'completed' || data.status === 'success') {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+          fill.style.width = '100%';
+          text.textContent = '✅ 生成完成！';
+          showToast('✅ 生成成功！', 'success');
+          if (data.images) {
+            const img = document.getElementById('preview-image');
+            img.src = data.images[0];
+            img.style.display = 'block';
+            document.getElementById('preview-placeholder').style.display = 'none';
+          }
+        } else if (data.status === 'failed') {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+          text.textContent = '❌ 生成失败';
+          showToast('❌ ' + (data.error || '生成失败'), 'error');
+        }
+      }
+    } catch(e) {
+      // silent - polling may fail if task not yet persisted
+    }
+  }, 3000);
+}
+
+// Patch startGeneration to add polling for async tasks
+const _origStartGeneration = window.startGeneration;
+window.startGeneration = async function() {
+  // ... keep original logic, add polling for async
+  await _origStartGeneration();
+  // Check if we got a task_id for polling
+  // (polling is started by startGeneration after API returns)
+};
+
+// ===== Batch Mode =====
+let batchMode = false;
+
+function toggleBatchMode() {
+  batchMode = !batchMode;
+  const area = document.getElementById('batch-area');
+  const btn = document.getElementById('btn-batch-toggle');
+  area.style.display = batchMode ? 'block' : 'none';
+  btn.textContent = batchMode ? '📋 单个模式' : '📋 批量模式';
+  btn.classList.toggle('btn-primary', batchMode);
+  btn.classList.toggle('btn-secondary', !batchMode);
+}
+
+// ===== Init =====
+checkApiStatus();
+checkProviders();
+setInterval(checkApiStatus, 30000);
+setInterval(checkProviders, 60000);
+console.log('✅ Studio.html loaded. Ready to generate!');
+</script>
+</body>
+</html>

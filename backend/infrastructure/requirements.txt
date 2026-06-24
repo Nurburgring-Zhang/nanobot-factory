@@ -1,0 +1,33 @@
+# Nanobot Factory - Data Infrastructure Dependencies
+# For enterprise-grade data management: PostgreSQL + Redis + RabbitMQ + S3/OSS
+
+# PostgreSQL Driver
+asyncpg>=0.29.0
+SQLAlchemy[asyncio]>=2.0.0
+aiomysql>=0.2.0
+
+# Redis Driver
+redis>=5.0.0
+
+# RabbitMQ Driver
+aio-pika>=9.0.0
+pika>=1.3.0
+aiocouch>=0.0.29
+
+# S3/OSS Driver
+boto3>=1.34.0
+aioboto3>=10.0.0
+aliyun-python-sdk-oss>=3.0.0
+
+# Database Tools
+alembic>=1.13.0
+psycopg2-binary>=2.9.0
+asyncpg-stubs>=0.29.0
+
+# Connection Pool
+DBUtils>=3.1.0
+httpx>=0.26.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.5.0

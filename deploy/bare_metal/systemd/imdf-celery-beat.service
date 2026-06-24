@@ -1,0 +1,57 @@
+# ============================================================================
+# imdf-celery-beat.service — celery beat scheduler (cron-style tasks)
+# ----------------------------------------------------------------------------
+# Only ONE beat process per cluster. Schedules stats_aggregate, model refresh,
+# vector index rotation, dataset expiry sweeps.
+# ============================================================================
+[Unit]
+Description=IMDF celery beat (scheduler)
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+Requires=redis-server.service postgresql.service
+
+[Service]
+Type=simple
+User=imdf
+Group=imdf
+WorkingDirectory=/opt/nanobot-factory
+EnvironmentFile=/etc/imdf/imdf.env
+
+ExecStart=/opt/nanobot-factory/venv/bin/celery \
+    -A backend.imdf.celery_app:celery_app \
+    beat \
+    --loglevel=${CELERY_LOG_LEVEL} \
+    --schedule=/opt/nanobot-factory/data/celery/celerybeat-schedule \
+    --pidfile=/opt/nanobot-factory/data/celery/celerybeat.pid
+
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+ReadWritePaths=/opt/nanobot-factory/data /opt/nanobot-factory/logs /opt/nanobot-factory/data/celery
+
+# Beat is tiny — single scheduler loop, no workers
+LimitNOFILE=8192
+LimitNPROC=1024
+MemoryMax=512M
+MemoryHigh=384M
+CPUQuota=50%
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=imdf-celery-beat
+
+[Install]
+WantedBy=multi-user.target

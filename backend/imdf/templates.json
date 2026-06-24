@@ -1,0 +1,19 @@
+{
+  "classify": {
+    "name": "classify",
+    "template": "将以下{{data_type}}分类为{{categories}}:\n{{input}}",
+    "variables": [
+      "data_type",
+      "categories",
+      "input"
+    ],
+    "versions": [
+      {
+        "template": "将以下{{data_type}}分类为{{categories}}:\n{{input}}",
+        "score": 0,
+        "created": "2026-06-16T03:53:11.843923"
+      }
+    ],
+    "created": "2026-06-16T03:53:11.843934"
+  }
+}

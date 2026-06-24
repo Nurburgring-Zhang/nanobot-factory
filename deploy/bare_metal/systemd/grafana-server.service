@@ -1,0 +1,43 @@
+# ============================================================================
+# grafana-server.service — IMDF Grafana dashboards
+# ----------------------------------------------------------------------------
+# Only include this file if the apt package does NOT ship its own unit
+# (Ubuntu 22.04 ships grafana-server.service — install.sh uses `cp -n`).
+# ============================================================================
+[Unit]
+Description=IMDF Grafana (dashboards :3000)
+After=network-online.target prometheus.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=grafana
+Group=grafana
+EnvironmentFile=/etc/default/grafana
+ExecStart=/usr/sbin/grafana-server \
+    --homepath=/usr/share/grafana \
+    --config=/etc/grafana/grafana.ini \
+    cfg:default.paths.data=/var/lib/grafana \
+    cfg:default.paths.logs=/var/log/grafana \
+    cfg:default.paths.plugins=/var/lib/grafana/plugins \
+    cfg:default.paths.provisioning=/etc/grafana/provisioning
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+LimitNOFILE=65536
+MemoryMax=1G
+MemoryHigh=768M
+
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/grafana /var/log/grafana
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=grafana
+
+[Install]
+WantedBy=multi-user.target

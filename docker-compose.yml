@@ -1,0 +1,485 @@
+# =====================================================================
+# Nanobot Factory — docker-compose
+# Two profiles:
+#   default "app"      → production-like stack (nginx + backend + redis + postgres)
+#   "dev"              → hot-reload dev stack (mounts source, runs uvicorn --reload)
+# =====================================================================
+
+name: nanobot-factory
+
+# P3-1-W1: PostgreSQL+pgvector 配置 — 5 个新模型走 PG (Embedding/Workflow/AgentTask/AuditChainEntry)
+x-postgres-common: &postgres-common
+  image: pgvector/pgvector:pg16
+  container_name: nanobot-postgres
+  restart: unless-stopped
+  environment:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_DB: imdf
+  ports:
+    - "127.0.0.1:5432:5432"
+  volumes:
+    - nanobot-postgres:/var/lib/postgresql/data
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U postgres -d imdf"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+    start_period: 10s
+  networks:
+    - nanobot-net
+
+x-backend-common: &backend-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: nanobot-factory:latest
+  restart: unless-stopped
+  environment:
+    NANOBOT_HOST: "0.0.0.0"
+    NANOBOT_PORT: "8001"
+    LOG_LEVEL: "INFO"
+    DEV_MODE: "false"
+    DATABASE_PATH: "/app/data/nanobot.db"
+    IMDF_DATA_DIR: "/app/data"
+    IMDF_LOGS_DIR: "/app/logs"
+    ALLOWED_ORIGINS: "http://localhost:8080,http://localhost:5173"
+    CORS_ALLOW_ALL: "false"
+    RATE_LIMIT_REQUESTS: "100"
+    RATE_LIMIT_WINDOW: "60"
+  volumes:
+    - nanobot-data:/app/data
+    - nanobot-logs:/app/logs
+  healthcheck:
+    test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8001/healthz"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 20s
+
+services:
+  # ===== Production-like stack =====
+  app:
+    <<: *backend-common
+    container_name: nanobot-app
+    ports:
+      - "8080:8080"
+    networks:
+      - nanobot-net
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4096M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    # profile default — always on unless --profile dev used
+
+  redis:
+    image: redis:7-alpine
+    container_name: nanobot-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - nanobot-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 384M
+
+  # ===== PostgreSQL + pgvector (P3-1-W1) =====
+  # pgvector/pgvector:pg16 已预装 vector extension, 启动后即可创建 vector(1024) 列
+  postgres:
+    <<: *postgres-common
+
+  # ===== Dev hot-reload profile =====
+  dev-backend:
+    <<: *backend-common
+    profiles: ["dev"]
+    container_name: nanobot-dev-backend
+    build:
+      target: backend-build   # use the python builder stage directly for fast iteration
+    command: ["/opt/venv/bin/uvicorn", "backend.server:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend:/app/backend
+      - ./config:/app/config
+      - ./scripts:/app/scripts
+      - nanobot-data:/app/data
+      - nanobot-logs:/app/logs
+    environment:
+      DEV_MODE: "true"
+      LOG_LEVEL: "DEBUG"
+      CORS_ALLOW_ALL: "true"
+    networks:
+      - nanobot-net
+
+  dev-frontend:
+    image: node:20-alpine
+    profiles: ["dev"]
+    container_name: nanobot-dev-frontend
+    working_dir: /workspace/frontend
+    # P3-1-W1 修复: 用 YAML list 形式避免 ":" 在双引号内被当成 key
+    command:
+      - sh
+      - -c
+      - |
+        if [ -f package.json ]; then
+          npm install && npm run dev -- --host 0.0.0.0 --port 5173
+        else
+          echo 'Vue 3 CDN SPA, serve via: npx serve -l 5173 .'
+          npx -y serve -l 5173 .
+        fi
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/workspace/frontend
+      - /workspace/frontend/node_modules
+    networks:
+      - nanobot-net
+
+  # ===== P3-1-W2: API Gateway (port 8000) =====
+  # Routes /api/v1/* etc. to the monolith on port 8001
+  # Adds JWT auth, token-bucket rate limit, per-service circuit breaker,
+  # structured access logs, X-Request-ID propagation.
+  gateway:
+    <<: *backend-common
+    container_name: nanobot-gateway
+    command: ["/opt/venv/bin/uvicorn", "backend.gateway.main:app",
+              "--host", "0.0.0.0", "--port", "8000",
+              "--log-level", "info"]
+    ports:
+      - "8000:8000"
+    # P3-1-W1 修复: 原 *backend-common-environment anchor 不存在, 改为内联
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8001"
+      LOG_LEVEL: "INFO"
+      DEV_MODE: "false"
+      DATABASE_PATH: "/app/data/nanobot.db"
+      IMDF_DATA_DIR: "/app/data"
+      IMDF_LOGS_DIR: "/app/logs"
+      ALLOWED_ORIGINS: "http://localhost:8080,http://localhost:5173"
+      CORS_ALLOW_ALL: "false"
+      RATE_LIMIT_REQUESTS: "100"
+      RATE_LIMIT_WINDOW: "60"
+      JWT_SECRET_KEY: "imdf_secret_change_me"
+      GATEWAY_UPSTREAM: "http://app:8001"
+      GATEWAY_LOG_LEVEL: "INFO"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # ===== P3-2-W1: 3 microservices — user/asset/annotation =====
+  # Each mounts the imdf data volume so SQLite users.db / asset.db / annotation.db
+  # are shared with the monolith (single source of truth for cross-service reads).
+  user-service:
+    <<: *backend-common
+    container_name: nanobot-user-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.user_service.main:app",
+              "--host", "0.0.0.0", "--port", "8001",
+              "--log-level", "info"]
+    ports:
+      - "8001:8001"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8001"
+      IMDF_DATA_DIR: "/app/data"
+      JWT_SECRET: "imdf_secret_change_me"
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  asset-service:
+    <<: *backend-common
+    container_name: nanobot-asset-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.asset_service.main:app",
+              "--host", "0.0.0.0", "--port", "8002",
+              "--log-level", "info"]
+    ports:
+      - "8002:8002"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8002"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  annotation-service:
+    <<: *backend-common
+    container_name: nanobot-annotation-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.annotation_service.main:app",
+              "--host", "0.0.0.0", "--port", "8003",
+              "--log-level", "info"]
+    ports:
+      - "8003:8003"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8003"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # ===== P3-2-W2: 4 microservices — cleaning/scoring/dataset/evaluation =====
+  cleaning-service:
+    <<: *backend-common
+    container_name: nanobot-cleaning-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.cleaning_service.main:app",
+              "--host", "0.0.0.0", "--port", "8004",
+              "--log-level", "info"]
+    ports:
+      - "8004:8004"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8004"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  scoring-service:
+    <<: *backend-common
+    container_name: nanobot-scoring-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.scoring_service.main:app",
+              "--host", "0.0.0.0", "--port", "8005",
+              "--log-level", "info"]
+    ports:
+      - "8005:8005"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8005"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  dataset-service:
+    <<: *backend-common
+    container_name: nanobot-dataset-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.dataset_service.main:app",
+              "--host", "0.0.0.0", "--port", "8006",
+              "--log-level", "info"]
+    ports:
+      - "8006:8006"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8006"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  evaluation-service:
+    <<: *backend-common
+    container_name: nanobot-evaluation-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.evaluation_service.main:app",
+              "--host", "0.0.0.0", "--port", "8007",
+              "--log-level", "info"]
+    ports:
+      - "8007:8007"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8007"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # ===== P3-3-W1: agent-service (port 8008) — Agent dispatch framework + 15 agent types =====
+  agent-service:
+    <<: *backend-common
+    container_name: nanobot-agent-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.agent_service.main:app",
+              "--host", "0.0.0.0", "--port", "8008",
+              "--log-level", "info"]
+    ports:
+      - "8008:8008"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8008"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+      AGENT_SERVICE_URL: "http://127.0.0.1:8008"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # ===== P3-3-W2: workflow / notification / search services (8009-8011) =====
+  workflow-service:
+    <<: *backend-common
+    container_name: nanobot-workflow-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.workflow_service.main:app",
+              "--host", "0.0.0.0", "--port", "8009",
+              "--log-level", "info"]
+    ports:
+      - "8009:8009"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8009"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+      WORKFLOW_SERVICE_URL: "http://127.0.0.1:8009"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  notification-service:
+    <<: *backend-common
+    container_name: nanobot-notification-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.notification_service.main:app",
+              "--host", "0.0.0.0", "--port", "8010",
+              "--log-level", "info"]
+    ports:
+      - "8010:8010"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8010"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+      NOTIFICATION_SERVICE_URL: "http://127.0.0.1:8010"
+      # SMTP_HOST: "smtp.example.com"     # uncomment + set to enable real SMTP
+      # SMTP_PORT: "587"
+      # SMTP_USER: "..."
+      # SMTP_PASSWORD: "..."
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  search-service:
+    <<: *backend-common
+    container_name: nanobot-search-service
+    command: ["/opt/venv/bin/uvicorn", "backend.services.search_service.main:app",
+              "--host", "0.0.0.0", "--port", "8011",
+              "--log-level", "info"]
+    ports:
+      - "8011:8011"
+    environment:
+      NANOBOT_HOST: "0.0.0.0"
+      NANOBOT_PORT: "8011"
+      IMDF_DATA_DIR: "/app/data"
+      CORS_ALLOW_ORIGINS: "*"
+      SEARCH_SERVICE_URL: "http://127.0.0.1:8011"
+      # PG_DSN: "postgresql://postgres:postgres@postgres:5432/imdf"  # enables pgvector
+    depends_on:
+      postgres:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    networks:
+      - nanobot-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+volumes:
+  nanobot-data:
+  nanobot-logs:
+  nanobot-redis:
+  nanobot-postgres:
+
+networks:
+  nanobot-net:
+    driver: bridge

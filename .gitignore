@@ -1,0 +1,129 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.whl
+share/python-wheels/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+backend/venv/
+backend/.venv/
+
+# IDEs / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Logs
+*.log
+logs/
+backend/logs/
+backend/.mavis/
+backend/test_results/
+
+# Frontend
+node_modules/
+frontend-v2/node_modules/
+frontend-v2/dist/
+frontend-v2/.env.development.local
+frontend-v2/.env.production.local
+
+# Build outputs
+build/
+dist/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+memory.db
+data/local.db
+
+# Large data
+backend/imdf/data/
+backend/imdf/logs/
+backend/data/
+
+# Vendor / cloned repos (reference only)
+backend/imdf/vendor/
+backend/imdf/frontend/node_modules/
+backend/omni_gen_studio/ComfyUI/
+backend/omni_gen_studio/stable-diffusion-webui/
+backend/omni_gen_studio/user_input_files/
+
+# Local artifacts
+.artifacts/
+.factory/
+.mavis/plans/
+.mavis/cron/
+
+# Runtime
+_uvi*.log
+_uvi*.err
+_uvi*.out
+_test_*.py
+_test_*.log
+_test_*.err
+_test_*.out
+*.tmp
+
+# Backup
+*.bak
+*.backup
+*.old
+
+# OS native symlinks (Linux venv on Windows)
+backend/venv/lib64
+backend/venv/include

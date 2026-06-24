@@ -1,0 +1,6 @@
+Collecting asyncpg
+  Obtaining dependency information for asyncpg from https://files.pythonhosted.org/packages/28/fc/735af5384c029eb7f1ca60ccb8fa95521dbdaeef788edf4cecfc604c3cab/asyncpg-0.31.0-cp311-cp311-win_amd64.whl.metadata
+  Using cached asyncpg-0.31.0-cp311-cp311-win_amd64.whl.metadata (4.5 kB)
+Using cached asyncpg-0.31.0-cp311-cp311-win_amd64.whl (584 kB)
+Installing collected packages: asyncpg
+Successfully installed asyncpg-0.31.0

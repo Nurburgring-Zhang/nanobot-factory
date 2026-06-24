@@ -1,0 +1,164 @@
+{{- if .Values.minio.enabled -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: minio
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "minio") | nindent 4 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "minio") | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.minio.storage }}
+  {{- if .Values.minio.storageClassName }}
+  storageClassName: {{ .Values.minio.storageClassName }}
+  {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "minio") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: api
+      port: {{ .Values.minio.apiPort }}
+      targetPort: {{ .Values.minio.apiPort }}
+      protocol: TCP
+    - name: console
+      port: {{ .Values.minio.consolePort }}
+      targetPort: {{ .Values.minio.consolePort }}
+      protocol: TCP
+  selector:
+    {{- include "nanobot-factory.selectorLabels" (dict "ctx" . "name" "minio") | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "minio") | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas.minio }}
+  selector:
+    matchLabels:
+      {{- include "nanobot-factory.selectorLabels" (dict "ctx" . "name" "minio") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "minio") | nindent 8 }}
+    spec:
+      serviceAccountName: minio
+      containers:
+        - name: minio
+          image: {{ .Values.minio.image }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - /data
+            - --console-address
+            - {{ printf ":%d" (int .Values.minio.consolePort) }}
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nanobot-factory.fullname" . }}-secrets
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nanobot-factory.fullname" . }}-secrets
+                  key: MINIO_ROOT_PASSWORD
+          ports:
+            - name: api
+              containerPort: {{ .Values.minio.apiPort }}
+              protocol: TCP
+            - name: console
+              containerPort: {{ .Values.minio.consolePort }}
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: {{ .Values.minio.apiPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: {{ .Values.minio.apiPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+            claimName: minio-data
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bucket-init
+  namespace: nanobot-factory
+  labels:
+    {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "minio") | nindent 4 }}
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "nanobot-factory.commonLabels" (dict "ctx" . "name" "minio") | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nanobot-factory.fullname" . }}-secrets
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nanobot-factory.fullname" . }}-secrets
+                  key: MINIO_ROOT_PASSWORD
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              mc alias set local http://minio:{{ .Values.minio.apiPort }} $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD
+              {{- range .Values.minio.buckets }}
+              mc mb --ignore-existing local/{{ . }}
+              {{- end }}
+              echo "MinIO buckets ready"
+{{- end }}
