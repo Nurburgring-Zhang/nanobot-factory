@@ -129,6 +129,9 @@ workspace/
 annotations_enhanced/
 平台方案_v3/
 
+# Deployment scripts (contain tokens/paths)
+_push_to_github.sh
+
 # Backup
 *.bak
 *.backup
