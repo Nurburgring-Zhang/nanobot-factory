@@ -78,6 +78,9 @@ class Order:
     # Refund info
     refunded_at: Optional[str] = None
     refund_reason: Optional[str] = None
+    # Partial refund tracking: cumulative amount already refunded (in cents).
+    # For a full refund this equals amount_cents after the refund completes.
+    refunded_amount_cents: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
@@ -301,8 +304,27 @@ class OrderService:
             self.store.save(order)
         return order
 
-    def refund(self, order_id: str, reason: Optional[str] = None) -> Order:
-        """Refund a paid/fulfilled order."""
+    def refund(self, order_id: str, reason: Optional[str] = None,
+               amount_cents: Optional[int] = None) -> Order:
+        """Refund a paid/fulfilled order — full or partial.
+
+        Args:
+            order_id:   order to refund
+            reason:     human-readable reason (recorded in order.refund_reason)
+            amount_cents: None -> full refund of remaining balance.
+                          int    -> partial refund amount in cents.
+                          If amount_cents == remaining, order is marked REFUNDED.
+                          If amount_cents < remaining, order stays in
+                          PAID/FULFILLED with refunded_amount_cents incremented.
+
+        Returns:
+            Updated Order.
+
+        Raises:
+            KeyError: order not found
+            ValueError: order in invalid status, or amount invalid
+                       (negative, exceeds remaining, etc.)
+        """
         order = self.store.get(order_id)
         if order is None:
             raise KeyError(f"order not found: {order_id!r}")
@@ -310,13 +332,50 @@ class OrderService:
             raise ValueError(
                 f"cannot refund order in status {order.status.value!r}"
             )
-        if order.status == OrderStatus.PAID:
-            return self.transition(order_id, OrderStatus.REFUNDED, reason=reason)
-        # fulfilled → refunded (special path: not in normal transition table,
-        # but we support refund after fulfillment)
-        order.status = OrderStatus.REFUNDED
-        order.refunded_at = _utcnow_iso()
-        order.refund_reason = reason
+        already_refunded = int(getattr(order, "refunded_amount_cents", 0) or 0)
+        remaining = order.amount_cents - already_refunded
+        if amount_cents is None:
+            amount_cents = remaining
+        if amount_cents <= 0:
+            raise ValueError(f"refund amount must be > 0, got {amount_cents}")
+        if amount_cents > remaining:
+            raise ValueError(
+                f"refund amount {amount_cents} cents exceeds remaining {remaining} cents "
+                f"(order={order.amount_cents}, already_refunded={already_refunded})"
+            )
+        new_refunded_total = already_refunded + amount_cents
+        is_full_refund = (new_refunded_total >= order.amount_cents)
+        now = _utcnow_iso()
+        order.refunded_amount_cents = new_refunded_total
+        order.refunded_at = now
+        if reason is not None:
+            order.refund_reason = reason
+        # Track partial refund history (most recent reason)
+        refunds = order.metadata.get("refunds") or []
+        refunds.append({
+            "amount_cents": amount_cents,
+            "reason": reason,
+            "at": now,
+            "is_partial": not is_full_refund,
+        })
+        order.metadata["refunds"] = refunds
+        if is_full_refund:
+            # Move to REFUNDED state
+            if order.status == OrderStatus.PAID:
+                # paid → refunded via transition table
+                order.status = OrderStatus.REFUNDED
+                order.refunded_at = now
+                order.refund_reason = reason
+                self.store.save(order)
+                return order
+            # fulfilled → refunded (special path)
+            order.status = OrderStatus.REFUNDED
+            order.refunded_at = now
+            order.refund_reason = reason
+            self.store.save(order)
+            return order
+        # Partial refund — order stays in current status (PAID or FULFILLED).
+        # Caller should mark it downgraded or simply record the partial refund.
         self.store.save(order)
         return order
 

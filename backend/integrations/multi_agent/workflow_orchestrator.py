@@ -665,7 +665,7 @@ _dispatcher: Optional[DispatcherAgent] = None
 def get_global_orchestrator() -> MultiAgentOrchestrator:
     global _orchestrator
     if _orchestrator is None:
-        from backend.integrations.multi_agent.agent_registry import get_agent_registry
+        from .agent_registry import get_agent_registry
         _orchestrator = MultiAgentOrchestrator(get_agent_registry())
     return _orchestrator
 

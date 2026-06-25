@@ -9,10 +9,214 @@ import os
 import json
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# P1-1: Lead scoring — tier/followup/recency/LTV 量化打分
+# ---------------------------------------------------------------------------
+# 各 tier 基础分 (战略 > 大型 > 中型 > SMB > 个人)
+TIER_BASE_SCORE = {
+    "individual": 10,
+    "smb": 25,
+    "mid_market": 50,
+    "large": 75,
+    "strategic": 100,
+}
+
+# 行业加分 (高客单价行业: 金融/政企/制造)
+INDUSTRY_BONUS = {
+    "金融": 15,
+    "政企": 12,
+    "制造": 10,
+    "互联网/科技": 8,
+    "汽车/出行": 8,
+    "医疗": 7,
+    "教育": 5,
+    "零售/电商": 5,
+    "媒体/广告": 4,
+    "游戏": 3,
+    "其他": 0,
+}
+
+# 公司规模加分 (员工数越多越值钱)
+SIZE_BONUS = {
+    "1-10": 0,
+    "11-50": 3,
+    "51-200": 8,
+    "201-1000": 15,
+    "1000+": 25,
+}
+
+# 跟进类型权重
+FOLLOWUP_TYPE_WEIGHT = {
+    "contract": 10,    # 合同相关最有价值
+    "payment": 8,      # 付款相关
+    "communication": 3,  # 普通沟通
+    "complaint": 2,    # 投诉 (有信号但偏负面)
+    "other": 1,
+}
+
+# 客户活跃度窗口 (7/30/90 天)
+ACTIVITY_WINDOWS_DAYS = [7, 30, 90]
+
+
+def _parse_dt(s: str) -> Optional[datetime]:
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(s)
+    except (ValueError, TypeError):
+        return None
+
+
+def compute_lead_score(
+    tier: str,
+    industry: str,
+    size: str,
+    followups: List[Dict[str, Any]],
+    lifetime_value: float,
+    updated_at: Optional[str] = None,
+    now: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """计算 Lead Score (0-200 分).
+    
+    公式 (加权):
+        score = tier_base  * 1.0
+              + industry_bonus * 0.8
+              + size_bonus   * 0.6
+              + followup_activity_score (0-40)
+              + ltv_score (0-20, 对数曲线)
+              + recency_bonus (0-15)
+    
+    grade:
+        A: ≥ 130  — 高价值目标, 优先分配资深销售
+        B: 90-129 — 优质潜客, 正常跟进
+        C: 50-89  — 一般潜客, 培育中
+        D: < 50   — 低优先级, 自动化跟进
+    """
+    if now is None:
+        now = datetime.utcnow()
+    # 基础分
+    base = TIER_BASE_SCORE.get(tier, 10)
+    ind_b = INDUSTRY_BONUS.get(industry, 0)
+    size_b = SIZE_BONUS.get(size, 0)
+    # 跟进活跃度 (类型权重 + 近期衰减)
+    fu_score = 0.0
+    for fu in followups:
+        weight = FOLLOWUP_TYPE_WEIGHT.get(fu.get("type", "other"), 1)
+        fu_at = _parse_dt(fu.get("at", ""))
+        if fu_at:
+            days_ago = (now - fu_at).total_seconds() / 86400
+            # 近期跟进权重更高 (90 天内满权重, 之后线性衰减)
+            if days_ago <= 90:
+                fu_score += weight
+            else:
+                fu_score += weight * max(0.2, 1.0 - (days_ago - 90) / 365)
+        else:
+            fu_score += weight * 0.5
+    fu_score = min(fu_score, 40)
+    # LTV 对数曲线 (¥1万→3分, ¥10万→12分, ¥100万→20分, 封顶 20)
+    import math
+    ltv_score = min(20.0, math.log10(max(1.0, lifetime_value) / 100.0) * 6.0) if lifetime_value > 0 else 0
+    ltv_score = max(0.0, ltv_score)
+    # 最近活跃度加分 (updated_at / 最后跟进)
+    recency_bonus = 0.0
+    up_at = _parse_dt(updated_at or "")
+    if up_at:
+        days_since = (now - up_at).total_seconds() / 86400
+        if days_since <= 7:
+            recency_bonus = 15
+        elif days_since <= 30:
+            recency_bonus = 10
+        elif days_since <= 90:
+            recency_bonus = 5
+    # 总分 (封顶 200)
+    raw = base + ind_b * 0.8 + size_b * 0.6 + fu_score + ltv_score + recency_bonus
+    score = round(min(200.0, max(0.0, raw)), 2)
+    # 评级
+    if score >= 130:
+        grade = "A"
+    elif score >= 90:
+        grade = "B"
+    elif score >= 50:
+        grade = "C"
+    else:
+        grade = "D"
+    return {
+        "score": score,
+        "grade": grade,
+        "breakdown": {
+            "tier_base": base,
+            "industry_bonus": round(ind_b * 0.8, 2),
+            "size_bonus": round(size_b * 0.6, 2),
+            "followup_activity": round(fu_score, 2),
+            "ltv_score": round(ltv_score, 2),
+            "recency_bonus": recency_bonus,
+        },
+    }
+
+
+def _customer_to_score_input(c: "Customer") -> Dict[str, Any]:
+    return {
+        "tier": c.tier,
+        "industry": c.industry,
+        "size": c.size,
+        "followups": c.followups,
+        "lifetime_value": c.lifetime_value,
+        "updated_at": c.updated_at,
+    }
+
+
+def recompute_customer_score(c: "Customer") -> Dict[str, Any]:
+    """刷新单个客户 lead score, 写入实例. 返回 score 详情."""
+    res = compute_lead_score(**_customer_to_score_input(c))
+    c.lead_score = res["score"]
+    c.lead_grade = res["grade"]
+    c.lead_score_breakdown = res["breakdown"]
+    c.lead_score_updated_at = datetime.utcnow().isoformat()
+    return res
+
+
+def recompute_all_scores() -> int:
+    """全局重算所有客户 lead score. 返回处理的客户数."""
+    n = 0
+    for c in _CUSTOMERS.values():
+        recompute_customer_score(c)
+        n += 1
+    return n
+
+
+def get_top_leads(limit: int = 20, grade: Optional[str] = None) -> List["Customer"]:
+    """按 lead score 倒序返回 Top 客户. 可选按 grade 过滤."""
+    items = list(_CUSTOMERS.values())
+    if grade:
+        items = [c for c in items if c.lead_grade == grade]
+    items.sort(key=lambda c: c.lead_score, reverse=True)
+    return items[:limit]
+
+
+def get_lead_stats() -> Dict[str, Any]:
+    """Lead Score 全局统计 (A/B/C/D 分布, 平均分, Top 行业)."""
+    by_grade: Dict[str, int] = {"A": 0, "B": 0, "C": 0, "D": 0}
+    by_industry: Dict[str, int] = {}
+    total = 0
+    score_sum = 0.0
+    for c in _CUSTOMERS.values():
+        if c.lead_grade in by_grade:
+            by_grade[c.lead_grade] += 1
+        by_industry[c.industry] = by_industry.get(c.industry, 0) + 1
+        total += 1
+        score_sum += c.lead_score
+    return {
+        "total_customers": total,
+        "avg_lead_score": round(score_sum / total, 2) if total else 0.0,
+        "by_grade": by_grade,
+        "by_industry": by_industry,
+    }
 
 # 客户分级
 TIERS = ["individual", "smb", "mid_market", "large", "strategic"]
@@ -78,6 +282,11 @@ class Customer:
         self.updated_at = self.created_at
         self.lifetime_value: float = 0.0  # 累计消费
         self.status = "active"  # active / churned / prospect
+        # P1-1: Lead scoring
+        self.lead_score: float = 0.0
+        self.lead_grade: str = "D"
+        self.lead_score_breakdown: Dict[str, float] = {}
+        self.lead_score_updated_at: Optional[str] = None
 
     def add_followup(self, followup_type: str, content: str, by: str = "system") -> Dict[str, Any]:
         if followup_type not in FOLLOWUP_TYPES:
@@ -111,6 +320,10 @@ class Customer:
             "updated_at": self.updated_at,
             "lifetime_value": self.lifetime_value,
             "status": self.status,
+            "lead_score": self.lead_score,
+            "lead_grade": self.lead_grade,
+            "lead_score_breakdown": self.lead_score_breakdown,
+            "lead_score_updated_at": self.lead_score_updated_at,
         }
 
 

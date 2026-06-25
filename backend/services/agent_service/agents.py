@@ -399,7 +399,112 @@ __all__ = [
     "AgentType",
     "ExecutionMode",
     "AGENT_REGISTRY",
+    "AGENT_CLASS_REGISTRY",
     "ALL_AGENT_TYPES",
     "get_agent_config",
+    "get_agent_class",
     "list_agent_summaries",
+    "register_builtin_agent_classes",
+    "reset_agent_class_registry_for_test",
 ]
+
+
+# ── P6-Fix-P0-5: bridge the 23 BaseAgent classes ──────────────────────────
+# The new plugin contract (see ``backend/imdf/agents/``) lets us
+# reference agent types by *class* as well as by metadata dict.
+# We expose ``AGENT_CLASS_REGISTRY`` (a ``AgentType -> BaseAgent
+# subclass`` map) plus a ``get_agent_class`` helper, and we
+# auto-register the 23 built-in classes on first access so the
+# executor / routes can stay oblivious to the plugin layer.
+from typing import TYPE_CHECKING  # noqa: E402
+
+if TYPE_CHECKING:  # pragma: no cover — typing only
+    from imdf.agents.base import BaseAgent  # noqa: F401
+
+_AGENT_CLASS_REGISTRY: Dict[AgentType, "type[BaseAgent]"] = {}
+_agent_class_registry_loaded: bool = False
+
+
+def _ensure_agent_class_registry_loaded() -> None:
+    """Lazy-load + cache the 23 built-in agent classes.
+
+    Importing :mod:`imdf.agents` is non-trivial (it pulls in
+    pydantic + a couple of other deps), so we delay the import
+    until the caller actually asks for an agent class.  The
+    ``register_builtin_agent_classes`` public function is the
+    explicit way to pre-load.
+    """
+    global _agent_class_registry_loaded
+    if _agent_class_registry_loaded:
+        return
+    try:
+        from imdf.agents import register_builtin_agents  # type: ignore
+        from imdf.agents.registry import PluginRegistry  # type: ignore
+    except Exception as e:  # noqa: BLE001
+        # Plugin layer unavailable — leave the registry empty; the
+        # executor can still run via the metadata dict path.
+        import logging
+        logging.getLogger(__name__).debug(
+            "imdf.agents plugin layer unavailable: %s", e,
+        )
+        _agent_class_registry_loaded = True
+        return
+    reg = PluginRegistry.get_registry()
+    register_builtin_agents(registry=reg)
+    # Mirror plugin-registry bindings into the local typed dict.
+    for slug, cls in reg.items():
+        try:
+            at = AgentType(slug)
+        except ValueError:
+            continue
+        _AGENT_CLASS_REGISTRY[at] = cls
+    _agent_class_registry_loaded = True
+
+
+def register_builtin_agent_classes() -> List[AgentType]:
+    """Force-load + register the 23 built-in agent classes.
+
+    Idempotent.  Returns the list of :class:`AgentType` entries that
+    ended up in :data:`AGENT_CLASS_REGISTRY`.
+    """
+    _ensure_agent_class_registry_loaded()
+    return list(_AGENT_CLASS_REGISTRY.keys())
+
+
+def get_agent_class(agent_type: str | AgentType) -> "type[BaseAgent]":
+    """Look up the concrete :class:`BaseAgent` subclass for an
+    agent type.
+
+    Raises ``KeyError`` when no class is registered (the caller
+    should treat this the same as a missing metadata entry).
+    """
+    _ensure_agent_class_registry_loaded()
+    if isinstance(agent_type, AgentType):
+        at = agent_type
+    else:
+        try:
+            at = AgentType(agent_type)
+        except ValueError as e:
+            raise KeyError(agent_type) from e
+    try:
+        return _AGENT_CLASS_REGISTRY[at]
+    except KeyError as e:
+        raise KeyError(agent_type) from e
+
+
+def reset_agent_class_registry_for_test() -> None:
+    """Test-only: drop the cached class registry and reset the
+    plugin singleton so the next ``get_agent_class`` call
+    re-imports from scratch."""
+    global _agent_class_registry_loaded
+    _AGENT_CLASS_REGISTRY.clear()
+    _agent_class_registry_loaded = False
+    try:
+        from imdf.agents.registry import PluginRegistry  # type: ignore
+        PluginRegistry.reset_singleton()
+    except Exception:  # noqa: BLE001
+        pass
+
+
+# Public alias for the typed registry.
+AGENT_CLASS_REGISTRY: Dict[AgentType, "type[BaseAgent]"] = _AGENT_CLASS_REGISTRY

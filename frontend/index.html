@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智影数据工场</title>
+  <!-- ===== CDN: Vue 3 + Element Plus + ECharts + Dayjs (全局 Vue) ===== -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/element-plus/dist/index.full.min.js"></script>
+  <script src="https://unpkg.com/element-plus/dist/locale/zh-cn.min.js"></script>
+  <script src="https://unpkg.com/echarts@5/dist/echarts.min.js"></script>
+  <script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
+  <!-- ===== CDN: Vue Router 4 + Pinia (全局, Pinia 需 VueDemi 垫片) ===== -->
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
+  <script src="https://unpkg.com/vue-demi@0.14.10/lib/index.iife.js"></script>
+  <script src="https://unpkg.com/pinia@2.3.1/dist/pinia.iife.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <style>
+    /* ===== 基础 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #303133; }
+    #app { height: 100vh; }
+
+    /* ===== Shell: sidebar + main ===== */
+    .ls-shell { display: flex; height: 100vh; }
+    .ls-sidebar {
+      width: 220px; background: #1d1e1f; color: #fff;
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .ls-logo { padding: 18px 20px; font-size: 17px; font-weight: 700;
+      border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
+    .ls-logo-emoji { font-size: 22px; }
+    .ls-menu-host { flex: 1; overflow-y: auto; padding: 6px 0; }
+    /* Element Plus menu overrides — dark sidebar */
+    .ls-menu-host .el-menu { background: transparent; border-right: none; }
+    .ls-menu-host .el-menu-item {
+      color: #aaa;
+      border-left: 3px solid transparent;
+      height: 44px; line-height: 44px;
+    }
+    .ls-menu-host .el-menu-item:hover,
+    .ls-menu-host .el-menu-item:focus { background: #2a2b2c; color: #fff; }
+    .ls-menu-host .el-menu-item.is-active { color: #409eff; background: #2a2b2c; border-left-color: #409eff; }
+    .ls-menu-host .ls-mi-icon { width: 18px; text-align: center; font-size: 16px; margin-right: 8px; }
+
+    .ls-sidebar-foot {
+      padding: 14px 20px; border-top: 1px solid #333;
+      font-size: 12px; color: #666;
+    }
+    .ls-sidebar-foot .muted { color: #888; }
+
+    .ls-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .ls-header {
+      height: 56px; background: #fff; border-bottom: 1px solid #e4e7ed;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; flex-shrink: 0;
+    }
+    .ls-header-title { font-size: 16px; font-weight: 600; color: #303133; }
+    .ls-header-right { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #606266; }
+    .ls-user { display: flex; align-items: center; gap: 8px; }
+    .ls-user-name { color: #303133; font-weight: 500; }
+    .ls-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+    /* ===== 卡片 / 表格 / 统计 ===== */
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #303133; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .stat-card .num { font-size: 28px; font-weight: 700; color: #409eff; }
+    .stat-card .label { font-size: 13px; color: #909399; margin-top: 4px; }
+    .table-actions { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .el-table th { background: #f5f7fa !important; }
+
+    /* ===== 三态组件样式 ===== */
+    .ls-loading { display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 0; gap: 12px; color: #606266; }
+    .ls-spinner {
+      border: 3px solid #e4e7ed; border-top-color: #409eff;
+      border-radius: 50%; animation: ls-spin .9s linear infinite;
+    }
+    @keyframes ls-spin { to { transform: rotate(360deg); } }
+    .ls-text { font-size: 14px; color: #909399; }
+
+    .ls-empty { display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 20px; gap: 10px; color: #909399; }
+    .ls-empty-icon { font-size: 56px; line-height: 1; opacity: .7; }
+    .ls-empty-title { font-size: 16px; color: #606266; font-weight: 500; }
+    .ls-empty-desc { font-size: 13px; color: #909399; }
+    .ls-empty-action { margin-top: 8px; }
+
+    .ls-error {
+      display: flex; align-items: center; gap: 14px;
+      background: #fef0f0; border: 1px solid #fbc4c4; color: #f56c6c;
+      padding: 14px 18px; border-radius: 6px; margin-bottom: 16px;
+    }
+    .ls-error-icon { font-size: 24px; }
+    .ls-error-body { flex: 1; }
+    .ls-error-title { font-size: 14px; font-weight: 600; color: #f56c6c; }
+    .ls-error-msg { font-size: 13px; color: #c45656; margin-top: 2px; }
+
+    /* ===== 通用 ===== */
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin: 2px; }
+    .tag-blue { background: #ecf5ff; color: #409eff; }
+    .tag-green { background: #f0f9eb; color: #67c23a; }
+    .tag-orange { background: #fdf6ec; color: #e6a23c; }
+    .tag-red { background: #fef0f0; color: #f56c6c; }
+    .flex { display: flex; gap: 12px; }
+    .flex-1 { flex: 1; }
+    .mb-12 { margin-bottom: 12px; }
+    .rank-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+    .rank-no { width: 28px; color: #909399; font-weight: 700; }
+    .rank-name { flex: 1; }
+    .rank-val { color: #409eff; font-weight: 600; }
+
+    /* ===== 画布 ===== */
+    .canvas-toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .canvas-host {
+      min-height: 360px; border: 1px dashed #dcdfe6; border-radius: 6px;
+      background: #fafbfc; display: flex; align-items: center; justify-content: center;
+    }
+    .canvas-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #909399; }
+    .ph-icon { font-size: 56px; opacity: .5; }
+    .ph-title { font-size: 16px; color: #606266; }
+    .ph-desc { font-size: 13px; }
+
+    /* ===== 路由切换动画 ===== */
+    .fade-enter-active, .fade-leave-active { transition: opacity .2s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+  </style>
+</head>
+<body>
+  <!-- Vue SPA mount point -->
+  <div id="app"></div>
+
+  <!-- App entry — ES module, 由浏览器原生 ESM 加载, defer-by-default -->
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

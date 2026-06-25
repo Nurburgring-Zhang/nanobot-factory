@@ -163,6 +163,17 @@ CELERY_TASK_ROUTES: dict = {
     "imdf.tasks.vector_index.*": {"queue": "imdf.index"},
     "imdf.tasks.model_gateway.*": {"queue": "imdf.network"},
     "imdf.tasks.stats_aggregate.*": {"queue": "imdf.cpu"},
+    # P6-Fix-C-5: SLA breach monitor — 30min beat schedule, low-priority queue
+    "tickets.tasks.sla_monitor.*": {"queue": "imdf.cpu"},
+}
+
+# Celery beat periodic schedule (P6-Fix-C-5 adds the SLA breach scan)
+CELERY_BEAT_SCHEDULE: dict = {
+    "sla-breach-check-every-30min": {
+        "task": "tickets.tasks.sla_monitor.run_sla_breach_check",
+        "schedule": 1800.0,  # 30 min in seconds
+        "options": {"queue": "imdf.cpu"},
+    },
 }
 
 # Eager mode for tests / dev (no broker roundtrip)

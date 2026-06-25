@@ -62,6 +62,7 @@ def _build_celery() -> Celery:
             CELERY_TASK_ROUTES,
             CELERY_TASK_ALWAYS_EAGER,
             CELERY_TASK_EAGER_PROPAGATES,
+            CELERY_BEAT_SCHEDULE,
         )
     except Exception as exc:  # pragma: no cover - defensive
         logger.error("Failed to import imdf.config.settings for Celery: %s", exc)
@@ -93,6 +94,8 @@ def _build_celery() -> Celery:
             "imdf.tasks.vector_index",
             "imdf.tasks.model_gateway",
             "imdf.tasks.stats_aggregate",
+            # P6-Fix-C-5: tickets SLA monitor
+            "tickets.tasks.sla_monitor",
         ],
     )
 
@@ -114,6 +117,8 @@ def _build_celery() -> Celery:
         # Routing
         task_default_queue=CELERY_TASK_DEFAULT_QUEUE,
         task_routes=CELERY_TASK_ROUTES,
+        # Periodic schedule (Celery beat) — P6-Fix-C-5 SLA breach scan runs every 30 min
+        beat_schedule=CELERY_BEAT_SCHEDULE,
         # Eager mode (tests)
         task_always_eager=CELERY_TASK_ALWAYS_EAGER,
         task_eager_propagates=CELERY_TASK_EAGER_PROPAGATES,
@@ -150,6 +155,8 @@ for _mod in (
     "imdf.tasks.vector_index",
     "imdf.tasks.model_gateway",
     "imdf.tasks.stats_aggregate",
+    # P6-Fix-C-5: tickets SLA monitor
+    "tickets.tasks.sla_monitor",
 ):
     try:
         __import__(_mod)

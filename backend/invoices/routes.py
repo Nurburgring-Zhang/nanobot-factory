@@ -17,8 +17,23 @@ from . import (
     on_order_paid,
     calc_tax,
 )
+from .tax_bureau import (
+    APPLICATION_STATUSES, UPLOAD_STATUSES, INVOICE_TYPES_SUPPORTED,
+    ApplicationRecord, UploadRecord, VerifyResult,
+    apply_invoice_numbers, get_application, list_applications, consume_application,
+    report_to_tax_bureau, get_upload, list_uploads,
+    verify_via_tax_bureau,
+    monthly_report, monthly_report_for,
+)
+from .financial_report import (
+    MonthlyFinancialReport,
+    generate_monthly_report, get_revenue_by_payment_method,
+    get_top_customers_by_revenue, generate_quarterly_report, export_report_csv,
+)
 
 router = APIRouter(prefix="/api/v1/invoices", tags=["invoices"])
+tax_bureau_router = APIRouter(prefix="/api/v1/invoices/tax-bureau", tags=["invoices-tax-bureau"])
+finance_router = APIRouter(prefix="/api/v1/invoices/finance", tags=["invoices-finance"])
 
 
 class InvoiceItem(BaseModel):
@@ -128,3 +143,176 @@ def hook_on_order_paid(
 @router.get("/_meta/calc_tax")
 def api_calc_tax(amount: float, rate: float = 0.13, inclusive: bool = True):
     return calc_tax(amount, rate, inclusive)
+
+
+# ============================================================================
+# P1-3: 国税平台对接 API
+# ============================================================================
+class ApplyInvoiceNumbersRequest(BaseModel):
+    invoice_type: str = Field("electronic", pattern=r"^(vat_normal|vat_special|electronic)$")
+    qty: int = Field(..., ge=1, le=1000)
+    operator: Optional[str] = Field(None, max_length=64)
+    simulate: bool = True
+
+
+class ReportInvoiceRequest(BaseModel):
+    invoice_no: str = Field(..., min_length=1, max_length=64)
+    application_id: str = Field(..., min_length=1, max_length=64)
+    invoice_type: str = Field("electronic", pattern=r"^(vat_normal|vat_special|electronic)$")
+
+
+class VerifyInvoiceRequest(BaseModel):
+    invoice_no: str = Field(..., min_length=1, max_length=64)
+    verify_code: str = Field(..., min_length=4, max_length=16)
+
+
+@tax_bureau_router.post("/apply")
+def tb_apply(req: ApplyInvoiceNumbersRequest):
+    try:
+        rec = apply_invoice_numbers(
+            invoice_type=req.invoice_type,
+            qty=req.qty,
+            operator=req.operator,
+            simulate=req.simulate,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return rec.to_dict()
+
+
+@tax_bureau_router.get("/apply")
+def tb_list_applications(status: Optional[str] = Query(None)):
+    if status and status not in APPLICATION_STATUSES:
+        raise HTTPException(status_code=400, detail=f"invalid status: {status!r}")
+    items = list_applications(status=status)
+    return {
+        "count": len(items),
+        "items": [a.to_dict() for a in items],
+    }
+
+
+@tax_bureau_router.get("/apply/{application_id}")
+def tb_get_application(application_id: str):
+    a = get_application(application_id)
+    if not a:
+        raise HTTPException(status_code=404, detail=f"application {application_id!r} not found")
+    return a.to_dict()
+
+
+@tax_bureau_router.post("/upload")
+def tb_upload(req: ReportInvoiceRequest):
+    try:
+        rec = report_to_tax_bureau(
+            invoice_no=req.invoice_no,
+            application_id=req.application_id,
+            invoice_type=req.invoice_type,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return rec.to_dict()
+
+
+@tax_bureau_router.get("/upload")
+def tb_list_uploads(invoice_no: Optional[str] = Query(None, max_length=64)):
+    items = list_uploads(invoice_no=invoice_no)
+    return {"count": len(items), "items": [u.to_dict() for u in items]}
+
+
+@tax_bureau_router.get("/upload/{upload_id}")
+def tb_get_upload(upload_id: str):
+    u = get_upload(upload_id)
+    if not u:
+        raise HTTPException(status_code=404, detail=f"upload {upload_id!r} not found")
+    return u.to_dict()
+
+
+@tax_bureau_router.post("/verify")
+def tb_verify(req: VerifyInvoiceRequest):
+    res = verify_via_tax_bureau(req.invoice_no, req.verify_code)
+    return res.to_dict()
+
+
+@tax_bureau_router.get("/monthly-report")
+def tb_monthly_report(year: int = Query(..., ge=2000, le=2100), month: int = Query(..., ge=1, le=12)):
+    try:
+        return monthly_report(year, month)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@tax_bureau_router.get("/_meta")
+def tb_meta():
+    return {
+        "application_statuses": APPLICATION_STATUSES,
+        "upload_statuses": UPLOAD_STATUSES,
+        "invoice_types": INVOICE_TYPES_SUPPORTED,
+        "monthly_deadline_day": 15,
+    }
+
+
+# ============================================================================
+# P1-7: 财务月度报表 API
+# ============================================================================
+@finance_router.get("/monthly")
+def fin_monthly(
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+):
+    try:
+        rpt = generate_monthly_report(year, month)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return rpt.to_dict()
+
+
+@finance_router.get("/monthly/csv")
+def fin_monthly_csv(
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+):
+    try:
+        rpt = generate_monthly_report(year, month)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    csv_text = export_report_csv(rpt)
+    return Response(
+        content=csv_text,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="finance-{year}-{month:02d}.csv"'},
+    )
+
+
+@finance_router.get("/quarterly")
+def fin_quarterly(
+    year: int = Query(..., ge=2000, le=2100),
+    quarter: int = Query(..., ge=1, le=4),
+):
+    try:
+        return generate_quarterly_report(year, quarter)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@finance_router.get("/revenue-by-method")
+def fin_revenue_by_method(
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+):
+    return {
+        "year": year, "month": month,
+        "by_method_cents": get_revenue_by_payment_method(year, month),
+    }
+
+
+@finance_router.get("/top-customers")
+def fin_top_customers(
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+    n: int = Query(10, ge=1, le=100),
+):
+    return {
+        "year": year, "month": month,
+        "top": get_top_customers_by_revenue(year, month, n=n),
+    }

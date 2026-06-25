@@ -1,0 +1,12 @@
+﻿D:\ComfyUI\.ext\python.exe : [main]	INFO	profile include tests: None
+所在位置 行:1 字符: 48
++ ... t-factory'; D:\ComfyUI\.ext\python.exe -m bandit -r backend/ --exclud ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([main]	INFO	profile include tests: None:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+Working... ---------------------------------------- 100% 0:00:59
+[json]	INFO	JSON output written to file: reports/bandit_real.json

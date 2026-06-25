@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List
 
+from services._none_safety import safe_dict_run  # P6-Fix-P0-1: NoneType guard
+
 from . import (
     fid,
     clip_score,
@@ -114,7 +116,9 @@ _META_TABLE: List[Dict[str, Any]] = [
 ]
 
 
-OPERATORS: Dict[str, Callable] = {entry["id"]: entry["run"] for entry in _META_TABLE}
+OPERATORS: Dict[str, Callable] = {
+    entry["id"]: safe_dict_run(entry["run"]) for entry in _META_TABLE
+}
 
 
 def _meta_without_callable(entry: Dict[str, Any]) -> Dict[str, Any]:

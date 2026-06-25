@@ -42,7 +42,7 @@
           fit-view-on-init
           class="vue-flow-canvas"
         >
-          <Background pattern-color="#aaa" :gap="16" />
+          <Background pattern-color="#767676" :gap="16" />
           <MiniMap />
           <Controls />
         </VueFlow>

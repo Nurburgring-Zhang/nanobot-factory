@@ -9,6 +9,7 @@ from . import (
     TICKET_TYPES, TICKET_TYPE_LABELS, PRIORITIES, STATES, SLA_HOURS,
     create_ticket, get_ticket, list_tickets, transition_ticket,
     add_ticket_comment, assign_ticket, sla_stats, on_customer_ticket,
+    merge_tickets, split_ticket,
 )
 
 router = APIRouter(prefix="/api/v1/tickets", tags=["tickets"])
@@ -117,3 +118,63 @@ def add_comment(ticket_id: str, req: TicketComment):
 def hook(customer_id: str, ticket_type: str, subject: str, description: str, priority: str = "P3"):
     t = on_customer_ticket(customer_id, ticket_type, subject, description, priority)
     return t.to_dict()
+
+
+# ============================================================================
+# P1-6: 工单合并 / 拆分
+# ============================================================================
+class TicketMergeRequest(BaseModel):
+    primary_ticket_id: str = Field(..., min_length=1)
+    secondary_ticket_ids: List[str] = Field(..., min_length=1)
+    operator: str = Field("system", max_length=64)
+    note: str = Field("", max_length=512)
+
+
+class TicketSplitRequest(BaseModel):
+    comment_indices: List[int] = Field(..., min_length=1)
+    new_subject: str = Field(..., min_length=1, max_length=200)
+    operator: str = Field("system", max_length=64)
+    new_priority: Optional[str] = Field(None, pattern="^(P0|P1|P2|P3)$")
+    new_ticket_type: Optional[str] = Field(None, pattern="^(problem|feature_request|billing|incident)$")
+
+
+@router.post("/{ticket_id}/merge")
+def merge(ticket_id: str, req: TicketMergeRequest):
+    try:
+        res = merge_tickets(
+            primary_ticket_id=req.primary_ticket_id or ticket_id,
+            secondary_ticket_ids=req.secondary_ticket_ids,
+            operator=req.operator,
+            note=req.note,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {
+        "primary": res["primary"].to_dict(),
+        "merged": [t.to_dict() for t in res["merged"]],
+        "moved_comments": res["moved_comments"],
+    }
+
+
+@router.post("/{ticket_id}/split")
+def split(ticket_id: str, req: TicketSplitRequest):
+    try:
+        res = split_ticket(
+            ticket_id=ticket_id,
+            comment_indices=req.comment_indices,
+            new_subject=req.new_subject,
+            operator=req.operator,
+            new_priority=req.new_priority,
+            new_ticket_type=req.new_ticket_type,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {
+        "original": res["original"].to_dict(),
+        "new": res["new"].to_dict(),
+        "moved_count": res["moved_count"],
+    }

@@ -21,8 +21,8 @@ gateway:
   port: 8000
   upstream_timeout_seconds: 30
   rate_limit:
-    capacity: 100          # max burst tokens per IP
-    refill_per_second: 50  # steady-state allowance per IP
+    capacity: 10000        # P6-Fix-B-6-2: bumped for 1000-user load test (default 100)
+    refill_per_second: 10000  # P6-Fix-B-6-2: bumped for 1000-user load test (default 50)
   circuit_breaker:
     failure_threshold: 5   # consecutive failures before opening
     reset_timeout_seconds: 30

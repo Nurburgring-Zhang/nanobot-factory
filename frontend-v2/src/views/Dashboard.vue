@@ -1,5 +1,6 @@
 <template>
-  <div class="dashboard">
+  <div class="dashboard" role="region" :aria-label="t('dashboard.pageTitle')">
+    <h2 class="sr-only">{{ t('dashboard.pageTitle') }}</h2>
     <NGrid :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
       <NGridItem v-for="card in statCards" :key="card.key">
         <NCard :title="card.title" hoverable>
@@ -21,18 +22,18 @@
 
     <NGrid :cols="2" :x-gap="16" :y-gap="16" responsive="screen" class="chart-grid">
       <NGridItem>
-        <NCard title="任务吞吐 (近 7 天)">
-          <div ref="throughputEl" class="chart" />
+        <NCard :title="t('dashboard.chartThroughput')">
+          <div ref="throughputEl" class="chart" :aria-label="t('dashboard.chartThroughput')" />
         </NCard>
       </NGridItem>
       <NGridItem>
-        <NCard title="引擎状态分布">
-          <div ref="engineEl" class="chart" />
+        <NCard :title="t('dashboard.chartEngines')">
+          <div ref="engineEl" class="chart" :aria-label="t('dashboard.chartEngines')" />
         </NCard>
       </NGridItem>
     </NGrid>
 
-    <NCard title="系统状态">
+    <NCard :title="t('dashboard.servicesTitle')">
       <NDataTable
         :columns="columns"
         :data="services"
@@ -58,10 +59,13 @@ import * as echarts from 'echarts/core'
 import { LineChart, PieChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import { useI18n } from 'vue-i18n'
 import { api } from '@/stores/api'
 import type { StatsOverview } from '@/types'
 
 echarts.use([LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
+
+const { t } = useI18n()
 
 const loading = ref(true)
 const overview = ref<StatsOverview>({
@@ -73,10 +77,10 @@ const overview = ref<StatsOverview>({
 })
 
 const statCards = ref([
-  { key: 'datasets', title: '数据集', value: 0, suffix: '', note: '累计入库数据资产' },
-  { key: 'tasks', title: '任务', value: 0, suffix: '', note: '历史任务总数' },
-  { key: 'engines', title: '引擎', value: 0, suffix: '', note: '已注册生产引擎' },
-  { key: 'users', title: '用户', value: 0, suffix: '', note: '平台账户数' }
+  { key: 'datasets', title: t('dashboard.cardDatasets'), value: 0, suffix: '', note: t('dashboard.cardDatasetsNote') },
+  { key: 'tasks', title: t('dashboard.cardTasks'), value: 0, suffix: '', note: t('dashboard.cardTasksNote') },
+  { key: 'engines', title: t('dashboard.cardEngines'), value: 0, suffix: '', note: t('dashboard.cardEnginesNote') },
+  { key: 'users', title: t('dashboard.cardUsers'), value: 0, suffix: '', note: t('dashboard.cardUsersNote') }
 ])
 
 async function loadOverview() {
@@ -111,7 +115,7 @@ function renderCharts() {
       grid: { left: 32, right: 16, top: 24, bottom: 32 },
       xAxis: {
         type: 'category',
-        data: ['D-6', 'D-5', 'D-4', 'D-3', 'D-2', 'D-1', 'Today']
+        data: ['D-6', 'D-5', 'D-4', 'D-3', 'D-2', 'D-1', t('common.today')]
       },
       yAxis: { type: 'value' },
       series: [{
@@ -133,10 +137,10 @@ function renderCharts() {
         type: 'pie',
         radius: ['38%', '70%'],
         data: [
-          { value: 38, name: 'running' },
+          { value: 38, name: t('common.running_') },
           { value: 12, name: 'idle' },
           { value: 8, name: 'error' },
-          { value: 6, name: 'disabled' }
+          { value: 6, name: t('common.disabled') }
         ]
       }]
     })
@@ -160,16 +164,22 @@ const services = ref([
 ])
 
 const columns: DataTableColumns<{ name: string; status: string; uptime: string }> = [
-  { title: '服务', key: 'name' },
+  { title: () => t('dashboard.colService'), key: 'name' },
   {
-    title: '状态',
+    title: () => t('dashboard.colStatus'),
     key: 'status',
     render(row) {
       const color = row.status === 'healthy' ? 'success' : row.status === 'degraded' ? 'warning' : 'error'
-      return row.status === 'healthy' ? '✓ healthy' : row.status === 'degraded' ? '! degraded' : '✗ down'
+      const label =
+        row.status === 'healthy'
+          ? `✓ ${t('common.healthy')}`
+          : row.status === 'degraded'
+          ? `! ${t('common.degraded')}`
+          : `✗ ${t('common.down')}`
+      return label
     }
   },
-  { title: '可用率 (30d)', key: 'uptime' }
+  { title: () => t('dashboard.colUptime'), key: 'uptime' }
 ]
 
 onMounted(async () => {
@@ -204,11 +214,11 @@ watch(() => statCards.value, () => { /* trigger reactive update */ }, { deep: tr
 .trend {
   margin-top: 8px;
   font-size: 12px;
-  color: #888;
+  color: var(--app-muted, #767676);
 }
 .suffix {
   font-size: 12px;
-  color: #888;
+  color: var(--app-muted, #767676);
   margin-left: 4px;
 }
 </style>

@@ -427,7 +427,7 @@ onMounted(() => {
 }
 .scene-item:hover { background: #f5f5f7; }
 .scene-item.active { background: #e6f0ff; border-color: #2080f0; }
-.scene-handle { color: #aaa; font-size: 14px; }
+.scene-handle { color: #767676; font-size: 14px; }
 .scene-info { flex: 1; min-width: 0; }
 .scene-del {
   color: #d03050;

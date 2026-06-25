@@ -1,0 +1,19 @@
+﻿        ___
+       __H__
+ ___ ___["]_____ ___ ___  {1.10.6#pip}
+|_ -| . [']     | .'| . |
+|___|_  [)]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+D:\ComfyUI\.ext\Scripts\sqlmap.exe : Usage: sqlmap [options]
+所在位置 行:1 字符: 48
++ ... t-factory'; D:\ComfyUI\.ext\Scripts\sqlmap.exe -u "http://127.0.0.1:8 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Usage: sqlmap [options]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+sqlmap: error: no such option: --content-type
+
+Press Enter to continue...
+[04:14:41] [ERROR] exit

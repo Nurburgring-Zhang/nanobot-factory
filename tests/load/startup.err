@@ -1,0 +1,8 @@
+Set-Location : 找不到路径“D:\Hermes\鐢熶骇骞冲彴\nanobot-factory”，因为该路径不存在。
+所在位置 D:\Hermes\生产平台\nanobot-factory\tests\load\start_all_services.ps1:10 字符: 1
++ Set-Location $Root
++ ~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory:String) [Set-Location], ItemNotFo
+undEx    ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand
+ 

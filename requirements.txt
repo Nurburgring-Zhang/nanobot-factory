@@ -34,3 +34,11 @@ opentelemetry-exporter-otlp==1.21.0
 # Auto-instrumentation for FastAPI + SQLAlchemy (route + DB tracing)
 opentelemetry-instrumentation-fastapi==0.42b0
 opentelemetry-instrumentation-sqlalchemy==0.42b0
+
+# P6-Fix-C-7: Live-mode payment SDKs (real Stripe / Alipay / WeChat Pay)
+# These are imported lazily inside providers; kept in requirements.txt so
+# the live-mode paths can be exercised when BILLING_*_MODE=live is set.
+# Mock mode (default) does NOT need any of these.
+stripe>=7.0.0         # official Stripe Python SDK (live mode: stripe.checkout.Session, stripe.Refund)
+python-alipay-sdk>=3.0.0  # Alipay Open API SDK (alipay.AliPay, api_alipay_trade_page_pay / _refund)
+wechatpy>=1.8.0       # WeChat Pay SDK (wechatpy.pay.WeChatPay, refund.apply)

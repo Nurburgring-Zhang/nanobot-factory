@@ -1,0 +1,7 @@
+Method,Name,Error,Occurrences
+POST,/auth/login,CatchResponseError('reviewer login 429'),154
+POST,/auth/login,CatchResponseError('admin login 429'),150
+POST,/auth/login,CatchResponseError('annotator login 429'),230
+POST,/auth/login,CatchResponseError('admin login 401'),4
+POST,/auth/login,CatchResponseError('annotator login 401'),1
+POST,/auth/login,CatchResponseError('viewer login 429'),154

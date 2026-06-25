@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
@@ -38,7 +39,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            'vue-vendor': ['vue', 'vue-router', 'pinia'],
+            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
             'naive-vendor': ['naive-ui'],
             'echarts-vendor': ['echarts', 'vue-echarts'],
             'vueflow-vendor': ['@vue-flow/core', '@vue-flow/controls', '@vue-flow/background', '@vue-flow/minimap']
@@ -47,7 +48,29 @@ export default defineConfig(({ mode }) => {
       }
     },
     optimizeDeps: {
-      include: ['vue', 'vue-router', 'pinia', 'axios', 'naive-ui', 'echarts', 'vue-echarts']
+      include: [
+        'vue',
+        'vue-router',
+        'vue-i18n',
+        'pinia',
+        'axios',
+        'naive-ui',
+        'echarts',
+        'vue-echarts'
+      ]
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./tests/setup.ts'],
+      include: ['tests/**/*.spec.ts'],
+      exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**'],
+      css: false,
+      // Keep tests fast — single thread, no isolation overhead for unit specs.
+      pool: 'threads',
+      poolOptions: {
+        threads: { singleThread: true }
+      }
     }
   }
 })

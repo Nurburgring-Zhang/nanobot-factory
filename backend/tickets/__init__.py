@@ -37,13 +37,14 @@ TICKET_TYPE_LABELS = {
 PRIORITIES = ["P0", "P1", "P2", "P3"]
 
 # 状态
-STATES = ["new", "assigned", "in_progress", "resolved", "closed"]
+STATES = ["new", "assigned", "in_progress", "resolved", "closed", "merged"]
 STATE_TRANSITIONS = {
     "new": ["assigned", "closed"],
     "assigned": ["in_progress", "closed"],
     "in_progress": ["resolved", "closed"],
     "resolved": ["closed", "in_progress"],  # 允许重开
     "closed": [],
+    "merged": [],  # 终态 (合并后)
 }
 
 # Oncall webhook (P2-2 integration; W1 不存在时使用 file log stub)
@@ -85,6 +86,10 @@ class Ticket:
         self.sla_deadline = (datetime.utcnow() + timedelta(hours=SLA_HOURS[priority])).isoformat()
         self.sla_breached = False
         self.sla_responded_within_sla: Optional[bool] = None
+        # P1-6: merge/split tracking
+        self.merged_into: Optional[str] = None
+        self.merged_at: Optional[str] = None
+        self.split_into: List[str] = []
 
     def add_comment(self, content: str, by: str, internal: bool = False) -> Dict[str, Any]:
         c = {
@@ -155,6 +160,9 @@ class Ticket:
             "sla_deadline": self.sla_deadline,
             "sla_breached": self.sla_breached,
             "sla_responded_within_sla": self.sla_responded_within_sla,
+            "merged_into": self.merged_into,
+            "merged_at": self.merged_at,
+            "split_into": self.split_into,
         }
 
 
@@ -296,3 +304,155 @@ def on_customer_ticket(customer_id: str, ticket_type: str, subject: str, descrip
         customer_id=customer_id,
         reporter=f"customer:{customer_id}",
     )
+
+
+# ---------------------------------------------------------------------------
+# P1-6: 工单合并 / 拆分
+# ---------------------------------------------------------------------------
+def _now_iso() -> str:
+    return datetime.utcnow().isoformat()
+
+
+def merge_tickets(
+    primary_ticket_id: str,
+    secondary_ticket_ids: List[str],
+    operator: str = "system",
+    note: str = "",
+) -> Dict[str, Any]:
+    """合并工单: secondary 的 comments 迁移到 primary, secondary 标记为 merged.
+
+    Returns:
+        {"primary": Ticket, "merged": [Ticket, ...], "moved_comments": int}
+
+    Raises:
+        KeyError: 任何 ID 不存在
+        ValueError: 状态冲突 (e.g. closed 不可合并; 同一客户不同 customer_id)
+    """
+    primary = get_ticket(primary_ticket_id)
+    if not primary:
+        raise KeyError(f"primary ticket not found: {primary_ticket_id}")
+    if primary.status == "closed":
+        raise ValueError(f"cannot merge into closed ticket: {primary_ticket_id}")
+    merged = []
+    moved = 0
+    for sid in secondary_ticket_ids:
+        if sid == primary_ticket_id:
+            continue  # skip self
+        sec = get_ticket(sid)
+        if not sec:
+            raise KeyError(f"secondary ticket not found: {sid}")
+        if sec.status == "closed":
+            raise ValueError(f"cannot merge closed ticket: {sid}")
+        if sec.status == "merged":
+            raise ValueError(f"ticket {sid!r} already merged into another")
+        # 客户不一致警告 (但不阻塞)
+        if sec.customer_id and primary.customer_id and sec.customer_id != primary.customer_id:
+            logger.warning(
+                "merge cross-customer: primary=%s (%s) ← secondary=%s (%s)",
+                primary_ticket_id, primary.customer_id, sid, sec.customer_id,
+            )
+        # 迁 comments
+        for c in sec.comments:
+            primary.comments.append(c)
+            moved += 1
+        # 优先级升级: 取最高
+        pri_order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+        if sec.priority in pri_order and primary.priority in pri_order:
+            if pri_order[sec.priority] < pri_order[primary.priority]:
+                primary.priority = sec.priority
+        # secondary 状态: merged
+        sec.status = "merged"
+        sec.merged_into = primary_ticket_id
+        sec.merged_at = _now_iso()
+        sec.add_comment(
+            f"已合并到主工单 {primary_ticket_id} (操作员: {operator})",
+            by=operator, internal=True,
+        )
+        merged.append(sec)
+    # 主工单加合并记录
+    primary.add_comment(
+        f"合并了 {len(merged)} 张工单: {', '.join(sid for sid in secondary_ticket_ids if sid != primary_ticket_id)}. 迁移 {moved} 条评论。"
+        + (f" 备注: {note}" if note else ""),
+        by=operator, internal=True,
+    )
+    logger.info(
+        "tickets merged: primary=%s merged=%d moved_comments=%d",
+        primary_ticket_id, len(merged), moved,
+    )
+    return {
+        "primary": primary,
+        "merged": merged,
+        "moved_comments": moved,
+    }
+
+
+def split_ticket(
+    ticket_id: str,
+    comment_indices: List[int],
+    new_subject: str,
+    operator: str = "system",
+    new_priority: Optional[str] = None,
+    new_ticket_type: Optional[str] = None,
+) -> Dict[str, Any]:
+    """拆分工单: 把指定 indices 的 comments 拆到新工单.
+
+    Args:
+        ticket_id: 原工单
+        comment_indices: 要拆走的 comment 在原工单 comments 列表中的索引 (0-based)
+        new_subject: 新工单主题
+        operator: 操作员
+        new_priority: 新工单优先级 (默认继承)
+        new_ticket_type: 新工单类型 (默认继承)
+
+    Returns:
+        {"original": Ticket, "new": Ticket, "moved_count": int}
+    """
+    orig = get_ticket(ticket_id)
+    if not orig:
+        raise KeyError(f"ticket not found: {ticket_id}")
+    if orig.status in ("closed", "merged"):
+        raise ValueError(f"cannot split ticket in status {orig.status!r}")
+    if not comment_indices:
+        raise ValueError("comment_indices must not be empty")
+    # 校验 indices
+    max_idx = len(orig.comments) - 1
+    for i in comment_indices:
+        if not (0 <= i <= max_idx):
+            raise ValueError(f"comment index {i} out of range (0..{max_idx})")
+    # 创建新工单
+    new_priority = new_priority or orig.priority
+    new_type = new_ticket_type or orig.type
+    new_ticket = create_ticket(
+        ticket_type=new_type,
+        priority=new_priority,
+        subject=new_subject,
+        description=f"拆分自工单 {ticket_id}",
+        customer_id=orig.customer_id,
+        reporter=orig.reporter,
+    )
+    # 搬移 comments (按降序避免 index 漂移)
+    moved = 0
+    for i in sorted(comment_indices, reverse=True):
+        if i < len(orig.comments):
+            c = orig.comments.pop(i)
+            new_ticket.comments.append(c)
+            moved += 1
+    # 审计 trail
+    new_ticket.add_comment(
+        f"由 {ticket_id} 拆分而来 (操作员: {operator})", by=operator, internal=True,
+    )
+    orig.add_comment(
+        f"已拆分 {moved} 条评论到新工单 {new_ticket.ticket_id} (操作员: {operator})",
+        by=operator, internal=True,
+    )
+    # 记录原→新关联
+    orig.split_into = (orig.__dict__.get("split_into") or []) + [new_ticket.ticket_id]
+    logger.info(
+        "ticket split: original=%s new=%s moved=%d",
+        ticket_id, new_ticket.ticket_id, moved,
+    )
+    return {
+        "original": orig,
+        "new": new_ticket,
+        "moved_count": moved,
+    }

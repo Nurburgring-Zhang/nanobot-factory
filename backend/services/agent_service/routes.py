@@ -548,8 +548,73 @@ async def list_tools(tag: Optional[str] = None, builtin_only: bool = False) -> D
 
 
 @router.get("/api/v1/agent/tools/audit")
-async def tool_audit(limit: int = 100) -> Dict[str, Any]:
-    return {"count": limit, "chain": get_tool_registry().audit_chain(limit=limit)}
+async def tool_audit(
+    limit: int = 100,
+    tool: Optional[str] = None,
+    actor: Optional[str] = None,
+    since_seq: int = 0,
+    verify: bool = True,
+) -> Dict[str, Any]:
+    """Return HMAC-signed tool audit records (P6-Fix-B-3 / P6-3 F-3.5).
+
+    Query params
+    ------------
+    limit     : int  — max rows to return (default 100, capped at 1000)
+    tool      : str  — filter by tool name (exact match)
+    actor     : str  — filter by actor (exact match)
+    since_seq : int  — return only records with seq > since_seq
+    verify    : bool — run HMAC verify_chain and include integrity status
+
+    Response
+    --------
+    {
+      "count":     int,
+      "limit":     int,
+      "tool":      str | None,
+      "actor":     str | None,
+      "since_seq": int,
+      "chain_ok":  bool | None,  # None when verify=False or chain unavailable
+      "bad_seq":   int,          # -1 when chain_ok=True/None
+      "records":   [ToolAuditRecord, ...]
+    }
+    """
+    safe_limit = max(1, min(int(limit), 1000))
+    try:
+        from services.agent_service.tools.audit import get_tool_audit_chain
+        return get_tool_audit_chain().query(
+            tool=tool,
+            actor=actor,
+            limit=safe_limit,
+            since_seq=int(since_seq),
+            verify=bool(verify),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("tool audit endpoint fallback to in-memory chain: %s", exc)
+        return {
+            "count": safe_limit,
+            "limit": safe_limit,
+            "tool": tool,
+            "actor": actor,
+            "since_seq": since_seq,
+            "chain_ok": None,
+            "bad_seq": -1,
+            "records": get_tool_registry().audit_chain(limit=safe_limit),
+            "fallback": "in_memory",
+        }
+
+
+@router.get("/api/v1/agent/tools/audit/verify")
+async def tool_audit_verify() -> Dict[str, Any]:
+    """Verify HMAC integrity of the underlying audit chain.
+
+    Returns ``{"chain_ok": bool, "bad_seq": int, "reason": str | None}``.
+    When the chain is unavailable returns ``chain_ok=None``.
+    """
+    try:
+        from services.agent_service.tools.audit import get_tool_audit_chain
+        return get_tool_audit_chain().verify()
+    except Exception as exc:  # noqa: BLE001
+        return {"chain_ok": None, "bad_seq": -1, "reason": f"unavailable: {exc}"}
 
 
 @router.post("/api/v1/agent/tools/reload")

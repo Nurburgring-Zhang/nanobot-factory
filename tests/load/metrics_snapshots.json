@@ -1,0 +1,7526 @@
+[
+ {
+  "ts": 1782329621.6720984,
+  "host": {
+   "cpu_pct": 32.9,
+   "cpu_count": 28,
+   "mem_pct": 52.8,
+   "mem_used_mb": 51843.40234375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174830.49168396,
+   "net_bytes_recv_mb": 697185.7689294815
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329625.236188,
+  "host": {
+   "cpu_pct": 38.9,
+   "cpu_count": 28,
+   "mem_pct": 52.6,
+   "mem_used_mb": 51657.55859375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174852.7178945541,
+   "net_bytes_recv_mb": 697196.099489212
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329628.7997732,
+  "host": {
+   "cpu_pct": 24.5,
+   "cpu_count": 28,
+   "mem_pct": 52.3,
+   "mem_used_mb": 51355.7109375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174878.4021100998,
+   "net_bytes_recv_mb": 697205.2256822586
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329632.3617296,
+  "host": {
+   "cpu_pct": 21.6,
+   "cpu_count": 28,
+   "mem_pct": 52.3,
+   "mem_used_mb": 51371.91015625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174901.7254476547,
+   "net_bytes_recv_mb": 697214.6176986694
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329635.93396,
+  "host": {
+   "cpu_pct": 30.6,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51512.91796875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174922.5589256287,
+   "net_bytes_recv_mb": 697225.3172941208
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329639.5171092,
+  "host": {
+   "cpu_pct": 19.9,
+   "cpu_count": 28,
+   "mem_pct": 52.6,
+   "mem_used_mb": 51600.953125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174942.6355905533,
+   "net_bytes_recv_mb": 697235.2083883286
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329643.087309,
+  "host": {
+   "cpu_pct": 30.2,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51555.046875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174968.9861831665,
+   "net_bytes_recv_mb": 697244.2152442932
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329646.6548948,
+  "host": {
+   "cpu_pct": 18.8,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51552.484375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1174988.5971488953,
+   "net_bytes_recv_mb": 697255.0689373016
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329650.2257326,
+  "host": {
+   "cpu_pct": 24.6,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51534.98828125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175011.1668233871,
+   "net_bytes_recv_mb": 697264.8975257874
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329653.7901034,
+  "host": {
+   "cpu_pct": 23.5,
+   "cpu_count": 28,
+   "mem_pct": 53.7,
+   "mem_used_mb": 52689.93359375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175033.942891121,
+   "net_bytes_recv_mb": 697275.7489185333
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329657.3606753,
+  "host": {
+   "cpu_pct": 29.7,
+   "cpu_count": 28,
+   "mem_pct": 64.3,
+   "mem_used_mb": 63130.765625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175057.2567634583,
+   "net_bytes_recv_mb": 697285.5928325653
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329660.932433,
+  "host": {
+   "cpu_pct": 21.2,
+   "cpu_count": 28,
+   "mem_pct": 64.6,
+   "mem_used_mb": 63416.46484375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175081.8041257858,
+   "net_bytes_recv_mb": 697293.91609478
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329664.498515,
+  "host": {
+   "cpu_pct": 24.0,
+   "cpu_count": 28,
+   "mem_pct": 59.3,
+   "mem_used_mb": 58230.109375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175104.935746193,
+   "net_bytes_recv_mb": 697304.2998523712
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329668.089442,
+  "host": {
+   "cpu_pct": 36.8,
+   "cpu_count": 28,
+   "mem_pct": 52.6,
+   "mem_used_mb": 51591.7421875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175127.592247963,
+   "net_bytes_recv_mb": 697312.584482193
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329671.6727421,
+  "host": {
+   "cpu_pct": 21.9,
+   "cpu_count": 28,
+   "mem_pct": 52.6,
+   "mem_used_mb": 51644.109375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175149.7038526535,
+   "net_bytes_recv_mb": 697324.4867191315
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.5234375,
+    "vms_mb": 824.63671875,
+    "num_threads": 29
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329675.237547,
+  "host": {
+   "cpu_pct": 37.9,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51544.3515625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175169.1871423721,
+   "net_bytes_recv_mb": 697333.3042984009
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329678.8058395,
+  "host": {
+   "cpu_pct": 22.2,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51516.9140625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175192.212849617,
+   "net_bytes_recv_mb": 697342.4125289917
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329682.3698342,
+  "host": {
+   "cpu_pct": 22.0,
+   "cpu_count": 28,
+   "mem_pct": 52.6,
+   "mem_used_mb": 51615.91796875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175214.0922842026,
+   "net_bytes_recv_mb": 697352.5809783936
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329685.92919,
+  "host": {
+   "cpu_pct": 39.6,
+   "cpu_count": 28,
+   "mem_pct": 52.6,
+   "mem_used_mb": 51640.44140625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175239.5878505707,
+   "net_bytes_recv_mb": 697363.118593216
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329689.5026996,
+  "host": {
+   "cpu_pct": 25.2,
+   "cpu_count": 28,
+   "mem_pct": 53.1,
+   "mem_used_mb": 52146.8125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175257.5488853455,
+   "net_bytes_recv_mb": 697372.9751281738
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329693.0783615,
+  "host": {
+   "cpu_pct": 36.0,
+   "cpu_count": 28,
+   "mem_pct": 52.4,
+   "mem_used_mb": 51419.11328125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175280.826538086,
+   "net_bytes_recv_mb": 697382.22224617
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329696.6435401,
+  "host": {
+   "cpu_pct": 28.3,
+   "cpu_count": 28,
+   "mem_pct": 52.4,
+   "mem_used_mb": 51447.99609375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175306.9236745834,
+   "net_bytes_recv_mb": 697392.0695066452
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.80859375,
+    "vms_mb": 57.67578125,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329700.2239292,
+  "host": {
+   "cpu_pct": 32.0,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51556.41015625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175330.0947475433,
+   "net_bytes_recv_mb": 697401.5991220474
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329703.8046567,
+  "host": {
+   "cpu_pct": 33.3,
+   "cpu_count": 28,
+   "mem_pct": 52.7,
+   "mem_used_mb": 51669.76953125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175352.329331398,
+   "net_bytes_recv_mb": 697410.9172973633
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329707.399037,
+  "host": {
+   "cpu_pct": 38.0,
+   "cpu_count": 28,
+   "mem_pct": 59.8,
+   "mem_used_mb": 58692.6171875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175376.0973510742,
+   "net_bytes_recv_mb": 697420.8274011612
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329710.9707267,
+  "host": {
+   "cpu_pct": 41.4,
+   "cpu_count": 28,
+   "mem_pct": 64.5,
+   "mem_used_mb": 63259.078125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175396.6018533707,
+   "net_bytes_recv_mb": 697431.0805387497
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329714.534944,
+  "host": {
+   "cpu_pct": 23.1,
+   "cpu_count": 28,
+   "mem_pct": 64.4,
+   "mem_used_mb": 63235.3515625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175418.5082998276,
+   "net_bytes_recv_mb": 697442.4520683289
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329718.1314816,
+  "host": {
+   "cpu_pct": 35.6,
+   "cpu_count": 28,
+   "mem_pct": 59.8,
+   "mem_used_mb": 58715.078125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175442.477136612,
+   "net_bytes_recv_mb": 697452.134850502
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329721.6906483,
+  "host": {
+   "cpu_pct": 21.8,
+   "cpu_count": 28,
+   "mem_pct": 52.3,
+   "mem_used_mb": 51338.875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175467.56229496,
+   "net_bytes_recv_mb": 697462.0481157303
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329725.248514,
+  "host": {
+   "cpu_pct": 28.7,
+   "cpu_count": 28,
+   "mem_pct": 52.2,
+   "mem_used_mb": 51251.125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175489.6029176712,
+   "net_bytes_recv_mb": 697471.9009017944
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329728.8020706,
+  "host": {
+   "cpu_pct": 25.4,
+   "cpu_count": 28,
+   "mem_pct": 52.2,
+   "mem_used_mb": 51233.7109375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175512.4244747162,
+   "net_bytes_recv_mb": 697482.4645404816
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329732.3606086,
+  "host": {
+   "cpu_pct": 27.6,
+   "cpu_count": 28,
+   "mem_pct": 52.2,
+   "mem_used_mb": 51245.6875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175537.5989894867,
+   "net_bytes_recv_mb": 697490.791220665
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329735.9271533,
+  "host": {
+   "cpu_pct": 30.4,
+   "cpu_count": 28,
+   "mem_pct": 52.2,
+   "mem_used_mb": 51192.67578125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175555.7753925323,
+   "net_bytes_recv_mb": 697500.1746940613
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329739.477743,
+  "host": {
+   "cpu_pct": 26.0,
+   "cpu_count": 28,
+   "mem_pct": 52.2,
+   "mem_used_mb": 51222.2578125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175578.7914381027,
+   "net_bytes_recv_mb": 697509.2339687347
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329743.0446587,
+  "host": {
+   "cpu_pct": 16.4,
+   "cpu_count": 28,
+   "mem_pct": 52.4,
+   "mem_used_mb": 51444.44921875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175600.4540109634,
+   "net_bytes_recv_mb": 697519.6826381683
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329746.6098917,
+  "host": {
+   "cpu_pct": 24.5,
+   "cpu_count": 28,
+   "mem_pct": 52.4,
+   "mem_used_mb": 51437.38671875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175621.2797794342,
+   "net_bytes_recv_mb": 697530.1582584381
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329750.1710007,
+  "host": {
+   "cpu_pct": 18.4,
+   "cpu_count": 28,
+   "mem_pct": 52.5,
+   "mem_used_mb": 51505.7890625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175648.6884670258,
+   "net_bytes_recv_mb": 697540.0100231171
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329753.7334414,
+  "host": {
+   "cpu_pct": 30.3,
+   "cpu_count": 28,
+   "mem_pct": 52.3,
+   "mem_used_mb": 51333.35546875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175670.0094537735,
+   "net_bytes_recv_mb": 697549.1263103485
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329757.305451,
+  "host": {
+   "cpu_pct": 36.1,
+   "cpu_count": 28,
+   "mem_pct": 55.1,
+   "mem_used_mb": 54064.2109375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175691.5081567764,
+   "net_bytes_recv_mb": 697558.8547792435
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329760.8793669,
+  "host": {
+   "cpu_pct": 28.1,
+   "cpu_count": 28,
+   "mem_pct": 64.3,
+   "mem_used_mb": 63122.65234375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175717.0631103516,
+   "net_bytes_recv_mb": 697569.9593200684
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329764.4607413,
+  "host": {
+   "cpu_pct": 24.0,
+   "cpu_count": 28,
+   "mem_pct": 64.7,
+   "mem_used_mb": 63457.5546875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175741.6769151688,
+   "net_bytes_recv_mb": 697578.7142524719
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329768.028812,
+  "host": {
+   "cpu_pct": 21.0,
+   "cpu_count": 28,
+   "mem_pct": 59.3,
+   "mem_used_mb": 58241.6875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175762.3256778717,
+   "net_bytes_recv_mb": 697589.9189853668
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329771.609506,
+  "host": {
+   "cpu_pct": 29.8,
+   "cpu_count": 28,
+   "mem_pct": 54.7,
+   "mem_used_mb": 53636.0390625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175784.017695427,
+   "net_bytes_recv_mb": 697598.890203476
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329775.167844,
+  "host": {
+   "cpu_pct": 22.7,
+   "cpu_count": 28,
+   "mem_pct": 52.7,
+   "mem_used_mb": 51718.72265625,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175807.9102773666,
+   "net_bytes_recv_mb": 697608.6747989655
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329778.7322345,
+  "host": {
+   "cpu_pct": 24.7,
+   "cpu_count": 28,
+   "mem_pct": 52.7,
+   "mem_used_mb": 51723.73046875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175831.1248865128,
+   "net_bytes_recv_mb": 697618.8338575363
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329782.2967231,
+  "host": {
+   "cpu_pct": 30.5,
+   "cpu_count": 28,
+   "mem_pct": 52.8,
+   "mem_used_mb": 51774.703125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175854.6167945862,
+   "net_bytes_recv_mb": 697629.0561504364
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329785.8955138,
+  "host": {
+   "cpu_pct": 28.5,
+   "cpu_count": 28,
+   "mem_pct": 53.0,
+   "mem_used_mb": 51976.64453125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175880.877494812,
+   "net_bytes_recv_mb": 697639.4382314682
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329789.4536457,
+  "host": {
+   "cpu_pct": 20.9,
+   "cpu_count": 28,
+   "mem_pct": 53.0,
+   "mem_used_mb": 51993.45703125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175901.397562027,
+   "net_bytes_recv_mb": 697649.2921791077
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329793.0199063,
+  "host": {
+   "cpu_pct": 24.9,
+   "cpu_count": 28,
+   "mem_pct": 53.0,
+   "mem_used_mb": 52004.2109375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175927.3718280792,
+   "net_bytes_recv_mb": 697658.905339241
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329796.5784416,
+  "host": {
+   "cpu_pct": 26.5,
+   "cpu_count": 28,
+   "mem_pct": 53.0,
+   "mem_used_mb": 51968.38671875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175947.1781406403,
+   "net_bytes_recv_mb": 697668.2665624619
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329800.1448267,
+  "host": {
+   "cpu_pct": 31.2,
+   "cpu_count": 28,
+   "mem_pct": 53.0,
+   "mem_used_mb": 51982.19921875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175967.47062397,
+   "net_bytes_recv_mb": 697678.0851345062
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329803.705978,
+  "host": {
+   "cpu_pct": 31.2,
+   "cpu_count": 28,
+   "mem_pct": 52.9,
+   "mem_used_mb": 51929.2734375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1175991.1986846924,
+   "net_bytes_recv_mb": 697688.0234861374
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329807.2860022,
+  "host": {
+   "cpu_pct": 26.0,
+   "cpu_count": 28,
+   "mem_pct": 53.0,
+   "mem_used_mb": 51972.95703125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1176014.1645727158,
+   "net_bytes_recv_mb": 697698.4407129288
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329810.852311,
+  "host": {
+   "cpu_pct": 26.9,
+   "cpu_count": 28,
+   "mem_pct": 55.3,
+   "mem_used_mb": 54236.0234375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1176035.5364751816,
+   "net_bytes_recv_mb": 697708.7162437439
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329814.438727,
+  "host": {
+   "cpu_pct": 34.8,
+   "cpu_count": 28,
+   "mem_pct": 64.9,
+   "mem_used_mb": 63696.40234375,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1176061.0784540176,
+   "net_bytes_recv_mb": 697717.9869327545
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329818.0123856,
+  "host": {
+   "cpu_pct": 33.5,
+   "cpu_count": 28,
+   "mem_pct": 64.9,
+   "mem_used_mb": 63735.73046875,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1176081.5800561905,
+   "net_bytes_recv_mb": 697729.7153968811
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ },
+ {
+  "ts": 1782329821.5807936,
+  "host": {
+   "cpu_pct": 16.7,
+   "cpu_count": 28,
+   "mem_pct": 63.0,
+   "mem_used_mb": 61865.8125,
+   "mem_total_mb": 98137.984375,
+   "disk_used_pct": 79.8,
+   "net_bytes_sent_mb": 1176105.093919754,
+   "net_bytes_recv_mb": 697740.0687093735
+  },
+  "processes": {
+   "gateway": {
+    "port": 8000,
+    "pid": 2136,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 72.98046875,
+    "vms_mb": 57.80859375,
+    "num_threads": 2
+   },
+   "user": {
+    "port": 8001,
+    "pid": 21836,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 96.1328125,
+    "vms_mb": 816.578125,
+    "num_threads": 25
+   },
+   "asset": {
+    "port": 8002,
+    "pid": 28816,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 91.42578125,
+    "vms_mb": 813.5078125,
+    "num_threads": 25
+   },
+   "annotation": {
+    "port": 8003,
+    "pid": 10956,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.9140625,
+    "vms_mb": 817.90234375,
+    "num_threads": 25
+   },
+   "cleaning": {
+    "port": 8004,
+    "pid": 31188,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 97.359375,
+    "vms_mb": 818.2734375,
+    "num_threads": 25
+   },
+   "scoring": {
+    "port": 8005,
+    "pid": 25516,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.4375,
+    "vms_mb": 812.0625,
+    "num_threads": 25
+   },
+   "dataset": {
+    "port": 8006,
+    "pid": 19888,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 105.14453125,
+    "vms_mb": 826.375,
+    "num_threads": 25
+   },
+   "evaluation": {
+    "port": 8007,
+    "pid": 23064,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.8203125,
+    "vms_mb": 809.7109375,
+    "num_threads": 25
+   },
+   "agent": {
+    "port": 8008,
+    "pid": 18644,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 104.51953125,
+    "vms_mb": 824.578125,
+    "num_threads": 27
+   },
+   "workflow": {
+    "port": 8009,
+    "pid": 25792,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 92.70703125,
+    "vms_mb": 815.78515625,
+    "num_threads": 25
+   },
+   "notification": {
+    "port": 8010,
+    "pid": 9828,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 87.19140625,
+    "vms_mb": 809.6015625,
+    "num_threads": 25
+   },
+   "search": {
+    "port": 8011,
+    "pid": 19968,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 89.17578125,
+    "vms_mb": 810.75,
+    "num_threads": 25
+   },
+   "collection": {
+    "port": 8012,
+    "pid": 34056,
+    "status": "running",
+    "cpu_pct": 0.0,
+    "rss_mb": 86.60546875,
+    "vms_mb": 809.12109375,
+    "num_threads": 25
+   }
+  }
+ }
+]

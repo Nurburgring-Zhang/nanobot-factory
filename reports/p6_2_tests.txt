@@ -1,0 +1,13 @@
+﻿
+FullName                                                                         
+--------                                                                         
+D:\Hermes\生产平台\nanobot-factory\backend\tests\asset_generators\test_image.py      
+D:\Hermes\生产平台\nanobot-factory\backend\tests\asset_generators\test_video.py      
+D:\Hermes\生产平台\nanobot-factory\backend\tests\asset_generators\test_voice.py      
+D:\Hermes\生产平台\nanobot-factory\backend\tests\multimodal\conftest.py              
+D:\Hermes\生产平台\nanobot-factory\backend\tests\multimodal\test_12service_adapter.py
+D:\Hermes\生产平台\nanobot-factory\backend\tests\multimodal\test_embedding.py        
+D:\Hermes\生产平台\nanobot-factory\backend\tests\multimodal\test_parser.py           
+D:\Hermes\生产平台\nanobot-factory\backend\tests\multimodal\test_rag.py              
+
+

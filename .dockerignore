@@ -1,0 +1,87 @@
+# Files/dirs excluded from the Docker build context
+# (we don't need to ship these into the image)
+
+**/.git
+**/.gitignore
+**/.gitattributes
+**/.DS_Store
+**/Thumbs.db
+
+# Node / frontend build artifacts
+**/node_modules
+**/dist
+**/.vite
+**/.cache
+
+# Python build artifacts
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.venv
+**/venv
+**/env
+**/*.egg-info
+
+# IDE / editor
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+
+# Local data / logs / secrets
+**/data
+**/logs
+**/*.log
+**/memory.db
+**/*.sqlite
+**/*.sqlite3
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Deploy / orchestration (we build inside the container)
+deploy/k8s/
+deploy/helm/
+.github/
+**/Dockerfile*
+**/docker-compose*
+.dockerignore
+
+# Workspace scratch
+**/workspace/
+**/.mavis/
+**/.factory/
+**/reports/
+**/memory/
+**/output/
+**/outputs/
+
+# Backup / temp files
+**/*_backup*/
+**/backup*/
+**/*.bak
+**/*.tmp
+**/*.orig
+
+# Audio / video assets (too large for build context)
+**/*.mp4
+**/*.mov
+**/*.wav
+**/*.mp3
+**/*.flac
+
+# Electron desktop builds (we ship the web app, not the Electron shell)
+**/release/
+**/dist-electron/
+
+# Documentation sources (md is shipped via image metadata, not as runtime content)
+**/*.md
+!backend/**/*.md
+!frontend/**/*.md
+
+# CI / workflow files
+.circleci/
+.travis.yml

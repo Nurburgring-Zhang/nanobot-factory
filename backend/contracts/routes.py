@@ -15,8 +15,14 @@ from . import (
     save_contract_pdf,
     on_order_paid,
 )
+from .expiration import (
+    check_expiring, send_expiration_notices,
+    expire_overdue, renew_contract, get_expiration_stats,
+    EXPIRATION_DEFAULT_WINDOW_DAYS,
+)
 
 router = APIRouter(prefix="/api/v1/contracts", tags=["contracts"])
+expiration_router = APIRouter(prefix="/api/v1/contracts/expiration", tags=["contracts-expiration"])
 
 
 class ContractCreate(BaseModel):
@@ -101,3 +107,49 @@ def hook_on_order_paid(order_id: str, plan_name: str, amount: float, company: st
     """W1 Order paid 钩子."""
     c = on_order_paid(order_id, plan_name, amount, company, email)
     return c.to_dict()
+
+
+# ============================================================================
+# P1-4: 合同到期提醒 API
+# ============================================================================
+class RenewContractRequest(BaseModel):
+    new_end_date: str = Field(..., min_length=8, max_length=32,
+                              description="新合同结束日期 YYYY-MM-DD")
+
+
+@expiration_router.get("/check")
+def exp_check(window_days: int = Query(EXPIRATION_DEFAULT_WINDOW_DAYS, ge=1, le=180)):
+    """扫描到期合同 (≤ window_days 天)."""
+    report = check_expiring(window_days=window_days)
+    return report.to_dict()
+
+
+@expiration_router.post("/send")
+def exp_send(window_days: int = Query(EXPIRATION_DEFAULT_WINDOW_DAYS, ge=1, le=180)):
+    """扫描 + 实际发送提醒 (webhook/email/log)."""
+    report = check_expiring(window_days=window_days)
+    counters = send_expiration_notices(report)
+    return {"report": report.to_dict(), "counters": counters}
+
+
+@expiration_router.post("/expire-overdue")
+def exp_expire_overdue():
+    """强制过期已过截止日但状态仍为 active/signed 的合同."""
+    n = expire_overdue()
+    return {"expired_count": n}
+
+
+@expiration_router.post("/{contract_id}/renew")
+def exp_renew(contract_id: str, req: RenewContractRequest):
+    try:
+        new = renew_contract(contract_id, req.new_end_date)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return new.to_dict()
+
+
+@expiration_router.get("/stats")
+def exp_stats():
+    return get_expiration_stats()

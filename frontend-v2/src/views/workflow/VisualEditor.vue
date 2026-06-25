@@ -71,7 +71,7 @@
             @node-click="onNodeClick"
             @node-context-menu="onNodeContextMenu"
           >
-            <Background pattern-color="#aaa" :gap="16" />
+            <Background pattern-color="#767676" :gap="16" />
             <MiniMap />
             <Controls />
           </VueFlow>

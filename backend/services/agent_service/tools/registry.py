@@ -373,7 +373,50 @@ class ToolRegistry:
         with self._lock:
             self._audit.append(entry)
         self._persist_audit(entry)
+        # P6-Fix-B-3: bridge into HMAC-signed audit chain (best-effort).
+        self._record_tool_audit(
+            invocation_id=invocation_id,
+            tool=name,
+            actor=actor,
+            args=args,
+            result=result,
+            error=error,
+            started_at=started,
+            finished_at=finished,
+        )
         return entry.to_dict()
+
+    def _record_tool_audit(
+        self,
+        *,
+        invocation_id: str,
+        tool: str,
+        actor: str,
+        args: Dict[str, Any],
+        result: Any,
+        error: Optional[str],
+        started_at: float,
+        finished_at: float,
+    ) -> None:
+        """Forward the invocation into the HMAC-signed :class:`ToolAuditChain`.
+
+        Failure here must NEVER bubble back to the tool hot path — a
+        broken audit chain should not break user-facing tool calls.
+        """
+        try:
+            from .audit import get_tool_audit_chain
+            get_tool_audit_chain().append(
+                invocation_id=invocation_id,
+                tool=tool,
+                actor=actor,
+                args=args,
+                result=result,
+                error=error,
+                started_at=started_at,
+                finished_at=finished_at,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("tool audit bridge append failed for %s: %s", invocation_id, exc)
 
     def audit_chain(self, limit: int = 100) -> List[Dict[str, Any]]:
         with self._lock:

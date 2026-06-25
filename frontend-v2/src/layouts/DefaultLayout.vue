@@ -1,5 +1,10 @@
 <template>
   <NLayout has-sider style="height: 100vh">
+    <!-- WCAG 2.4.1 Bypass Blocks: skip-link for keyboard users -->
+    <a class="skip-link" href="#main" @click.prevent="onSkip">
+      {{ t('nav.skipToMain') }}
+    </a>
+
     <NLayoutSider
       bordered
       collapse-mode="width"
@@ -7,10 +12,12 @@
       :width="240"
       :native-scrollbar="false"
       show-trigger
+      role="navigation"
+      :aria-label="t('nav.dashboard')"
     >
       <div class="sidebar-brand">
-        <span class="brand-text">智影</span>
-        <span class="brand-sub">nanobot-factory</span>
+        <span class="brand-text">{{ t('common.appName') }}</span>
+        <span class="brand-sub">{{ t('common.appSubName') }}</span>
       </div>
       <NMenu
         :options="menuOptions"
@@ -22,15 +29,43 @@
       />
     </NLayoutSider>
     <NLayout>
-      <NLayoutHeader bordered class="layout-header">
-        <div class="header-title">{{ pageTitle }}</div>
+      <NLayoutHeader bordered class="layout-header" role="banner">
+        <h1 class="header-title">{{ pageTitle }}</h1>
         <div class="header-user">
-          <NSpace align="center">
+          <NSpace align="center" :size="12">
+            <!-- Locale switcher (P6-4 P1: minimal selector) -->
+            <NButton
+              class="locale-toggle"
+              size="small"
+              quaternary
+              :title="localeTooltip"
+              :aria-label="localeTooltip"
+              @click="onToggleLocale"
+            >
+              <template #icon>
+                <span class="locale-toggle-label" aria-hidden="true">{{ localeShortLabel }}</span>
+              </template>
+            </NButton>
+            <NButton
+              class="theme-toggle"
+              size="small"
+              quaternary
+              :title="themeTooltip"
+              :aria-label="themeTooltip"
+              @click="onToggleTheme"
+            >
+              <template #icon>
+                <NIcon size="18">
+                  <component :is="themeIcon" />
+                </NIcon>
+              </template>
+              <span class="theme-toggle-label">{{ themeShortLabel }}</span>
+            </NButton>
             <NTag v-if="auth.user" type="info" size="small" round>
               {{ auth.user.role }}
             </NTag>
             <span v-if="auth.user" class="username">{{ auth.user.username }}</span>
-            <NButton size="small" tertiary @click="onLogout">退出登录</NButton>
+            <NButton size="small" tertiary @click="onLogout">{{ t('nav.logout') }}</NButton>
           </NSpace>
         </div>
       </NLayoutHeader>
@@ -38,14 +73,16 @@
         content-style="padding: 24px;"
         :native-scrollbar="false"
       >
-        <RouterView />
+        <main id="main" tabindex="-1" role="main" :aria-label="pageTitle">
+          <RouterView />
+        </main>
       </NLayoutContent>
     </NLayout>
   </NLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, h, markRaw, type Component } from 'vue'
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router'
 import {
   NLayout,
@@ -56,32 +93,99 @@ import {
   NSpace,
   NButton,
   NTag,
+  NIcon,
   type MenuOption
 } from 'naive-ui'
+import {
+  SunnyOutline,
+  MoonOutline,
+  DesktopOutline
+} from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
+import { useLocaleStore } from '@/stores/locale'
+import { useSkipLink } from '@/utils/skipLink'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const themeStore = useThemeStore()
+const localeStore = useLocaleStore()
+const { t } = useI18n()
+const { focusMain } = useSkipLink()
+
+/**
+ * Map theme mode → ionicon component.
+ * Use markRaw so Vue doesn't try to make the icon reactive (icons are static).
+ */
+const themeIcon = computed<Component>(() => {
+  const map: Record<'light' | 'dark' | 'auto', Component> = {
+    light: markRaw(SunnyOutline),
+    dark: markRaw(MoonOutline),
+    auto: markRaw(DesktopOutline)
+  }
+  return map[themeStore.mode] ?? markRaw(SunnyOutline)
+})
+
+const themeShortLabel = computed<string>(() => {
+  const map: Record<'light' | 'dark' | 'auto', string> = {
+    light: localeStore.current === 'zh-CN' ? '浅色' : 'Light',
+    dark: localeStore.current === 'zh-CN' ? '深色' : 'Dark',
+    auto: localeStore.current === 'zh-CN' ? '自动' : 'Auto'
+  }
+  return map[themeStore.mode] ?? (localeStore.current === 'zh-CN' ? '浅色' : 'Light')
+})
+
+const themeTooltip = computed<string>(() => {
+  const next: Record<'light' | 'dark' | 'auto', string> = {
+    light: localeStore.current === 'zh-CN' ? '当前:浅色 · 点击切换为深色' : 'Light · click for Dark',
+    dark: localeStore.current === 'zh-CN' ? '当前:深色 · 点击切换为自动' : 'Dark · click for Auto',
+    auto: localeStore.current === 'zh-CN' ? '当前:自动 (跟随系统) · 点击切换为浅色' : 'Auto (system) · click for Light'
+  }
+  return next[themeStore.mode] ?? (localeStore.current === 'zh-CN' ? '切换主题' : 'Toggle theme')
+})
+
+const localeShortLabel = computed<string>(() => {
+  return localeStore.current === 'zh-CN' ? '中' : 'EN'
+})
+
+const localeTooltip = computed<string>(() => {
+  return localeStore.current === 'zh-CN'
+    ? '当前:简体中文 · 点击切换为 English'
+    : 'Current: English · click for 简体中文'
+})
+
+function onToggleTheme(): void {
+  themeStore.cycle()
+}
+
+function onToggleLocale(): void {
+  void localeStore.toggle()
+}
+
+function onSkip(): void {
+  focusMain()
+}
 
 const menuOptions: MenuOption[] = [
-  { label: () => h(RouterLink, { to: '/' }, () => '仪表盘'), key: 'dashboard', icon: () => h('span', { class: 'menu-icon' }, '◈') },
-  { label: () => h(RouterLink, { to: '/dataset' }, () => '数据集'), key: 'dataset', icon: () => h('span', { class: 'menu-icon' }, '▤') },
-  { label: () => h(RouterLink, { to: '/annotation' }, () => '标注'), key: 'annotation', icon: () => h('span', { class: 'menu-icon' }, '✎') },
-  { label: () => h(RouterLink, { to: '/review' }, () => '审核'), key: 'review', icon: () => h('span', { class: 'menu-icon' }, '✓') },
-  { label: () => h(RouterLink, { to: '/scoring' }, () => '评分'), key: 'scoring', icon: () => h('span', { class: 'menu-icon' }, '★') },
-  { label: () => h(RouterLink, { to: '/workflows' }, () => '工作流'), key: 'workflows', icon: () => h('span', { class: 'menu-icon' }, '⇄') },
-  { label: () => h(RouterLink, { to: '/engines' }, () => '引擎'), key: 'engines', icon: () => h('span', { class: 'menu-icon' }, '◆') },
-  { label: () => h(RouterLink, { to: '/tasks' }, () => '任务'), key: 'tasks', icon: () => h('span', { class: 'menu-icon' }, '☰') },
-  { label: () => h(RouterLink, { to: '/users' }, () => '用户'), key: 'users', icon: () => h('span', { class: 'menu-icon' }, '☷') },
-  { label: () => h(RouterLink, { to: '/billing' }, () => '计费'), key: 'billing', icon: () => h('span', { class: 'menu-icon' }, '☼') },
-  { label: () => h(RouterLink, { to: '/monitoring' }, () => '监控'), key: 'monitoring', icon: () => h('span', { class: 'menu-icon' }, '◉') },
-  { label: () => h(RouterLink, { to: '/settings' }, () => '设置'), key: 'settings', icon: () => h('span', { class: 'menu-icon' }, '⚙') }
+  { label: () => h(RouterLink, { to: '/' }, () => t('nav.dashboard')), key: 'dashboard', icon: () => h('span', { class: 'menu-icon' }, '◈') },
+  { label: () => h(RouterLink, { to: '/dataset' }, () => t('nav.dataset')), key: 'dataset', icon: () => h('span', { class: 'menu-icon' }, '▤') },
+  { label: () => h(RouterLink, { to: '/annotation' }, () => t('nav.annotation')), key: 'annotation', icon: () => h('span', { class: 'menu-icon' }, '✎') },
+  { label: () => h(RouterLink, { to: '/review' }, () => t('nav.review')), key: 'review', icon: () => h('span', { class: 'menu-icon' }, '✓') },
+  { label: () => h(RouterLink, { to: '/scoring' }, () => t('nav.scoring')), key: 'scoring', icon: () => h('span', { class: 'menu-icon' }, '★') },
+  { label: () => h(RouterLink, { to: '/workflows' }, () => t('nav.workflows')), key: 'workflows', icon: () => h('span', { class: 'menu-icon' }, '⇄') },
+  { label: () => h(RouterLink, { to: '/engines' }, () => t('nav.engines')), key: 'engines', icon: () => h('span', { class: 'menu-icon' }, '◆') },
+  { label: () => h(RouterLink, { to: '/tasks' }, () => t('nav.tasks')), key: 'tasks', icon: () => h('span', { class: 'menu-icon' }, '☰') },
+  { label: () => h(RouterLink, { to: '/users' }, () => t('nav.users')), key: 'users', icon: () => h('span', { class: 'menu-icon' }, '☷') },
+  { label: () => h(RouterLink, { to: '/billing' }, () => t('nav.billing')), key: 'billing', icon: () => h('span', { class: 'menu-icon' }, '☼') },
+  { label: () => h(RouterLink, { to: '/monitoring' }, () => t('nav.monitoring')), key: 'monitoring', icon: () => h('span', { class: 'menu-icon' }, '◉') },
+  { label: () => h(RouterLink, { to: '/settings' }, () => t('nav.settings')), key: 'settings', icon: () => h('span', { class: 'menu-icon' }, '⚙') }
 ]
 // === Business submenu: 12 业务模块 (P3-7-W2) ===
 const businessSubmenu: MenuOption = {
   type: 'group',
-  label: '业务模块',
+  label: () => h('span', null, { default: () => '业务模块' }),
   key: 'biz',
   children: [
     { label: () => h(RouterLink, { to: '/user-management' }, () => '用户管理'), key: 'user-management', icon: () => h('span', { class: 'menu-icon' }, 'U') },
@@ -103,7 +207,7 @@ menuOptions.push(businessSubmenu)
 // === P4-8-W2 新增菜单组: Skills / Obsidian / Storyboard / Workflow / Multimodal / Billing / Lineage ===
 const skillsSubmenu: MenuOption = {
   type: 'group',
-  label: 'P4-8 能力',
+  label: () => h('span', null, { default: () => 'P4-8 能力' }),
   key: 'p48',
   children: [
     { label: () => h(RouterLink, { to: '/skills' }, () => 'Skill 市场'), key: 'skills', icon: () => h('span', { class: 'menu-icon' }, '◇') },
@@ -123,7 +227,7 @@ const activeMenuKey = computed<string>(() => (route.name as string) || 'dashboar
 
 const pageTitle = computed<string>(() => {
   const meta = route.meta?.title
-  return typeof meta === 'string' ? meta : 'nanobot-factory'
+  return typeof meta === 'string' ? meta : t('nav.dashboard')
 })
 
 function onMenuSelect(key: string) {
@@ -143,7 +247,7 @@ function onLogout() {
   align-items: center;
   justify-content: center;
   padding: 18px 12px 14px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
 }
 .brand-text {
   font-size: 22px;
@@ -153,7 +257,7 @@ function onLogout() {
 }
 .brand-sub {
   font-size: 11px;
-  color: #888;
+  color: var(--app-muted, #767676);
   margin-top: 2px;
 }
 .layout-header {
@@ -162,11 +266,14 @@ function onLogout() {
   justify-content: space-between;
   padding: 0 24px;
   height: 56px;
-  background: #fff;
+  background: var(--app-surface, #fff);
+  color: var(--app-fg, #333);
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 .header-title {
   font-size: 16px;
   font-weight: 600;
+  margin: 0;
 }
 .header-user {
   display: flex;
@@ -175,7 +282,7 @@ function onLogout() {
 }
 .username {
   font-size: 13px;
-  color: #555;
+  color: var(--app-muted, #767676);
 }
 .menu-icon {
   display: inline-block;
@@ -183,5 +290,21 @@ function onLogout() {
   text-align: center;
   color: #2080f0;
   font-size: 16px;
+}
+.theme-toggle,
+.locale-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.theme-toggle-label,
+.locale-toggle-label {
+  font-size: 12px;
+  margin-left: 2px;
+  color: var(--app-muted, #767676);
+}
+.locale-toggle-label {
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 </style>

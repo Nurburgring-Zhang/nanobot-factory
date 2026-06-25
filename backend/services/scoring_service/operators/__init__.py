@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from services._none_safety import safe_dict_run  # P6-Fix-P0-1: NoneType guard
+
 # Import each operator module so its .run() registers itself in OPERATORS.
 from . import (
     aesthetic,
@@ -50,6 +52,9 @@ def _build_registry() -> Dict[str, Any]:
         assert hasattr(m, "OP_ID"), f"{m.__name__} missing OP_ID"
         assert hasattr(m, "run"), f"{m.__name__} missing run()"
         assert callable(m.run), f"{m.__name__}.run not callable"
+        # P6-Fix-P0-1: wrap with None-safety guard so call sites
+        # get {"ok": False, "error": ...} instead of AttributeError.
+        m.run = safe_dict_run(m.run)  # type: ignore[attr-defined]
         reg[m.OP_ID] = m
     return reg
 

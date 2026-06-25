@@ -12,10 +12,19 @@ from . import (
     create_customer, get_customer, list_customers, update_customer, delete_customer, add_followup,
     create_contact, list_contacts, get_contact, update_contact, delete_contact,
     on_plan_upgrade,
+    recompute_customer_score, recompute_all_scores, get_top_leads, get_lead_stats,
+)
+from .segments import (
+    Segment, define_segment, evaluate_segment, match_customers,
+    list_segments, get_segment, delete_segment, update_segment_count,
+    evaluate_all_segments, get_segment_stats, create_preset, PRESET_TEMPLATES,
+    SUPPORTED_FIELDS, SUPPORTED_OPS, COMBINATORS,
 )
 
 router_customers = APIRouter(prefix="/api/v1/crm/customers", tags=["crm-customers"])
 router_contacts = APIRouter(prefix="/api/v1/crm/contacts", tags=["crm-contacts"])
+router_leads = APIRouter(prefix="/api/v1/crm/leads", tags=["crm-leads"])
+router_segments = APIRouter(prefix="/api/v1/crm/segments", tags=["crm-segments"])
 
 
 # ---------------- Customers ----------------
@@ -67,6 +76,8 @@ def create(req: CustomerCreate):
         c = create_customer(**req.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # P1-1: 新建客户自动打分
+    recompute_customer_score(c)
     return c.to_dict()
 
 
@@ -186,3 +197,127 @@ def delete_c(contact_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail="contact not found")
     return {"deleted": True}
+
+
+# ---------------------------------------------------------------------------
+# P1-1: Lead scoring 路由
+# ---------------------------------------------------------------------------
+@router_leads.get("/top")
+def top_leads(
+    limit: int = Query(20, ge=1, le=200),
+    grade: Optional[str] = Query(None, pattern="^(A|B|C|D)$"),
+):
+    items = get_top_leads(limit=limit, grade=grade)
+    return {
+        "items": [c.to_dict() for c in items],
+        "total": len(items),
+        "filter_grade": grade,
+    }
+
+
+@router_leads.get("/stats")
+def lead_stats():
+    return get_lead_stats()
+
+
+@router_leads.post("/recompute")
+def recompute_scores(customer_id: Optional[str] = Query(None)):
+    """单客户或全量重算 lead score."""
+    if customer_id:
+        c = get_customer(customer_id)
+        if not c:
+            raise HTTPException(status_code=404, detail="customer not found")
+        res = recompute_customer_score(c)
+        return {"customer_id": customer_id, "score": res}
+    n = recompute_all_scores()
+    return {"recomputed": n}
+
+
+@router_customers.post("/{customer_id}/rescore")
+def rescore_customer(customer_id: str):
+    """手动触发单个客户打分刷新 (在添加跟进/更新后)."""
+    c = get_customer(customer_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="customer not found")
+    res = recompute_customer_score(c)
+    return {"customer_id": customer_id, "score": res}
+
+
+# ---------------------------------------------------------------------------
+# P1-9: 客户细分 (Segments) 路由
+# ---------------------------------------------------------------------------
+class DefineSegmentRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str = Field("", max_length=512)
+    rules: dict
+
+
+@router_segments.get("/_meta")
+def segments_meta():
+    return {
+        "supported_fields": sorted(SUPPORTED_FIELDS),
+        "supported_ops": sorted(SUPPORTED_OPS),
+        "combinators": sorted(COMBINATORS),
+        "presets": list(PRESET_TEMPLATES.keys()),
+    }
+
+
+@router_segments.post("")
+def define_seg(req: DefineSegmentRequest):
+    try:
+        s = define_segment(
+            name=req.name, description=req.description, rules=req.rules,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return s.to_dict()
+
+
+@router_segments.post("/preset/{preset_key}")
+def define_preset(preset_key: str):
+    try:
+        s = create_preset(preset_key)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return s.to_dict()
+
+
+@router_segments.get("")
+def list_segs():
+    items = list_segments()
+    # 自动 refresh count
+    update_segment_count()
+    return {"count": len(items), "items": [s.to_dict() for s in items]}
+
+
+@router_segments.get("/stats")
+def segments_stats():
+    return get_segment_stats()
+
+
+@router_segments.get("/{segment_id}")
+def get_seg(segment_id: str):
+    s = get_segment(segment_id)
+    if not s:
+        raise HTTPException(status_code=404, detail=f"segment {segment_id!r} not found")
+    return s.to_dict()
+
+
+@router_segments.get("/{segment_id}/customers")
+def get_seg_customers(segment_id: str):
+    s = get_segment(segment_id)
+    if not s:
+        raise HTTPException(status_code=404, detail=f"segment {segment_id!r} not found")
+    matches = match_customers(s)
+    return {
+        "segment_id": segment_id,
+        "count": len(matches),
+        "items": [c.to_dict() for c in matches],
+    }
+
+
+@router_segments.delete("/{segment_id}")
+def del_seg(segment_id: str):
+    if not delete_segment(segment_id):
+        raise HTTPException(status_code=404, detail=f"segment {segment_id!r} not found")
+    return {"deleted": True, "segment_id": segment_id}

@@ -8,7 +8,8 @@ import json
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Optional
+from decimal import Decimal, InvalidOperation
+from typing import Any, Dict, Optional, Union
 
 
 class PaymentStatus(str):
@@ -25,6 +26,10 @@ class ProviderNotConfiguredError(RuntimeError):
 
 class WebhookVerificationError(ValueError):
     """Raised when webhook signature verification fails."""
+
+
+class RefundValidationError(ValueError):
+    """Raised when refund amount is invalid (non-positive, exceeds remaining, etc.)."""
 
 
 @dataclass
@@ -58,14 +63,105 @@ class WebhookEvent:
         return asdict(self)
 
 
+@dataclass
+class RefundResult:
+    """Result of refund() — provider returns success status and refunded amount.
+
+    Fields:
+    - success:        True if refund was initiated successfully at provider side
+    - refund_id:      provider-side refund ID (e.g. Stripe re_xxx, alipay refund_no)
+    - amount_cents:   actual amount refunded in cents (== full order amount for full refund,
+                      or == requested amount for partial refund)
+    - is_partial:     True if this single refund operation did NOT consume the entire
+                      remaining balance (i.e. order is left with positive remaining).
+                      False if this refund exhausts remaining (== full).
+    - remaining_cents: order.amount_cents - order.refunded_amount_cents AFTER this
+                      refund completes (== 0 if this was a full refund).
+    - message:        optional human-readable status
+    - raw:            provider-specific raw response
+    """
+    success: bool
+    refund_id: str
+    amount_cents: int
+    is_partial: bool
+    remaining_cents: int = 0
+    message: str = ""
+    raw: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+def to_refund_cents(amount: Optional[Union[int, float, str, Decimal]],
+                    order_amount_cents: int,
+                    already_refunded_cents: int = 0) -> int:
+    """Normalize refund ``amount`` argument into integer cents.
+
+    Rules:
+    - amount is None or empty -> full refund = order_amount_cents - already_refunded_cents
+    - amount is numeric       -> converted to cents; if amount < 1 cent, raises
+    - amount may be a Decimal, int, float (interpreted as yuan/dollar, NOT cents),
+      or string with optional currency suffix
+    - already_refunded_cents is excluded from the refundable remaining.
+
+    Raises RefundValidationError on:
+    - amount <= 0
+    - amount > remaining (order_amount_cents - already_refunded_cents)
+    - amount cannot be parsed
+    """
+    if amount is None:
+        remaining = order_amount_cents - already_refunded_cents
+        if remaining <= 0:
+            raise RefundValidationError(
+                f"order already fully refunded (already_refunded={already_refunded_cents})"
+            )
+        return remaining
+    # Parse amount -> Decimal (interpret as yuan/dollar, convert to cents)
+    try:
+        if isinstance(amount, Decimal):
+            d = amount
+        elif isinstance(amount, (int, float)):
+            d = Decimal(str(amount))
+        elif isinstance(amount, str):
+            s = amount.strip()
+            if not s:
+                raise RefundValidationError("amount string is empty")
+            d = Decimal(s)
+        else:
+            raise RefundValidationError(
+                f"unsupported amount type: {type(amount).__name__}"
+            )
+    except (InvalidOperation, ValueError) as e:
+        raise RefundValidationError(f"cannot parse amount {amount!r}: {e}") from e
+    if d <= 0:
+        raise RefundValidationError(f"refund amount must be > 0, got {d}")
+    # Convert major units (yuan/dollar) -> cents. Use ROUND_HALF_UP to mirror payment logic.
+    cents = int((d * Decimal(100)).quantize(Decimal("1"), rounding="ROUND_HALF_UP"))
+    if cents <= 0:
+        raise RefundValidationError(f"refund amount too small: {d} (< 0.01)")
+    remaining = order_amount_cents - already_refunded_cents
+    if cents > remaining:
+        raise RefundValidationError(
+            f"refund amount {cents} cents exceeds remaining {remaining} cents "
+            f"(order={order_amount_cents}, already_refunded={already_refunded_cents})"
+        )
+    return cents
+
+
 class PaymentProvider(abc.ABC):
     """Abstract base for payment providers.
 
     Implementations:
     - create_payment(order) -> PaymentResult
     - verify_webhook(payload_bytes, signature) -> WebhookEvent
-    - refund(order) -> bool
+    - refund(order, amount=None) -> RefundResult
+        - amount=None  -> full refund (entire remaining amount)
+        - amount=int|float|Decimal|str (major units, e.g. 9.99) -> partial refund
     - query(order) -> PaymentStatus
+
+    Concrete implementations must validate ``amount`` via
+    :func:`to_refund_cents` to ensure the requested amount does not
+    exceed the order's remaining refundable balance.
     """
     name: str = "base"
 
@@ -77,7 +173,8 @@ class PaymentProvider(abc.ABC):
                        signature: str) -> WebhookEvent: ...
 
     @abc.abstractmethod
-    def refund(self, order: Any) -> bool: ...
+    def refund(self, order: Any,
+               amount: Optional[Union[int, float, str, Decimal]] = None) -> RefundResult: ...
 
     @abc.abstractmethod
     def query(self, order: Any) -> str: ...
@@ -102,6 +199,9 @@ class PaymentProvider(abc.ABC):
 
 
 __all__ = [
-    "PaymentProvider", "PaymentResult", "WebhookEvent", "PaymentStatus",
+    "PaymentProvider", "PaymentResult", "WebhookEvent", "RefundResult",
+    "PaymentStatus",
     "ProviderNotConfiguredError", "WebhookVerificationError",
+    "RefundValidationError",
+    "to_refund_cents",
 ]

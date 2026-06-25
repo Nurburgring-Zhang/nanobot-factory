@@ -1,0 +1,150 @@
+/**
+ * English (en-US) translations
+ * Mirror of zh-CN.js — keys identical, values translated
+ */
+window.I18N_EN_US = {
+  // ===== nav =====
+  'nav.dashboard':     'Dashboard',
+  'nav.assets':        'Assets',
+  'nav.requirements':  'Requirements',
+  'nav.tasks':         'Tasks',
+  'nav.datasets':      'Datasets',
+  'nav.eval':          'Evaluation',
+  'nav.stats':         'Statistics',
+  'nav.governance':    'Governance',
+  'nav.users':         'Users',
+  'nav.brand':         'Hermes Data Factory',
+  'nav.projects':      'Projects',
+  'nav.canvas':        'Canvas',
+  'nav.quality':       'Quality',
+
+  // ===== common =====
+  'common.search':     'Search',
+  'common.create':     'Create',
+  'common.delete':     'Delete',
+  'common.edit':       'Edit',
+  'common.confirm':    'Confirm',
+  'common.cancel':     'Cancel',
+  'common.save':       'Save',
+  'common.submit':     'Submit',
+  'common.refresh':    'Refresh',
+  'common.loading':    'Loading...',
+  'common.empty':      'No data',
+  'common.yes':        'Yes',
+  'common.no':         'No',
+  'common.all':        'All',
+
+  // ===== buttons =====
+  'btn.create_user':     'Create User',
+  'btn.create_asset':    'New Asset',
+  'btn.create_requirement':'New Requirement',
+  'btn.create_task':     'Create Task',
+  'btn.create_dataset':  'New Dataset',
+  'btn.create_eval':     'Create Eval',
+  'btn.preview':         'Preview',
+  'btn.assign':          'Assign',
+  'btn.review':          'Review',
+  'btn.export':          'Export',
+  'btn.approve':         'Approve',
+  'btn.reject':          'Reject',
+  'btn.decompose':       'Decompose',
+  'btn.backup':          'Create Backup',
+  'btn.lineage':         'Query Lineage',
+  'btn.badcase':         'View BadCase',
+
+  // ===== errors =====
+  'error.network':       'Network error, please retry',
+  'error.unauthorized':  'Unauthorized, please login',
+  'error.forbidden':     'Forbidden, no permission',
+  'error.not_found':     'Resource not found',
+  'error.server':        'Server error',
+  'error.validation':    'Validation failed',
+  'error.empty_query':   'Query cannot be empty',
+  'error.role_required': 'Admin role required',
+
+  // ===== user & role =====
+  'user.online':         'Online',
+  'user.offline':        'Offline',
+  'user.role_admin':     'Admin',
+  'user.role_prod_lead': 'Production Lead',
+  'user.role_qc_lead':   'QC Lead',
+  'user.role_annotator': 'Annotator',
+  'user.role_reviewer':  'Reviewer',
+  'user.role_viewer':    'Viewer',
+  'user.switch_role':    'Switch Role',
+  'user.switch_lang':    'Language',
+
+  // ===== stats =====
+  'stats.total_users':   'Total Users',
+  'stats.total_assets':  'Total Assets',
+  'stats.total_datasets':'Datasets',
+  'stats.total_tasks':   'Total Tasks',
+  'stats.completed':     'Completed',
+  'stats.storage':       'Storage',
+  'stats.approval_rate': 'Approval Rate',
+
+  // ===== table column =====
+  'col.name':       'Name',
+  'col.type':       'Type',
+  'col.status':     'Status',
+  'col.priority':   'Priority',
+  'col.assignee':   'Assignee',
+  'col.score':      'Score',
+  'col.tags':       'Tags',
+  'col.created_at': 'Created At',
+  'col.action':     'Action',
+  'col.id':         'ID',
+  'col.size':       'Size',
+  'col.role':       'Role',
+
+  // ===== P1-C-W1 period / dashboard =====
+  'period.today':   'Today',
+  'period.week':    'This Week',
+  'period.month':   'This Month',
+  'stats.production_count':    'Production Today',
+  'stats.avg_quality_score':   'Quality Score',
+  'stats.tasks_pending':       'Pending Tasks',
+  'stats.daily_active_users':  'Daily Active Users',
+  'stats.audit_actions':       'Audit Actions',
+  'stats.current_user':        'Current User',
+  'stats.assets_projects':     'Assets / Projects',
+  'dashboard.recent_tasks':    'Recent Tasks',
+  'dashboard.recent_tasks_empty': 'No recent tasks — backend /api/tasks/recent returned empty',
+  'dashboard.notifications':   'Notifications',
+  'dashboard.notifications_empty': 'No new notifications',
+
+  // ===== P1-C-W1 canvas =====
+  'btn.load':       'Load',
+  'btn.save':       'Save',
+  'btn.render':     'Render',
+  'btn.export':     'Export',
+  'btn.upload':     'Upload',
+  'btn.download':   'Download',
+  'btn.tag':        'Tag',
+  'btn.audit':      'Audit',
+  'btn.members':    'Members',
+  'btn.load_template': 'Load Template',
+  'canvas.saved_at': 'Saved At',
+  'canvas.render_task': 'Render Task',
+  'canvas.loading':  'Loading canvas...',
+  'canvas.empty_title': 'Canvas is empty',
+  'canvas.empty_desc': 'Click "Load Template" to start, or drag nodes from the sidebar',
+  'canvas.full_editor': 'Canvas editor (R6.5 placeholder, R7 will integrate node library)',
+
+  // ===== P1-C-W1 assets / projects / users =====
+  'assets.empty_desc':  'No assets — click "Upload" to create the first one',
+  'projects.empty_desc': 'No projects — click "Create" to start',
+  'projects.no_members': 'No members in this project',
+  'users.empty_desc':   'No users — click "Create" to start',
+  'users.no_audit':     'No audit entries',
+
+  // ===== 403 page =====
+  '403.title':      '403 Forbidden',
+  '403.message':    'Your current role has no permission to access this page',
+  '403.back':       'Back to Home',
+
+  // ===== a11y =====
+  'a11y.skip':          'Skip to main content',
+  'a11y.lang_zh':       'Simplified Chinese',
+  'a11y.lang_en':       'English',
+};

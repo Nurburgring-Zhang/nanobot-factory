@@ -41,6 +41,24 @@ from .payments.base import (
     PaymentResult, WebhookEvent, WebhookVerificationError,
     ProviderNotConfiguredError,
 )
+from .payments.idempotency import (
+    get_store as get_idem_store, hash_request, derive_key_from_order,
+)
+from .payments.webhook_dedup import (
+    get_store as get_dedup_store, extract_event_id,
+)
+from .payments.dispute import (
+    register_dispute, get_dispute, get_disputes_by_order,
+    upload_evidence, resolve_dispute, list_open_disputes, dispute_stats,
+    DISPUTE_REASONS, Dispute,
+)
+from .customers import (
+    PM_TYPES, PM_TYPE_LABELS, Customer, PaymentMethod,
+    register_customer, get_customer, get_customer_by_user, list_customers,
+    attach_payment_method, detach_payment_method, list_payment_methods,
+    get_payment_method, get_default_payment_method, set_default_payment_method,
+    customer_stats,
+)
 
 
 # ============================================================================
@@ -119,6 +137,13 @@ class CreatePaymentRequest(BaseModel):
 
 class RefundRequest(BaseModel):
     reason: str = Field(..., min_length=1, max_length=512)
+    # Optional: None/omitted -> full refund; numeric -> partial refund amount
+    # in major units (e.g. 9.99 == 999 cents). Accepts int|float|str|Decimal.
+    amount: Optional[Any] = Field(
+        None,
+        description="Partial refund amount in major units (e.g. 9.99). "
+                    "Omit for full refund.",
+    )
 
 
 class ChangePlanRequest(BaseModel):
@@ -249,7 +274,8 @@ payment_router = APIRouter(prefix="/payment", tags=["billing-payment"])
 
 
 @payment_router.post("/{order_id}")
-async def create_payment(order_id: str, req: CreatePaymentRequest):
+async def create_payment(order_id: str, req: CreatePaymentRequest,
+                         request: Request = None):  # type: ignore[assignment]
     order = _STATE["order_service"].get(order_id)
     if order is None:
         raise HTTPException(status_code=404, detail=f"order {order_id!r} not found")
@@ -263,11 +289,52 @@ async def create_payment(order_id: str, req: CreatePaymentRequest):
         provider = get_provider(method)
     except KeyError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # ── Idempotency: honor ``Idempotency-Key`` header from client.
+    # If absent, derive one from order_id + payment_method.
+    idem_key = None
+    if request is not None:
+        idem_key = request.headers.get("Idempotency-Key") or request.headers.get("idempotency-key")
+    if not idem_key:
+        idem_key = derive_key_from_order(order_id, method)
+    request_hash = hash_request({
+        "order_id": order_id,
+        "payment_method": method,
+        "amount_cents": order.amount_cents,
+        "currency": order.currency,
+        "return_url": req.return_url,
+    })
+    idem_store = get_idem_store()
+    hit, reserved = idem_store.lookup_or_reserve(idem_key, request_hash)
+    if hit is not None:
+        # Replay — return the cached result verbatim
+        return {
+            **hit.parsed(),
+            "_idempotent_replay": True,
+            "_replay_count": hit.replay_count,
+            "_idempotency_key": idem_key,
+        }
+    if not reserved:
+        # In-progress placeholder — caller should retry
+        raise HTTPException(
+            status_code=409,
+            detail="a request with this Idempotency-Key is already in progress",
+        )
     try:
         result = provider.create_payment(order)
     except ProviderNotConfiguredError as e:
+        idem_store.release(idem_key)
         raise HTTPException(status_code=503, detail=f"provider not configured: {e}")
-    return result.to_dict()
+    except Exception:
+        # Don't cache failures — let the client retry.
+        idem_store.release(idem_key)
+        raise
+    payload = result.to_dict()
+    idem_store.commit(idem_key, request_hash, payload)
+    return {
+        **payload,
+        "_idempotent_replay": False,
+        "_idempotency_key": idem_key,
+    }
 
 
 # ── Webhook ──────────────────────────────────────────────────────────────
@@ -290,27 +357,99 @@ async def receive_webhook(provider: str, request: Request):
         sig = request.headers.get("wechat-signature", "")
     else:
         sig = request.headers.get("x-signature", "")
+    # ── Replay protection (event-id dedup) — run BEFORE signature verify
+    # so a malicious actor can't burn the dedup slot for legit events.
+    # (Event id is provider-supplied but it's just a Redis key; signature
+    # verify still gates whether we act on the event.)
+    event_id = extract_event_id(provider, body)
+    dedup = get_dedup_store()
+    if event_id:
+        result = dedup.register(event_id, provider)
+        if result.is_duplicate:
+            # 200 OK so the provider stops retrying, but no business action.
+            return {
+                "received": True,
+                "duplicate": True,
+                "event_id": event_id,
+                "provider": provider,
+            }
     try:
         event = prov.verify_webhook(body, sig)
     except WebhookVerificationError as e:
+        # Signature failed — release the dedup slot so the legit retry
+        # can be processed.
+        if event_id:
+            dedup.release(event_id, provider)
         raise HTTPException(status_code=400, detail=f"webhook verify failed: {e}")
     # Mark order paid (or refunded) based on event
     order = _STATE["order_service"].get(event.order_id)
+    business_applied = False
+    dispute_registered: Optional[Dict[str, Any]] = None
     if order is not None:
         if event.status == "success":
             try:
                 _STATE["order_service"].mark_paid(
                     event.order_id, external_ref=event.payment_id,
                 )
+                business_applied = True
             except (ValueError, KeyError):
                 # already in non-pending state — ignore
                 pass
         elif event.status == "refunded":
             try:
                 _STATE["order_service"].refund(event.order_id, reason="webhook")
+                business_applied = True
             except (ValueError, KeyError):
                 pass
-    return {"received": True, "event": event.to_dict()}
+        elif event.status == "disputed":
+            # P1-2: dispute.created / dispute.closed 业务处理
+            dispute_event_type = event.event_type
+            if dispute_event_type == "charge.dispute.created":
+                try:
+                    # 尝试从 raw 提取 reason
+                    obj = (event.raw or {}).get("data", {}).get("object", {}) or {}
+                    reason = obj.get("reason", "general")
+                    if reason not in DISPUTE_REASONS:
+                        reason = "general"
+                    d = register_dispute(
+                        order_id=event.order_id,
+                        payment_id=event.payment_id,
+                        amount_cents=event.amount_cents,
+                        currency=event.currency,
+                        reason=reason,
+                    )
+                    business_applied = True
+                    dispute_registered = d.to_dict()
+                except Exception as e:
+                    logger.warning("dispute register failed: %s", e)
+            elif dispute_event_type == "charge.dispute.closed":
+                # 标记已有 dispute 为 closed
+                try:
+                    disputes = get_disputes_by_order(event.order_id)
+                    # 找最新一笔未结的
+                    for d in reversed(disputes):
+                        if d.status in ("needs_response", "under_review"):
+                            obj = (event.raw or {}).get("data", {}).get("object", {}) or {}
+                            final_status = obj.get("status", "closed")
+                            if final_status == "won":
+                                resolve_dispute(d.dispute_id, "won", resolution_note="stripe webhook: won")
+                            elif final_status == "lost":
+                                resolve_dispute(d.dispute_id, "lost", resolution_note="stripe webhook: lost")
+                            else:
+                                resolve_dispute(d.dispute_id, "closed", resolution_note="stripe webhook: closed")
+                            business_applied = True
+                            break
+                except Exception as e:
+                    logger.warning("dispute close failed: %s", e)
+    return {
+        "received": True,
+        "duplicate": False,
+        "event_id": event.event_id,
+        "provider": provider,
+        "business_applied": business_applied,
+        "event": event.to_dict(),
+        "dispute_registered": dispute_registered,
+    }
 
 
 # ── Refund ───────────────────────────────────────────────────────────────
@@ -322,16 +461,41 @@ async def refund_order(order_id: str, req: RefundRequest):
     order = _STATE["order_service"].get(order_id)
     if order is None:
         raise HTTPException(status_code=404, detail=f"order {order_id!r} not found")
+    # Convert req.amount to cents (None stays None)
+    from .payments.base import to_refund_cents, RefundValidationError
+    already_refunded = int(getattr(order, "refunded_amount_cents", 0) or 0)
     try:
-        # Provider-side refund
+        amount_cents = to_refund_cents(
+            req.amount,
+            order_amount_cents=int(order.amount_cents),
+            already_refunded_cents=already_refunded,
+        ) if req.amount is not None else None
+    except RefundValidationError as e:
+        raise HTTPException(status_code=400, detail=f"invalid refund amount: {e}")
+    try:
+        # Provider-side refund (only if order has external_ref — i.e. payment was
+        # already initiated at the provider). Without external_ref, there's no
+        # provider-side refund to perform; we still update internal state.
         method = order.payment_method
-        if method != "mock":
+        if method != "mock" and order.external_ref:
             try:
                 prov = get_provider(method)
-                prov.refund(order)
+                # Pass amount through; provider validates + initiates refund
+                prov.refund(order, amount=req.amount)
             except (KeyError, ProviderNotConfiguredError):
                 pass  # proceed with internal refund regardless
-        refunded = _STATE["order_service"].refund(order_id, reason=req.reason)
+            except RefundValidationError as e:
+                # Distinguish "amount invalid" (reject) from "can't refund" (skip).
+                msg = str(e)
+                if "no external_ref" in msg or "cannot refund" in msg:
+                    pass  # proceed with internal refund only
+                else:
+                    raise HTTPException(
+                        status_code=400, detail=f"provider rejected: {e}"
+                    )
+        refunded = _STATE["order_service"].refund(
+            order_id, reason=req.reason, amount_cents=amount_cents,
+        )
     except (ValueError, KeyError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     return refunded.to_dict()
@@ -569,6 +733,243 @@ router.include_router(subscription_router)
 router.include_router(quotas_router)
 router.include_router(usage_router)
 router.include_router(admin_router)
+
+
+# ============================================================================
+# P1-2: Disputes API
+# ============================================================================
+disputes_router = APIRouter(prefix="/disputes", tags=["billing-disputes"])
+
+
+class RegisterDisputeRequest(BaseModel):
+    order_id: str = Field(..., min_length=1, max_length=64)
+    payment_id: str = Field(..., min_length=1, max_length=128)
+    amount_cents: int = Field(..., gt=0)
+    currency: str = Field("USD", pattern=r"^(USD|CNY|EUR|GBP)$")
+    reason: str = Field("general", max_length=64)
+    evidence_due_days: int = Field(14, ge=1, le=60)
+    alert: bool = True
+
+
+class EvidenceUpload(BaseModel):
+    customer_communication: Optional[str] = None
+    receipt: Optional[Dict[str, Any]] = None
+    shipping_documentation: Optional[Dict[str, Any]] = None
+    service_documentation: Optional[Dict[str, Any]] = None
+    cancellation_policy: Optional[str] = None
+    uncategorized_text: Optional[str] = None
+
+
+class ResolveDisputeRequest(BaseModel):
+    status: str = Field(..., pattern="^(won|lost|closed)$")
+    resolution_note: Optional[str] = Field(None, max_length=512)
+
+
+@disputes_router.post("")
+async def disputes_register(req: RegisterDisputeRequest):
+    try:
+        d = register_dispute(
+            order_id=req.order_id,
+            payment_id=req.payment_id,
+            amount_cents=req.amount_cents,
+            currency=req.currency,
+            reason=req.reason,
+            evidence_due_days=req.evidence_due_days,
+            alert=req.alert,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return d.to_dict()
+
+
+@disputes_router.get("")
+async def disputes_list(
+    order_id: Optional[str] = Query(None, max_length=64),
+    open_only: bool = Query(False),
+    limit: int = Query(100, ge=1, le=500),
+):
+    if open_only:
+        items = list_open_disputes()
+        return {"count": len(items), "items": [d.to_dict() for d in items[:limit]]}
+    if order_id:
+        items = get_disputes_by_order(order_id)
+    else:
+        items = list(_all_disputes())
+    return {"count": len(items), "items": [d.to_dict() for d in items[:limit]]}
+
+
+def _all_disputes():
+    """测试用 — 列出所有 dispute (直接遍历内部 store)."""
+    from .payments.dispute import _DISPUTES  # noqa: PLC0415
+    return list(_DISPUTES.values())
+
+
+@disputes_router.get("/stats")
+async def disputes_stats():
+    return dispute_stats()
+
+
+@disputes_router.get("/{dispute_id}")
+async def disputes_get(dispute_id: str):
+    d = get_dispute(dispute_id)
+    if not d:
+        raise HTTPException(status_code=404, detail=f"dispute {dispute_id!r} not found")
+    return d.to_dict()
+
+
+@disputes_router.post("/{dispute_id}/evidence")
+async def disputes_upload_evidence(dispute_id: str, req: EvidenceUpload):
+    try:
+        d = upload_evidence(dispute_id, req.model_dump(exclude_none=True))
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return d.to_dict()
+
+
+@disputes_router.post("/{dispute_id}/resolve")
+async def disputes_resolve(dispute_id: str, req: ResolveDisputeRequest):
+    try:
+        d = resolve_dispute(dispute_id, req.status, req.resolution_note)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return d.to_dict()
+
+
+router.include_router(disputes_router)
+
+
+# ============================================================================
+# P1-5: Customer + PaymentMethod API
+# ============================================================================
+customers_router = APIRouter(prefix="/customers", tags=["billing-customers"])
+
+
+class RegisterCustomerRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, max_length=64)
+    email: str = Field(..., min_length=3, max_length=128)
+    name: str = Field(..., min_length=1, max_length=128)
+    currency: str = Field("USD", pattern=r"^(USD|CNY|EUR|GBP|JPY|HKD)$")
+    provider: str = Field("stripe", max_length=32)
+    external_id: Optional[str] = Field(None, max_length=128)
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class AttachPaymentMethodRequest(BaseModel):
+    customer_id: str = Field(..., min_length=1, max_length=64)
+    pm_type: str = Field(..., pattern=r"^(card|alipay|wechat|bank_account|mock)$")
+    token: str = Field(..., min_length=1, max_length=256)
+    brand: Optional[str] = Field(None, max_length=32)
+    last4: Optional[str] = Field(None, max_length=4)
+    exp_month: Optional[int] = Field(None, ge=1, le=12)
+    exp_year: Optional[int] = Field(None, ge=2024, le=2099)
+    is_default: bool = False
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@customers_router.post("")
+async def customers_register(req: RegisterCustomerRequest):
+    try:
+        c = register_customer(
+            user_id=req.user_id, email=req.email, name=req.name,
+            currency=req.currency, provider=req.provider,
+            external_id=req.external_id, metadata=req.metadata,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return c.to_dict()
+
+
+@customers_router.get("")
+async def customers_list(limit: int = Query(100, ge=1, le=500)):
+    items = list_customers(limit=limit)
+    return {"count": len(items), "customers": [c.to_dict() for c in items]}
+
+
+@customers_router.get("/stats")
+async def customers_stats():
+    return customer_stats()
+
+
+@customers_router.get("/{customer_id}")
+async def customers_get(customer_id: str):
+    c = get_customer(customer_id)
+    if not c:
+        raise HTTPException(status_code=404, detail=f"customer {customer_id!r} not found")
+    return c.to_dict()
+
+
+@customers_router.get("/by-user/{user_id}")
+async def customers_get_by_user(user_id: str):
+    c = get_customer_by_user(user_id)
+    if not c:
+        raise HTTPException(status_code=404, detail=f"customer for user {user_id!r} not found")
+    return c.to_dict()
+
+
+@customers_router.post("/payment-methods")
+async def customers_attach_pm(req: AttachPaymentMethodRequest):
+    try:
+        pm = attach_payment_method(
+            customer_id=req.customer_id, pm_type=req.pm_type, token=req.token,
+            brand=req.brand, last4=req.last4, exp_month=req.exp_month,
+            exp_year=req.exp_year, is_default=req.is_default,
+            metadata=req.metadata,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return pm.to_dict()
+
+
+@customers_router.get("/{customer_id}/payment-methods")
+async def customers_list_pms(
+    customer_id: str,
+    pm_type: Optional[str] = Query(None, pattern=r"^(card|alipay|wechat|bank_account|mock)$"),
+):
+    c = get_customer(customer_id)
+    if not c:
+        raise HTTPException(status_code=404, detail=f"customer {customer_id!r} not found")
+    items = list_payment_methods(customer_id, pm_type=pm_type)
+    return {"count": len(items), "items": [pm.to_dict() for pm in items]}
+
+
+@customers_router.get("/{customer_id}/payment-methods/default")
+async def customers_default_pm(
+    customer_id: str,
+    pm_type: Optional[str] = Query(None, pattern=r"^(card|alipay|wechat|bank_account|mock)$"),
+):
+    c = get_customer(customer_id)
+    if not c:
+        raise HTTPException(status_code=404, detail=f"customer {customer_id!r} not found")
+    pm = get_default_payment_method(customer_id, pm_type=pm_type)
+    if not pm:
+        raise HTTPException(status_code=404, detail="no payment method")
+    return pm.to_dict()
+
+
+@customers_router.post("/payment-methods/{pm_id}/set-default")
+async def customers_set_default_pm(pm_id: str):
+    try:
+        pm = set_default_payment_method(pm_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'"))
+    return pm.to_dict()
+
+
+@customers_router.delete("/payment-methods/{pm_id}")
+async def customers_detach_pm(pm_id: str):
+    ok = detach_payment_method(pm_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"payment_method {pm_id!r} not found")
+    return {"deleted": True, "pm_id": pm_id}
+
+
+router.include_router(customers_router)
 
 
 __all__ = [

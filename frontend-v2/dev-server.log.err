@@ -1,0 +1,10 @@
+
+[1m[33mwarn[39m[22m - The `content` option in your Tailwind CSS configuration is missing or empty.
+[1m[33mwarn[39m[22m - Configure your content sources or your generated CSS will be missing styles.
+[1m[33mwarn[39m[22m - https://tailwindcss.com/docs/content-configuration
+[1m[33m[@vue/compiler-sfc][0m[33m `v-model` cannot update a `const` reactive binding `form`. The compiler has transformed it to `let` to make the update work.[0m
+
+[2m02:48:21[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/operators[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)

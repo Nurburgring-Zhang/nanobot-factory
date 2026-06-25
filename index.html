@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nanobot Factory - AIGC数据生产与管理系统</title>
+  
+  <!-- EventEmitter Polyfill - 必须在所有脚本之前加载 -->
+  <script>
+    (function() {
+      var EventEmitter;
+      if (typeof window !== 'undefined') {
+        if (window.EventEmitter) {
+          if (typeof window.EventEmitter.prototype.emit !== 'function') {
+            EventEmitter = undefined;
+          }
+        }
+        if (!EventEmitter) {
+          EventEmitter = function EventEmitter() {
+            if (!(this instanceof EventEmitter)) return new EventEmitter();
+            this._events = this._events || {};
+            this._eventsCount = 0;
+            this._maxListeners = this._maxListeners || undefined;
+          };
+          EventEmitter.prototype._events = undefined;
+          EventEmitter.prototype._eventsCount = 0;
+          EventEmitter.prototype._maxListeners = undefined;
+          EventEmitter.defaultMaxListeners = 10;
+          EventEmitter.prototype.on = function on(name, listener) {
+            if (!this._events) this._events = {};
+            if (!this._events[name]) { this._events[name] = []; this._eventsCount++; }
+            this._events[name].push(listener);
+            return this;
+          };
+          EventEmitter.prototype.once = function once(name, listener) {
+            var self = this;
+            function wrapper() { self.off(name, wrapper); listener.apply(self, arguments); }
+            wrapper.listener = listener;
+            return this.on(name, wrapper);
+          };
+          EventEmitter.prototype.emit = function emit(name) {
+            var args = Array.prototype.slice.call(arguments, 1);
+            var listeners = this._events && this._events[name];
+            if (!listeners || !listeners.length) return false;
+            for (var i = 0; i < listeners.length; i++) {
+              try { listeners[i].apply(this, args); } catch (e) { console.error('Event listener error:', e); }
+            }
+            return true;
+          };
+          EventEmitter.prototype.off = function off(name, listener) {
+            if (!this._events || !this._events[name]) return this;
+            var list = this._events[name], position = -1;
+            for (var i = 0; i < list.length; i++) {
+              if (list[i] === listener || (list[i].listener && list[i].listener === listener)) { position = i; break; }
+            }
+            if (position < 0) return this;
+            if (position === 0) list.shift();
+            else if (position === list.length - 1) list.pop();
+            else list.splice(position, 1);
+            if (list.length === 0) { delete this._events[name]; this._eventsCount--; }
+            return this;
+          };
+          EventEmitter.prototype.removeAllListeners = function removeAllListeners(name) {
+            if (!this._events) return this;
+            if (name) { delete this._events[name]; this._eventsCount = 0; }
+            else { this._events = {}; this._eventsCount = 0; }
+            return this;
+          };
+          EventEmitter.prototype.listeners = function listeners(name) {
+            return (this._events && this._events[name]) ? [].slice.call(this._events[name]) : [];
+          };
+          EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
+            if (typeof n !== 'number' || n < 0) throw new TypeError('n must be a positive number');
+            this._maxListeners = n;
+            return this;
+          };
+          EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
+            return this._maxListeners !== undefined ? this._maxListeners : EventEmitter.defaultMaxListeners;
+          };
+          EventEmitter.listenerCount = function(emitter, name) { return emitter.listeners(name).length; };
+        }
+        window.EventEmitter = EventEmitter;
+        if (typeof window.PIXI === 'undefined') window.PIXI = {};
+        if (!window.PIXI.utils) window.PIXI.utils = {};
+        window.PIXI.utils.EventEmitter = EventEmitter;
+        console.log('[Polyfill] EventEmitter polyfill installed');
+      }
+    })();
+  </script>
+  
+  <!-- Live2D Cubism Core - 必须在 pixi-live2d-display 之前加载 -->
+  <!-- Cubism 2 Core (for shizuku model) -->
+  <script src="/cubism2.min.js"></script>
+  <script>
+    console.log('[Live2D] Cubism 2 Core loaded:', typeof window.Live2D);
+  </script>
+  <!-- Cubism 4 Core (for haru model) -->
+  <script src="/cubismcore.min.js"></script>
+  <script>
+    console.log('[Live2D] Cubism 4 Core loaded:', typeof window.Live2DCubismCore);
+  </script>
+  
+  <style>
+    :root {
+      --primary-color: #3b82f6;
+      --primary-hover: #2563eb;
+      --background: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface-hover: #252525;
+      --border: #333;
+      --text-primary: #e0e0e0;
+      --text-secondary: #9ca3af;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar {
+      width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transition: width 0.3s;
+    }
+    .sidebar.collapsed { width: 60px; }
+    .sidebar-header {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-title { font-size: 18px; font-weight: bold; color: var(--primary-color); }
+    .collapsed .app-title { display: none; }
+    .toggle-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .sidebar-nav { flex: 1; padding: 10px; overflow-y: auto; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      margin: 5px 0;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+    .nav-item.active { background: var(--primary-color); color: white; }
+    .nav-icon { font-size: 18px; margin-right: 12px; min-width: 24px; text-align: center; }
+    .collapsed .nav-label { display: none; }
+    .main-content { flex: 1; overflow-y: auto; padding: 20px; }
+    .card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; }
+    h1 { margin-bottom: 20px; }
+    .grid { display: grid; gap: 20px; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .stat-card { text-align: center; padding: 20px; }
+    .stat-icon { font-size: 32px; margin-bottom: 10px; }
+    .stat-value { font-size: 28px; font-weight: bold; }
+    .stat-label { color: var(--text-secondary); font-size: 14px; }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary-color); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border); }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+    .badge-info { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 40px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .page { display: none; }
+    .page.active { display: block; }
+    .form-group { margin-bottom: 15px; }
+    .form-label { display: block; margin-bottom: 5px; font-size: 14px; color: var(--text-secondary); }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 15px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table th { font-weight: 600; color: var(--text-secondary); font-size: 13px; background: var(--background); }
+    .data-table tr:hover { background: var(--surface-hover); }
+    .progress-bar { width: 100%; height: 8px; background: var(--background); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary-color); transition: width 0.3s; }
+    .tag { display: inline-block; padding: 3px 8px; background: var(--background); border-radius: 4px; font-size: 12px; color: var(--text-secondary); margin-right: 5px; }
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 25px;
+      width: 90%;
+      max-width: 500px;
+      border: 1px solid var(--border);
+    }
+    .modal-lg { max-width: 800px; }
+    .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+    .text-muted { color: var(--text-secondary); }
+    .flex { display: flex; }
+    .flex-between { justify-content: space-between; }
+    .gap-10 { gap: 10px; }
+    .mb-20 { margin-bottom: 20px; }
+    .agent-card, .model-card { padding: 20px; }
+    .agent-header, .model-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+    .agent-icon, .model-icon { font-size: 36px; }
+    .agent-description { color: var(--text-secondary); font-size: 14px; margin-bottom: 15px; }
+    .agent-capabilities { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
+    .agent-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid var(--border); }
+    .model-badge { background: var(--background); padding: 4px 10px; border-radius: 4px; font-size: 12px; color: var(--text-secondary); }
+    .model-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+    .chat-container { display: flex; flex-direction: column; height: calc(100vh - 100px); }
+    .chat-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; background: var(--surface); border-radius: 12px; margin-bottom: 20px; max-height: 500px; }
+    .message { display: flex; gap: 15px; margin-bottom: 20px; }
+    .message-avatar { font-size: 32px; min-width: 40px; }
+    .message-content { flex: 1; }
+    .message-text { background: var(--background); padding: 12px 16px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap; }
+    .message-user .message-text { background: var(--primary-color); color: white; }
+    .message-meta { display: flex; gap: 15px; margin-top: 8px; font-size: 12px; color: var(--text-secondary); }
+    .typing-indicator { display: flex; gap: 5px; padding: 12px 16px; }
+    .typing-indicator span { width: 8px; height: 8px; background: var(--text-secondary); border-radius: 50%; animation: typing 1.4s infinite; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+    .quick-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .quick-label { color: var(--text-secondary); font-size: 14px; margin-right: 10px; }
+    .chat-input { display: flex; gap: 15px; align-items: flex-end; }
+    .chat-input .form-textarea { flex: 1; margin-bottom: 0; }
+    .tabs { display: flex; gap: 5px; background: var(--surface); padding: 5px; border-radius: 8px; margin-bottom: 15px; }
+    .tab-btn { flex: 1; padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .tab-btn:hover { background: var(--surface-hover); }
+    .tab-btn.active { background: var(--primary-color); color: white; }
+    .history-list { max-height: 400px; overflow-y: auto; }
+    .history-item { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border); }
+    .history-item:last-child { border-bottom: none; }
+    .history-icon { font-size: 24px; }
+    .history-content { flex: 1; min-width: 0; }
+    .history-prompt { font-size: 13px; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .asset-card { overflow: hidden; }
+    .asset-preview { height: 120px; background: var(--background); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .asset-icon { font-size: 48px; }
+    .asset-name { font-size: 16px; font-weight: 600; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .asset-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+    .asset-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+    .asset-date { font-size: 12px; color: var(--text-secondary); }
+    .asset-actions { display: flex; gap: 8px; }
+    .model-list { display: flex; flex-direction: column; gap: 10px; }
+    .model-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--background); border-radius: 6px; }
+    .model-name { font-size: 14px; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--background); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h1 class="app-title">Nanobot Factory</h1>
+        <button class="toggle-btn" onclick="toggleSidebar()">◀</button>
+      </div>
+      <nav class="sidebar-nav" id="nav">
+        <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">仪表盘</span>
+        </div>
+        <div class="nav-item" data-page="agents" onclick="showPage('agents')">
+          <span class="nav-icon">🤖</span>
+          <span class="nav-label">智能体</span>
+        </div>
+        <div class="nav-item" data-page="tasks" onclick="showPage('tasks')">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">任务管理</span>
+        </div>
+        <div class="nav-item" data-page="assets" onclick="showPage('assets')">
+          <span class="nav-icon">💾</span>
+          <span class="nav-label">资产管理</span>
+        </div>
+        <div class="nav-item" data-page="models" onclick="showPage('models')">
+          <span class="nav-icon">🧠</span>
+          <span class="nav-label">模型管理</span>
+        </div>
+        <div class="nav-item" data-page="nanobot" onclick="showPage('nanobot')">
+          <span class="nav-icon">💬</span>
+          <span class="nav-label">Nanobot对话</span>
+        </div>
+        <div class="nav-item" data-page="database" onclick="showPage('database')">
+          <span class="nav-icon">🗄️</span>
+          <span class="nav-label">数据集管理</span>
+        </div>
+        <div class="nav-item" data-page="omnigen" onclick="showPage('omnigen')">
+          <span class="nav-icon">🎨</span>
+          <span class="nav-label">OmniGen工坊</span>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard Page -->
+      <div class="page active" id="page-dashboard">
+        <h1>仪表盘</h1>
+        <div class="grid grid-4 mb-20">
+          <div class="card stat-card">
+            <div class="stat-icon">🤖</div>
+            <div class="stat-value" id="stat-agents">5 / 5</div>
+            <div class="stat-label">活跃智能体</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" id="stat-tasks">12</div>
+            <div class="stat-label">运行任务</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon">💾</div>
+            <div class="stat-value" id="stat-assets">156</div>
+            <div class="stat-label">资产总数</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon">🧠</div>
+            <div class="stat-value" id="stat-models">4</div>
+            <div class="stat-label">可用模型</div>
+          </div>
+        </div>
+        <div class="card mb-20">
+          <h2 class="card-title">快速操作</h2>
+          <div class="flex gap-10">
+            <button class="btn btn-primary" onclick="showPage('omnigen')">生成图像</button>
+            <button class="btn btn-primary" onclick="showPage('omnigen')">生成视频</button>
+            <button class="btn btn-secondary" onclick="showPage('database')">采集数据</button>
+            <button class="btn btn-secondary" onclick="showPage('tasks')">数据分析</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="card-title">系统信息</h2>
+          <div class="grid grid-2">
+            <div>
+              <div class="form-label">版本</div>
+              <div>1.0.0</div>
+            </div>
+            <div>
+              <div class="form-label">状态</div>
+              <div><span class="badge badge-success">运行中</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agents Page -->
+      <div class="page" id="page-agents">
+        <div class="flex flex-between mb-20">
+          <h1>智能体管理</h1>
+          <button class="btn btn-primary" onclick="showModal('createAgent')">+ 创建智能体</button>
+        </div>
+        <div class="grid grid-3" id="agents-grid">
+          <!-- Agents will be rendered here -->
+        </div>
+      </div>
+
+      <!-- Tasks Page -->
+      <div class="page" id="page-tasks">
+        <div class="flex flex-between mb-20">
+          <h1>任务管理</h1>
+          <button class="btn btn-primary" onclick="showModal('createTask')">+ 创建任务</button>
+        </div>
+        <div class="card">
+          <table class="data-table">
+            <thead>
+              <tr><th>ID</th><th>类型</th><th>状态</th><th>进度</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="tasks-tbody">
+              <!-- Tasks will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Assets Page -->
+      <div class="page" id="page-assets">
+        <div class="flex flex-between mb-20">
+          <h1>资产管理</h1>
+          <button class="btn btn-primary" onclick="loadAssets()">刷新</button>
+        </div>
+        <div class="grid grid-4" id="assets-grid">
+          <!-- Assets will be rendered here -->
+        </div>
+      </div>
+
+      <!-- Models Page -->
+      <div class="page" id="page-models">
+        <h1 class="mb-20">模型管理</h1>
+        <div class="grid grid-2" id="models-grid">
+          <!-- Models will be rendered here -->
+        </div>
+      </div>
+
+      <!-- Nanobot Chat Page -->
+      <div class="page" id="page-nanobot">
+        <div class="chat-container">
+          <div class="chat-header">
+            <h1>💬 Nanobot 对话</h1>
+            <span class="badge badge-info">AI Assistant</span>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="message">
+              <div class="message-avatar">🤖</div>
+              <div class="message-content">
+                <div class="message-text">你好！我是 Nanobot Factory 的智能助手。我可以帮助你：
+
+• 生成图像和视频
+• 采集和分析数据
+• 管理智能体和工作流
+• 回答问题和提供建议
+
+请告诉我你需要什么帮助？</div>
+                <div class="message-meta">
+                  <span>系统</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="quick-actions">
+            <span class="quick-label">快速操作:</span>
+            <button class="btn btn-sm btn-secondary" onclick="setQuickPrompt('请帮我生成一张图片')">生成图片</button>
+            <button class="btn btn-sm btn-secondary" onclick="setQuickPrompt('我想创建一个新任务')">创建任务</button>
+            <button class="btn btn-sm btn-secondary" onclick="setQuickPrompt('显示系统统计信息')">统计数据</button>
+            <button class="btn btn-sm btn-secondary" onclick="setQuickPrompt('你能做什么？')">帮助</button>
+          </div>
+          <div class="chat-input">
+            <textarea class="form-textarea" id="chat-input" placeholder="输入消息... (Enter 发送, Shift+Enter 换行)" rows="2"></textarea>
+            <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Database Page -->
+      <div class="page" id="page-database">
+        <div class="flex flex-between mb-20">
+          <h1>🗄️ 数据集管理</h1>
+          <button class="btn btn-primary" onclick="showModal('createDataset')">+ 创建数据集</button>
+        </div>
+        <div class="grid grid-4 mb-20">
+          <div class="card stat-card"><div class="stat-icon">📊</div><div class="stat-value">4</div><div class="stat-label">数据集总数</div></div>
+          <div class="card stat-card"><div class="stat-icon">🖼️</div><div class="stat-value">1</div><div class="stat-label">图像</div></div>
+          <div class="card stat-card"><div class="stat-icon">🎬</div><div class="stat-value">1</div><div class="stat-label">视频</div></div>
+          <div class="card stat-card"><div class="stat-icon">📄</div><div class="stat-value">55,500</div><div class="stat-label">样本总数</div></div>
+        </div>
+        <div class="card">
+          <h2 class="card-title">数据集列表</h2>
+          <table class="data-table">
+            <thead><tr><th>名称</th><th>类型</th><th>大小</th><th>样本数</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+            <tbody id="datasets-tbody">
+              <!-- Datasets will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- OmniGen Studio Page -->
+      <div class="page" id="page-omnigen">
+        <div class="mb-20">
+          <h1>🎨 OmniGen 工坊</h1>
+          <p class="text-muted">AIGC 内容生成工作室</p>
+        </div>
+        <div class="grid" style="grid-template-columns: 2fr 1fr;">
+          <div>
+            <div class="tabs mb-20">
+              <button class="tab-btn active" onclick="setGenTab('image')">🖼️ 图像生成</button>
+              <button class="tab-btn" onclick="setGenTab('video')">🎬 视频生成</button>
+              <button class="tab-btn" onclick="setGenTab('audio')">🎵 音频生成</button>
+            </div>
+            <div class="card">
+              <p class="text-muted mb-20" id="gen-desc">使用AI生成高质量图像</p>
+              <div class="form-group">
+                <label class="form-label">描述你想要的</label>
+                <textarea class="form-textarea" id="gen-prompt" placeholder="输入描述，例如：一只可爱的橘猫在阳光下打盹" rows="4"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">模型</label>
+                <select class="form-select" id="gen-model">
+                  <option value="flux-pro">flux-pro</option>
+                  <option value="dalle-4">dalle-4</option>
+                  <option value="midjourney-v7">midjourney-v7</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">风格</label>
+                <select class="form-select" id="gen-style">
+                  <option value="realistic">写实</option>
+                  <option value="anime">动漫</option>
+                  <option value="illustration">插画</option>
+                  <option value="3d">3D</option>
+                </select>
+              </div>
+              <button class="btn btn-primary btn-lg" style="width:100%" onclick="startGeneration()">生成图像</button>
+              <div id="gen-progress" style="display:none; margin-top:20px;">
+                <div class="progress-bar" style="height:20px;">
+                  <div class="progress-fill" id="gen-progress-fill" style="width:0%">0%</div>
+                </div>
+                <p class="text-muted text-center" style="margin-top:10px;">AI 正在创作中，请稍候...</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card mb-20">
+              <h2 class="card-title">生成历史</h2>
+              <div class="history-list" id="gen-history">
+                <div class="empty-state"><p>暂无生成记录</p></div>
+              </div>
+            </div>
+            <div class="card">
+              <h2 class="card-title">可用模型</h2>
+              <div class="model-list">
+                <div class="model-item"><span class="model-name">flux-pro</span><span class="badge badge-success">可用</span></div>
+                <div class="model-item"><span class="model-name">dalle-4</span><span class="badge badge-success">可用</span></div>
+                <div class="model-item"><span class="model-name">midjourney-v7</span><span class="badge badge-success">可用</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="modal-createAgent">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h2 class="card-title">创建新智能体</h2>
+      <div class="form-group">
+        <label class="form-label">名称</label>
+        <input type="text" class="form-input" id="agent-name" placeholder="输入智能体名称">
+      </div>
+      <div class="form-group">
+        <label class="form-label">描述</label>
+        <textarea class="form-textarea" id="agent-desc" placeholder="输入智能体描述" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">能力 (逗号分隔)</label>
+        <input type="text" class="form-input" id="agent-caps" placeholder="如: web_scraping, api_integration">
+      </div>
+      <div class="form-group">
+        <label class="form-label">模型</label>
+        <select class="form-select" id="agent-model">
+          <option value="qwen-max">通义千问 Max</option>
+          <option value="gpt-5.2">GPT-5.2</option>
+          <option value="claude-4.6">Claude 4.6</option>
+          <option value="gemini-3.1-pro">Gemini 3.1 Pro</option>
+        </select>
+      </div>
+      <div class="flex gap-10" style="margin-top:20px">
+        <button class="btn btn-primary" onclick="createAgent()">创建</button>
+        <button class="btn btn-secondary" onclick="hideModal('createAgent')">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-createTask">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h2 class="card-title">创建新任务</h2>
+      <div class="form-group">
+        <label class="form-label">任务类型</label>
+        <select class="form-select" id="task-type">
+          <option value="image_generation">图像生成</option>
+          <option value="video_generation">视频生成</option>
+          <option value="text_generation">文本生成</option>
+          <option value="data_collection">数据采集</option>
+          <option value="data_analysis">数据分析</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">参数 (JSON格式)</label>
+        <textarea class="form-textarea" id="task-params" placeholder='{"prompt": "描述"}' rows="3"></textarea>
+      </div>
+      <div class="flex gap-10" style="margin-top:20px">
+        <button class="btn btn-primary" onclick="createTask()">创建</button>
+        <button class="btn btn-secondary" onclick="hideModal('createTask')">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-createDataset">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h2 class="card-title">创建新数据集</h2>
+      <div class="form-group">
+        <label class="form-label">数据集名称</label>
+        <input type="text" class="form-input" placeholder="输入数据集名称">
+      </div>
+      <div class="form-group">
+        <label class="form-label">数据类型</label>
+        <select class="form-select">
+          <option value="image">图像</option>
+          <option value="video">视频</option>
+          <option value="audio">音频</option>
+          <option value="text">文本</option>
+        </select>
+      </div>
+      <div class="flex gap-10" style="margin-top:20px">
+        <button class="btn btn-primary" onclick="hideModal('createDataset')">创建</button>
+        <button class="btn btn-secondary" onclick="hideModal('createDataset')">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data
+    const agents = [
+      { id: 'master', name: 'Master Agent', type: 'master', description: '主控Agent，负责全局任务规划', status: 'active', capabilities: ['task_planning', 'coordination', 'intent_recognition'], model: 'qwen-max' },
+      { id: 'collector', name: 'Data Collector Agent', type: 'collector', description: '数据采集Agent', status: 'active', capabilities: ['web_scraping', 'api_integration'], model: 'qwen-max' },
+      { id: 'generator', name: 'AIGC Generator Agent', type: 'generator', description: 'AIGC生成Agent', status: 'active', capabilities: ['image_generation', 'video_generation'], model: 'qwen-max' },
+      { id: 'analyzer', name: 'Data Analyzer Agent', type: 'analyzer', description: '数据分析Agent', status: 'active', capabilities: ['statistical_analysis', 'visualization'], model: 'qwen-max' },
+      { id: 'dba', name: 'DBA Agent', type: 'dba', description: '数据库管理Agent', status: 'active', capabilities: ['data_storage', 'vector_search'], model: 'qwen-max' }
+    ];
+
+    const models = [
+      { id: 'qwen-max', name: '通义千问Max', provider: 'alibaba', context_window: 32000, status: 'active' },
+      { id: 'gpt-5.2', name: 'GPT-5.2', provider: 'openai', context_window: 200000, status: 'active' },
+      { id: 'claude-4.6', name: 'Claude 4.6', provider: 'anthropic', context_window: 200000, status: 'active' },
+      { id: 'gemini-3.1-pro', name: 'Gemini 3.1 Pro', provider: 'google', context_window: 100000, status: 'active' }
+    ];
+
+    const tasks = [
+      { id: 'task_001', type: 'image_generation', status: 'completed', progress: 100, created_at: '2026-03-03 10:30:00' },
+      { id: 'task_002', type: 'video_generation', status: 'running', progress: 65, created_at: '2026-03-03 11:00:00' },
+      { id: 'task_003', type: 'data_collection', status: 'pending', progress: 0, created_at: '2026-03-03 11:15:00' }
+    ];
+
+    const assets = [
+      { id: 'asset_001', name: '风景图片001.jpg', type: 'image', size: 2048000, tags: ['landscape'], created_at: '2026-03-01' },
+      { id: 'asset_002', name: '教程视频001.mp4', type: 'video', size: 51200000, tags: ['tutorial'], created_at: '2026-03-02' },
+      { id: 'asset_003', name: '问答数据集.json', type: 'text', size: 512000, tags: ['qa'], created_at: '2026-03-03' }
+    ];
+
+    const datasets = [
+      { id: 'ds_001', name: '图像数据集-风景', type: 'image', size: 2048000000, samples: 10000, status: 'ready', created_at: '2026-02-15' },
+      { id: 'ds_002', name: '视频数据集-教程', type: 'video', size: 5120000000, samples: 500, status: 'ready', created_at: '2026-02-20' },
+      { id: 'ds_003', name: '文本数据集-问答', type: 'text', size: 512000000, samples: 50000, status: 'processing', created_at: '2026-02-25' },
+      { id: 'ds_004', name: '音频数据集-语音', type: 'audio', size: 1024000000, samples: 1000, status: 'ready', created_at: '2026-03-01' }
+    ];
+
+    const genHistory = [];
+
+    // Functions
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('collapsed');
+      const btn = sidebar.querySelector('.toggle-btn');
+      btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+    }
+
+    function showPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      document.querySelector('[data-page="' + page + '"]').classList.add('active');
+
+      if (page === 'agents') renderAgents();
+      if (page === 'tasks') renderTasks();
+      if (page === 'assets') renderAssets();
+      if (page === 'models') renderModels();
+      if (page === 'database') renderDatasets();
+    }
+
+    function showModal(modalId) {
+      document.getElementById('modal-' + modalId).classList.add('active');
+    }
+
+    function hideModal(modalId) {
+      document.getElementById('modal-' + modalId).classList.remove('active');
+    }
+
+    // Close modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', () => modal.classList.remove('active'));
+    });
+
+    // Render functions
+    function renderAgents() {
+      const grid = document.getElementById('agents-grid');
+      grid.innerHTML = agents.map(agent => `
+        <div class="card agent-card">
+          <div class="agent-header">
+            <div class="agent-icon">🤖</div>
+            <div>
+              <h3>${agent.name}</h3>
+              <span class="badge badge-${agent.status === 'active' ? 'success' : 'warning'}">${agent.status === 'active' ? '运行中' : '已停止'}</span>
+            </div>
+          </div>
+          <p class="agent-description">${agent.description}</p>
+          <div class="agent-capabilities">
+            ${agent.capabilities.map(c => `<span class="tag">${c}</span>`).join('')}
+          </div>
+          <div class="agent-footer">
+            <span class="model-badge">${agent.model}</span>
+            <button class="btn btn-sm btn-secondary">编辑</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderTasks() {
+      const tbody = document.getElementById('tasks-tbody');
+      const typeMap = { 'image_generation': '图像生成', 'video_generation': '视频生成', 'text_generation': '文本生成', 'data_collection': '数据采集', 'data_analysis': '数据分析' };
+      const statusMap = { 'pending': 'badge-warning', 'running': 'badge-info', 'completed': 'badge-success', 'failed': 'badge-danger' };
+      tbody.innerHTML = tasks.map(task => `
+        <tr>
+          <td>${task.id}</td>
+          <td>${typeMap[task.type] || task.type}</td>
+          <td><span class="badge ${statusMap[task.status]}">${task.status === 'completed' ? '已完成' : task.status === 'running' ? '运行中' : task.status === 'pending' ? '等待中' : '失败'}</span></td>
+          <td><div class="progress-bar"><div class="progress-fill" style="width:${task.progress}%"></div></div></td>
+          <td>${task.created_at}</td>
+          <td><button class="btn btn-sm btn-secondary">详情</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAssets() {
+      const grid = document.getElementById('assets-grid');
+      const icons = { 'image': '🖼️', 'video': '🎬', 'audio': '🎵', 'text': '📄' };
+      grid.innerHTML = assets.map(asset => `
+        <div class="card asset-card">
+          <div class="asset-preview"><div class="asset-icon">${icons[asset.type] || '📁'}</div></div>
+          <div class="asset-info">
+            <div class="asset-name">${asset.name}</div>
+            <div class="asset-meta"><span class="badge">${asset.type}</span><span>${(asset.size/1024).toFixed(1)} KB</span></div>
+            <div class="asset-tags">${asset.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+            <div class="asset-date">${asset.created_at}</div>
+          </div>
+          <div class="asset-actions">
+            <button class="btn btn-sm btn-secondary">查看</button>
+            <button class="btn btn-sm btn-secondary">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderModels() {
+      const grid = document.getElementById('models-grid');
+      const icons = { 'openai': '🔵', 'anthropic': '🟣', 'google': '🟢', 'alibaba': '🟠' };
+      grid.innerHTML = models.map(model => `
+        <div class="card model-card">
+          <div class="model-header">
+            <div class="model-icon">${icons[model.provider] || '🧠'}</div>
+            <div class="model-title">
+              <h3>${model.name}</h3>
+              <span class="model-id">${model.id}</span>
+            </div>
+            <span class="badge badge-${model.status === 'active' ? 'success' : 'warning'}">${model.status === 'active' ? '可用' : '不可用'}</span>
+          </div>
+          <div class="model-stats">
+            <div><span class="form-label">供应商</span><span>${model.provider}</span></div>
+            <div><span class="form-label">上下文窗口</span><span>${(model.context_window/1000).toFixed(0)}K tokens</span></div>
+          </div>
+          <div class="flex gap-10">
+            <button class="btn btn-sm btn-primary">测试</button>
+            <button class="btn btn-sm btn-secondary">配置</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDatasets() {
+      const tbody = document.getElementById('datasets-tbody');
+      const icons = { 'image': '🖼️', 'video': '🎬', 'audio': '🎵', 'text': '📄' };
+      const formatSize = (b) => { if (b >= 1e9) return (b/1e9).toFixed(2) + ' GB'; if (b >= 1e6) return (b/1e6).toFixed(2) + ' MB'; return (b/1e3).toFixed(2) + ' KB'; };
+      tbody.innerHTML = datasets.map(ds => `
+        <tr>
+          <td><div class="flex" style="align-items:center;gap:10px"><span>${icons[ds.type]}</span><span>${ds.name}</span></div></td>
+          <td><span class="badge">${ds.type}</span></td>
+          <td>${formatSize(ds.size)}</td>
+          <td>${ds.samples.toLocaleString()}</td>
+          <td><span class="badge badge-${ds.status === 'ready' ? 'success' : 'warning'}">${ds.status === 'ready' ? '就绪' : '处理中'}</span></td>
+          <td>${ds.created_at}</td>
+          <td><button class="btn btn-sm btn-secondary">查看</button></td>
+        </tr>
+      `).join('');
+    }
+
+    // Chat functions
+    function setQuickPrompt(prompt) {
+      document.getElementById('chat-input').value = prompt;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const messages = document.getElementById('chat-messages');
+
+      // Add user message
+      messages.innerHTML += `
+        <div class="message message-user">
+          <div class="message-avatar">👤</div>
+          <div class="message-content">
+            <div class="message-text">${message}</div>
+            <div class="message-meta"><span>${new Date().toLocaleTimeString()}</span></div>
+          </div>
+        </div>
+      `;
+
+      // Add typing indicator
+      messages.innerHTML += `
+        <div class="message" id="typing-msg">
+          <div class="message-avatar">🤖</div>
+          <div class="message-content">
+            <div class="typing-indicator"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      `;
+
+      input.value = '';
+      messages.scrollTop = messages.scrollHeight;
+
+      // Simulate response
+      setTimeout(() => {
+        document.getElementById('typing-msg').remove();
+        const responses = [
+          '收到！让我帮你处理这个请求。',
+          '好的，我理解你的需求，正在进行处理。',
+          '我已经记录了你的请求，会立即开始执行。',
+          '明白了，让我为你规划一下下一步操作。'
+        ];
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        messages.innerHTML += `
+          <div class="message">
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+              <div class="message-text">${response}</div>
+              <div class="message-meta"><span>${new Date().toLocaleTimeString()}</span><span>意图: general_query</span></div>
+            </div>
+          </div>
+        `;
+        messages.scrollTop = messages.scrollHeight;
+      }, 1500);
+    }
+
+    // Handle Enter in chat
+    document.getElementById('chat-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // OmniGen functions
+    let currentGenTab = 'image';
+    const genDesc = { image: '使用AI生成高质量图像', video: '使用AI生成动态视频', audio: '使用AI生成音乐和音效' };
+
+    function setGenTab(tab) {
+      currentGenTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('gen-desc').textContent = genDesc[tab];
+    }
+
+    function startGeneration() {
+      const prompt = document.getElementById('gen-prompt').trim();
+      if (!prompt) {
+        alert('请输入描述');
+        return;
+      }
+
+      const progress = document.getElementById('gen-progress');
+      const progressFill = document.getElementById('gen-progress-fill');
+      progress.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressFill.textContent = '0%';
+
+      let pct = 0;
+      const interval = setInterval(() => {
+        pct += Math.random() * 20;
+        if (pct >= 100) {
+          pct = 100;
+          clearInterval(interval);
+          progressFill.style.width = '100%';
+          progressFill.textContent = '100%';
+
+          // Add to history
+          const history = document.getElementById('gen-history');
+          const icon = currentGenTab === 'image' ? '🖼️' : currentGenTab === 'video' ? '🎬' : '🎵';
+          if (genHistory.length === 0) history.innerHTML = '';
+          genHistory.unshift({ type: currentGenTab, prompt, status: 'completed' });
+          history.innerHTML = `
+            <div class="history-item">
+              <div class="history-icon">${icon}</div>
+              <div class="history-content">
+                <div class="history-prompt">${prompt.slice(0, 30)}...</div>
+                <div class="history-meta">
+                  <span class="badge badge-success">完成</span>
+                  <span>${new Date().toLocaleTimeString()}</span>
+                </div>
+              </div>
+            </div>
+          ` + history.innerHTML;
+
+          setTimeout(() => { progress.style.display = 'none'; }, 2000);
+        } else {
+          progressFill.style.width = pct + '%';
+          progressFill.textContent = Math.round(pct) + '%';
+        }
+      }, 500);
+    }
+
+    // Create Agent
+    function createAgent() {
+      const name = document.getElementById('agent-name').value;
+      const desc = document.getElementById('agent-desc').value;
+      const caps = document.getElementById('agent-caps').value;
+      const model = document.getElementById('agent-model').value;
+
+      if (!name) { alert('请输入名称'); return; }
+
+      agents.push({
+        id: 'agent_' + (agents.length + 1),
+        name: name,
+        type: 'custom',
+        description: desc,
+        capabilities: caps ? caps.split(',').map(c => c.trim()) : [],
+        status: 'active',
+        model: model
+      });
+
+      hideModal('createAgent');
+      renderAgents();
+      document.getElementById('agent-name').value = '';
+      document.getElementById('agent-desc').value = '';
+      document.getElementById('agent-caps').value = '';
+    }
+
+    // Create Task
+    function createTask() {
+      const type = document.getElementById('task-type').value;
+      tasks.unshift({
+        id: 'task_' + String(tasks.length + 1).padStart(3, '0'),
+        type: type,
+        status: 'pending',
+        progress: 0,
+        created_at: new Date().toLocaleString()
+      });
+      hideModal('createTask');
+      renderTasks();
+    }
+
+    // Load assets
+    function loadAssets() {
+      renderAssets();
+    }
+
+    // Initialize
+    renderAgents();
+    renderTasks();
+    renderModels();
+    renderDatasets();
+  </script>
+</body>
+</html>

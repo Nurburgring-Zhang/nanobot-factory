@@ -1,9 +1,10 @@
 <template>
   <div class="login-page">
-    <NCard class="login-card" :bordered="false">
+    <a class="skip-link" href="#login-card">{{ t('nav.skipToMain') }}</a>
+    <NCard id="login-card" class="login-card" :bordered="false" tabindex="-1" role="main" :aria-label="t('auth.loginTitle')">
       <div class="login-header">
-        <h1 class="brand">智影</h1>
-        <p class="brand-en">nanobot-factory</p>
+        <h1 class="brand">{{ t('auth.loginTitle') }}</h1>
+        <p class="brand-en">{{ t('auth.loginSubtitle') }}</p>
       </div>
       <NForm
         ref="formRef"
@@ -15,19 +16,27 @@
         size="large"
         @submit.prevent="onSubmit"
       >
-        <NFormItem path="username" label="账号">
-          <NInput v-model:value="form.username" placeholder="username" clearable autofocus />
+        <NFormItem path="username" :label="t('auth.username')">
+          <NInput
+            v-model:value="form.username"
+            :placeholder="t('auth.usernamePlaceholder')"
+            clearable
+            autofocus
+            :aria-label="t('auth.username')"
+          />
         </NFormItem>
-        <NFormItem path="password" label="密码">
+        <NFormItem path="password" :label="t('auth.password')">
           <NInput
             v-model:value="form.password"
             type="password"
             show-password-on="click"
-            placeholder="password"
+            :placeholder="t('auth.passwordPlaceholder')"
+            :aria-label="t('auth.password')"
             @keydown.enter="onSubmit"
           />
         </NFormItem>
-        <div v-if="auth.lastError" class="login-error">
+        <!-- Live region for accessibility: announces auth errors to screen readers -->
+        <div v-if="auth.lastError" class="login-error" role="alert" aria-live="assertive">
           {{ auth.lastError }}
         </div>
         <NButton
@@ -38,11 +47,11 @@
           attr-type="submit"
           @click="onSubmit"
         >
-          登录
+          {{ t('auth.submit') }}
         </NButton>
       </NForm>
       <div class="login-footer">
-        <span class="hint">默认账号可在后端 docs/ 中查阅</span>
+        <span class="hint">{{ t('auth.defaultHint') }}</span>
       </div>
     </NCard>
   </div>
@@ -60,12 +69,14 @@ import {
   type FormInst,
   type FormRules
 } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const formRef = ref<FormInst | null>(null)
+const { t } = useI18n()
 
 const form = reactive({
   username: '',
@@ -73,8 +84,8 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  username: { required: true, message: '请输入账号', trigger: ['blur', 'input'] },
-  password: { required: true, message: '请输入密码', trigger: ['blur', 'input'] }
+  username: { required: true, message: t('auth.validationRequired'), trigger: ['blur', 'input'] },
+  password: { required: true, message: t('auth.validationRequired'), trigger: ['blur', 'input'] }
 }
 
 async function onSubmit() {
@@ -119,7 +130,7 @@ async function onSubmit() {
 }
 .brand-en {
   font-size: 12px;
-  color: #888;
+  color: var(--app-muted, #767676);
   letter-spacing: 2px;
   margin: 0;
 }
@@ -134,6 +145,6 @@ async function onSubmit() {
 }
 .hint {
   font-size: 11px;
-  color: #aaa;
+  color: var(--a11y-muted, #767676);
 }
 </style>

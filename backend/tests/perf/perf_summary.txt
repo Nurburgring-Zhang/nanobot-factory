@@ -1,6 +1,6 @@
 
-[PERF] /healthz     n= 100  min=  1.09ms  p50=  1.19ms  p95=  1.35ms  p99=  1.40ms  max=  1.54ms
+[PERF] /healthz     n= 100  min=  1.20ms  p50=  1.35ms  p95=  1.54ms  p99=  1.64ms  max=  1.75ms
 
-[PERF] /readyz      n=  50  min=  1.26ms  p50=  1.37ms  p95=  1.50ms  p99=  1.60ms  max=  1.68ms
+[PERF] /readyz      n=  50  min=  1.41ms  p50=  1.58ms  p95=  1.77ms  p99=  1.88ms  max=  1.97ms
 
-[PERF] /metrics     n=  50  min=  1.65ms  p50=  1.80ms  p95=  1.96ms  p99=  2.03ms  max=  2.07ms
+[PERF] /metrics     n=  50  min=  1.79ms  p50=  2.08ms  p95=  2.24ms  p99=  2.33ms  max=  2.80ms
