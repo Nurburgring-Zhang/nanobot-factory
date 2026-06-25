@@ -119,6 +119,16 @@ _test_*.err
 _test_*.out
 *.tmp
 
+# Large directories (not source code)
+comfyui/
+research/
+web/
+data/
+outputs/
+workspace/
+annotations_enhanced/
+平台方案_v3/
+
 # Backup
 *.bak
 *.backup
