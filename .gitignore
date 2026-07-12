@@ -83,6 +83,12 @@ Desktop.ini
 .env.local
 .env.*.local
 backend/.env
+# P21 P4 P2 OWASP A02 fix: real env configs (not templates) must never
+# be committed. Templates carry the `.example` suffix; the bare names
+# below are live deploy-time configs that contain real secrets.
+.env.production
+.env.template
+frontend-v2/.env.production
 
 # Database
 *.db
@@ -106,8 +112,18 @@ backend/omni_gen_studio/user_input_files/
 # Local artifacts
 .artifacts/
 .factory/
-.mavis/plans/
-.mavis/cron/
+.mavis/
+.harness/
+
+# Top-level one-off audit scripts (P19 era, not source)
+/audit_p*.py
+/_audit_*.py
+/git_log*.txt
+/annotation_workbench_diagnosis.json
+
+# P21 leftover SFC split artifacts (incomplete, not source)
+/.ic_part*.py
+/frontend-v2/.ic_part*.py
 
 # Runtime
 _uvi*.log
