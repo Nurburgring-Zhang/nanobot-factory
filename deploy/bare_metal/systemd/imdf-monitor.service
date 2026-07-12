@@ -1,0 +1,51 @@
+# ============================================================================
+# imdf-monitor.service — P22-P2b
+# ----------------------------------------------------------------------------
+# Cluster-wide watchdog. Runs deploy/bare_metal/scripts/healthcheck.sh on a
+# 30-second schedule; if the healthcheck exits non-zero, restarts the
+# imdf-cluster target (which brings the whole stack back up in order).
+#
+# This is the LAST line of defence after per-service Restart=always; a
+# bug in a single service that takes down the cluster as a whole (e.g.
+# a deadlock in the gateway under 1000-concurrent) will be recovered
+# automatically.
+# ============================================================================
+[Unit]
+Description=VDP-2026 cluster monitor (watchdog + auto-restart)
+Documentation=https://github.com/Nurburgring-Zhang/nanobot-factory/blob/main/deploy/bare_metal/RUNBOOK.md
+After=imdf-cluster.target
+Requires=imdf-cluster.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/nanobot-factory
+ExecStartPre=/usr/bin/test -x /opt/nanobot-factory/deploy/bare_metal/scripts/healthcheck.sh
+ExecStart=/opt/nanobot-factory/deploy/bare_metal/scripts/healthcheck.sh --watch \
+    --interval=30 \
+    --restart-target=imdf-cluster.target \
+    --log=/var/log/imdf/monitor.log
+
+Restart=always
+RestartSec=10
+StartLimitBurst=3
+StartLimitIntervalSec=300
+
+# Hardening: monitor runs as root only because it needs systemctl
+# to restart the cluster target; production deployments may want to
+# use a polkit rule or cap the monitor to a specific sudo command.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/log/imdf /opt/nanobot-factory/logs
+
+LimitNOFILE=4096
+MemoryMax=256M
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=imdf-monitor
+
+[Install]
+WantedBy=multi-user.target

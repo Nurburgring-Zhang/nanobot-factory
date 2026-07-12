@@ -1,0 +1,60 @@
+# ============================================================================
+# imdf-cluster.target — P22-P2b
+# ----------------------------------------------------------------------------
+# Pulls up the entire VDP-2026 production stack as a single systemd unit.
+# `systemctl start imdf-cluster.target` boots every imdf-* service in the
+# correct dependency order; `stop` does the reverse. Health-checked by
+# imdf-monitor.service which restarts the target on cluster-wide failure.
+#
+# Per the P21 P4 P2 OWASP / backup runbook, every service is
+# postgresql/redis/minio-backed and writes to a shared /opt/nanobot-factory
+# directory. The cluster target orders the boot sequence to match the
+# data-dependency graph:
+#
+#   postgresql + redis + minio (storage layer)
+#      -> imdf-gateway (API)
+#      -> imdf-agent, imdf-annotation, imdf-asset, ... (per-domain APIs)
+#      -> imdf-celery + imdf-celery-beat (async + scheduler)
+#      -> imdf-monitor (watchdog over the whole thing)
+#
+# Frontend served by nginx, NOT by this target — see nginx.service.
+# ============================================================================
+[Unit]
+Description=VDP-2026 nanobot-factory cluster (all imdf-* services)
+Documentation=https://github.com/Nurburgring-Zhang/nanobot-factory/blob/main/deploy/bare_metal/RUNBOOK.md
+After=network-online.target postgresql.service redis-server.service minio.service
+Wants=network-online.target
+Requires=postgresql.service redis-server.service minio.service
+
+# All imdf services in the cluster. Order matters: storage deps first,
+# gateway next, then domain APIs, then async (celery), then monitor.
+Requires=imdf-gateway.service
+Requires=imdf-user.service
+Requires=imdf-agent.service
+Requires=imdf-annotation.service
+Requires=imdf-asset.service
+Requires=imdf-cleaning.service
+Requires=imdf-collection.service
+Requires=imdf-dataset.service
+Requires=imdf-evaluation.service
+Requires=imdf-notification.service
+Requires=imdf-scoring.service
+Requires=imdf-search.service
+Requires=imdf-workflow.service
+Requires=imdf-celery.service
+Requires=imdf-celery-beat.service
+Requires=imdf-monitor.service
+Wants=backup-cron.timer
+
+# Order: storage → gateway → domain APIs → celery → monitor
+After=imdf-gateway.service
+After=imdf-user.service imdf-agent.service imdf-annotation.service
+After=imdf-asset.service imdf-cleaning.service imdf-collection.service
+After=imdf-dataset.service imdf-evaluation.service
+After=imdf-notification.service imdf-scoring.service imdf-search.service
+After=imdf-workflow.service
+After=imdf-celery.service imdf-celery-beat.service
+After=imdf-monitor.service
+
+[Install]
+WantedBy=multi-user.target
