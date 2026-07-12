@@ -1,0 +1,930 @@
+{
+  "summary": {
+    "total": 52,
+    "pass": 10,
+    "partial": 6,
+    "fail": 36,
+    "avgScore": 4.65,
+    "avgPct": 66.5,
+    "byCheck": {
+      "landmark": {
+        "pass": 10,
+        "pct": 19.2
+      },
+      "heading": {
+        "pass": 10,
+        "pct": 19.2
+      },
+      "interactive": {
+        "pass": 51,
+        "pct": 98.1
+      },
+      "noNativeButton": {
+        "pass": 52,
+        "pct": 100
+      },
+      "noLowContrastToken": {
+        "pass": 51,
+        "pct": 98.1
+      },
+      "focusRing": {
+        "pass": 52,
+        "pct": 100
+      },
+      "i18n": {
+        "pass": 16,
+        "pct": 30.8
+      }
+    },
+    "realI18nCount": 10,
+    "realI18nPct": 19.2
+  },
+  "results": [
+    {
+      "file": "src/views/agent/MultimodalChat.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 10,
+      "ariaCount": 10,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/AgentManagement.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Annotation.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/AnnotationManagement.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/AssetManagement.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/assets/CharacterManager.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/assets/ConsistencyReport.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 1,
+      "ariaCount": 1,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/assets/IterativeStudio.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/assets/MultiAgentPanel.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 1,
+      "ariaCount": 1,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/assets/StoryboardEditor.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 7,
+      "ariaCount": 7,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/billing/Dashboard.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 2,
+      "ariaCount": 2,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/billing/Invoices.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/billing/Orders.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 1,
+      "ariaCount": 1,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/billing/Pricing.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Billing.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/CanvasDesigner.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/CleaningManagement.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/contracts/Contracts.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 1,
+      "ariaCount": 1,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/crm/Customers.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 1,
+      "ariaCount": 1,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Dashboard.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Dataset.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/DatasetManagement.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Engines.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/EvaluationManagement.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/lineage/Graph.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 2,
+      "ariaCount": 2,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Login.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 1,
+      "ariaCount": 1,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Monitoring.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/multimodal/AgentChat.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": false,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 3,
+      "max": 7,
+      "interactiveCount": 2,
+      "ariaCount": 1,
+      "missingAria": [
+        "NCheckbox"
+      ]
+    },
+    {
+      "file": "src/views/multimodal/EmbedStudio.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 5,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/multimodal/Parser.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 5,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/multimodal/SearchRAG.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 5,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/NotificationManagement.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/obsidian/KnowledgeGraph.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 4,
+      "ariaCount": 4,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/obsidian/WikiEdit.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 10,
+      "ariaCount": 10,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/obsidian/WikiList.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 1,
+      "ariaCount": 1,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Review.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Scoring.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/ScoringManagement.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/SearchManagement.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Settings.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/skills/Marketplace.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": false,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 3,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/skills/Orchestrator.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 3,
+      "ariaCount": 3,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Tasks.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/tickets/Tickets.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 2,
+      "ariaCount": 2,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/UserManagement.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Users.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/workflow/DirectorStudio.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 5,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/workflow/OperatorMarket.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 5,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/workflow/RunMonitor.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 5,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/workflow/VisualEditor.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 6,
+      "ariaCount": 6,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/WorkflowManagement.vue",
+      "checks": {
+        "landmark": false,
+        "heading": false,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": false
+      },
+      "score": 4,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    },
+    {
+      "file": "src/views/Workflows.vue",
+      "checks": {
+        "landmark": true,
+        "heading": true,
+        "interactive": true,
+        "noNativeButton": true,
+        "noLowContrastToken": true,
+        "focusRing": true,
+        "i18n": true
+      },
+      "score": 7,
+      "max": 7,
+      "interactiveCount": 0,
+      "ariaCount": 0,
+      "missingAria": []
+    }
+  ]
+}

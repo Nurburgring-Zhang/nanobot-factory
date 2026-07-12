@@ -1,0 +1,47 @@
+[
+  {
+    "view": "Dashboard",
+    "path": "/dashboard",
+    "data_theme": "dark",
+    "violationCount": 0,
+    "elapsed_s": 16.16,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Tasks",
+    "path": "/tasks",
+    "data_theme": "dark",
+    "violationCount": 0,
+    "elapsed_s": 16.01,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Datasets",
+    "path": "/datasets",
+    "data_theme": "dark",
+    "violationCount": 0,
+    "elapsed_s": 16.07,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Engines",
+    "path": "/engines",
+    "data_theme": "dark",
+    "violationCount": 0,
+    "elapsed_s": 16.01,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Login",
+    "path": "/login",
+    "data_theme": "dark",
+    "violationCount": 0,
+    "elapsed_s": 16.06,
+    "result": "PASS",
+    "violations": []
+  }
+]

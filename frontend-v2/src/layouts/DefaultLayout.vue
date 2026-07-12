@@ -12,6 +12,8 @@
       :width="240"
       :native-scrollbar="false"
       show-trigger
+      :collapsed="ui.sidebarCollapsed"
+      @update:collapsed="(v: boolean) => ui.setSidebarCollapsed(v)"
       role="navigation"
       :aria-label="t('nav.dashboard')"
     >
@@ -25,56 +27,30 @@
         :collapsed-width="64"
         :collapsed-icon-size="20"
         :indent="18"
+        :collapsed="ui.sidebarCollapsed"
         @update:value="onMenuSelect"
       />
     </NLayoutSider>
+    <!-- P17-D3: Quick navigation panel (favorites + recent) -->
+    <QuickNav v-if="showQuickNav" class="layout-quicknav" />
     <NLayout>
       <NLayoutHeader bordered class="layout-header" role="banner">
-        <h1 class="header-title">{{ pageTitle }}</h1>
-        <div class="header-user">
-          <NSpace align="center" :size="12">
-            <!-- Locale switcher (P6-4 P1: minimal selector) -->
-            <NButton
-              class="locale-toggle"
-              size="small"
-              quaternary
-              :title="localeTooltip"
-              :aria-label="localeTooltip"
-              @click="onToggleLocale"
-            >
-              <template #icon>
-                <span class="locale-toggle-label" aria-hidden="true">{{ localeShortLabel }}</span>
-              </template>
-            </NButton>
-            <NButton
-              class="theme-toggle"
-              size="small"
-              quaternary
-              :title="themeTooltip"
-              :aria-label="themeTooltip"
-              @click="onToggleTheme"
-            >
-              <template #icon>
-                <NIcon size="18">
-                  <component :is="themeIcon" />
-                </NIcon>
-              </template>
-              <span class="theme-toggle-label">{{ themeShortLabel }}</span>
-            </NButton>
-            <NTag v-if="auth.user" type="info" size="small" round>
-              {{ auth.user.role }}
-            </NTag>
-            <span v-if="auth.user" class="username">{{ auth.user.username }}</span>
-            <NButton size="small" tertiary @click="onLogout">{{ t('nav.logout') }}</NButton>
-          </NSpace>
-        </div>
+        <Topbar :page-title="pageTitle" />
       </NLayoutHeader>
       <NLayoutContent
         content-style="padding: 24px;"
         :native-scrollbar="false"
       >
         <main id="main" tabindex="-1" role="main" :aria-label="pageTitle">
-          <RouterView />
+          <!-- Suspense + Skeleton fallback for lazy-loaded routes -->
+          <RouterView v-slot="{ Component }">
+            <Suspense>
+              <component :is="Component" v-if="Component" />
+              <template #fallback>
+                <SkeletonLoader variant="block" />
+              </template>
+            </Suspense>
+          </RouterView>
         </main>
       </NLayoutContent>
     </NLayout>
@@ -82,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, markRaw, type Component } from 'vue'
+import { computed, h, type Component } from 'vue'
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router'
 import {
   NLayout,
@@ -90,85 +66,51 @@ import {
   NLayoutHeader,
   NLayoutContent,
   NMenu,
-  NSpace,
-  NButton,
-  NTag,
-  NIcon,
   type MenuOption
 } from 'naive-ui'
-import {
-  SunnyOutline,
-  MoonOutline,
-  DesktopOutline
-} from '@vicons/ionicons5'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
-import { useLocaleStore } from '@/stores/locale'
+import { useUiStore } from '@/stores/ui'
 import { useSkipLink } from '@/utils/skipLink'
+import QuickNav from '@/components/QuickNav.vue'
+import Topbar from '@/components/Topbar.vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 const router = useRouter()
 const route = useRoute()
-const auth = useAuthStore()
-const themeStore = useThemeStore()
-const localeStore = useLocaleStore()
+const ui = useUiStore()
 const { t } = useI18n()
 const { focusMain } = useSkipLink()
 
-/**
- * Map theme mode → ionicon component.
- * Use markRaw so Vue doesn't try to make the icon reactive (icons are static).
- */
-const themeIcon = computed<Component>(() => {
-  const map: Record<'light' | 'dark' | 'auto', Component> = {
-    light: markRaw(SunnyOutline),
-    dark: markRaw(MoonOutline),
-    auto: markRaw(DesktopOutline)
+// P17-D3: QuickNav is opt-in via env (defaults to visible). This lets
+// us hide it on small screens or for demo deployments without code
+// changes. Set VITE_DISABLE_QUICKNAV=true to suppress.
+const showQuickNav = computed<boolean>(() => {
+  try {
+    const flag = (import.meta.env.VITE_DISABLE_QUICKNAV ?? '') as string
+    return flag !== 'true'
+  } catch {
+    return true
   }
-  return map[themeStore.mode] ?? markRaw(SunnyOutline)
 })
-
-const themeShortLabel = computed<string>(() => {
-  const map: Record<'light' | 'dark' | 'auto', string> = {
-    light: localeStore.current === 'zh-CN' ? '浅色' : 'Light',
-    dark: localeStore.current === 'zh-CN' ? '深色' : 'Dark',
-    auto: localeStore.current === 'zh-CN' ? '自动' : 'Auto'
-  }
-  return map[themeStore.mode] ?? (localeStore.current === 'zh-CN' ? '浅色' : 'Light')
-})
-
-const themeTooltip = computed<string>(() => {
-  const next: Record<'light' | 'dark' | 'auto', string> = {
-    light: localeStore.current === 'zh-CN' ? '当前:浅色 · 点击切换为深色' : 'Light · click for Dark',
-    dark: localeStore.current === 'zh-CN' ? '当前:深色 · 点击切换为自动' : 'Dark · click for Auto',
-    auto: localeStore.current === 'zh-CN' ? '当前:自动 (跟随系统) · 点击切换为浅色' : 'Auto (system) · click for Light'
-  }
-  return next[themeStore.mode] ?? (localeStore.current === 'zh-CN' ? '切换主题' : 'Toggle theme')
-})
-
-const localeShortLabel = computed<string>(() => {
-  return localeStore.current === 'zh-CN' ? '中' : 'EN'
-})
-
-const localeTooltip = computed<string>(() => {
-  return localeStore.current === 'zh-CN'
-    ? '当前:简体中文 · 点击切换为 English'
-    : 'Current: English · click for 简体中文'
-})
-
-function onToggleTheme(): void {
-  themeStore.cycle()
-}
-
-function onToggleLocale(): void {
-  void localeStore.toggle()
-}
 
 function onSkip(): void {
   focusMain()
 }
 
+// ============================================================
+// P20-O: Sidebar menu groups
+//   - main:   top-level nav (12 base modules)
+//   - v5:     V5 core UI (canvas, command, project, requirement,
+//             dataset, pack, annotation, qc, delivery, agent)
+//   - biz:    12 业务模块
+//   - p48:    P4-8 能力 (skills / obsidian / storyboard / lineage / etc.)
+//   - flow:   P5 数据流转链路
+// ============================================================
+
+const _void: Component = (() => null) as unknown as Component // helper type for h()
+
 const menuOptions: MenuOption[] = [
+  // === Top-level: 12 modules ===
   { label: () => h(RouterLink, { to: '/' }, () => t('nav.dashboard')), key: 'dashboard', icon: () => h('span', { class: 'menu-icon' }, '◈') },
   { label: () => h(RouterLink, { to: '/dataset' }, () => t('nav.dataset')), key: 'dataset', icon: () => h('span', { class: 'menu-icon' }, '▤') },
   { label: () => h(RouterLink, { to: '/annotation' }, () => t('nav.annotation')), key: 'annotation', icon: () => h('span', { class: 'menu-icon' }, '✎') },
@@ -182,7 +124,30 @@ const menuOptions: MenuOption[] = [
   { label: () => h(RouterLink, { to: '/monitoring' }, () => t('nav.monitoring')), key: 'monitoring', icon: () => h('span', { class: 'menu-icon' }, '◉') },
   { label: () => h(RouterLink, { to: '/settings' }, () => t('nav.settings')), key: 'settings', icon: () => h('span', { class: 'menu-icon' }, '⚙') }
 ]
-// === Business submenu: 12 业务模块 (P3-7-W2) ===
+
+// === V5 Core UI submenu — 9/12 V5 core pages (P20-O) ===
+// canvas / command / project / requirement / dataset / pack /
+// annotation / qc / delivery / agent (alias for agent-management).
+const v5CoreUiSubmenu: MenuOption = {
+  type: 'group',
+  label: () => h('span', null, { default: () => 'V5 Core UI' }),
+  key: 'v5core',
+  children: [
+    { label: () => h(RouterLink, { to: '/canvas' }, () => 'Infinite Canvas'), key: 'infinite-canvas', icon: () => h('span', { class: 'menu-icon' }, 'C') },
+    { label: () => h(RouterLink, { to: '/command' }, () => 'Command Center'), key: 'command-center', icon: () => h('span', { class: 'menu-icon' }, 'M') },
+    { label: () => h(RouterLink, { to: '/projects' }, () => '项目中心'), key: 'ProjectCenter', icon: () => h('span', { class: 'menu-icon' }, '◰') },
+    { label: () => h(RouterLink, { to: '/requirements' }, () => '需求中心'), key: 'requirements', icon: () => h('span', { class: 'menu-icon' }, 'R') },
+    { label: () => h(RouterLink, { to: '/dataset-management' }, () => 'Dataset Hub'), key: 'dataset-management', icon: () => h('span', { class: 'menu-icon' }, 'D') },
+    { label: () => h(RouterLink, { to: '/packs' }, () => '数据包管理'), key: 'packs', icon: () => h('span', { class: 'menu-icon' }, '⬢') },
+    { label: () => h(RouterLink, { to: '/annotation-workbench' }, () => 'Annotation Workbench'), key: 'annotation-workbench', icon: () => h('span', { class: 'menu-icon' }, 'A') },
+    { label: () => h(RouterLink, { to: '/internal-qc' }, () => 'Internal QC'), key: 'internal-qc', icon: () => h('span', { class: 'menu-icon' }, 'Q') },
+    { label: () => h(RouterLink, { to: '/delivery' }, () => 'Delivery'), key: 'delivery', icon: () => h('span', { class: 'menu-icon' }, 'Y') },
+    { label: () => h(RouterLink, { to: '/agent-management' }, () => 'Agent'), key: 'agent-management', icon: () => h('span', { class: 'menu-icon' }, 'B') }
+  ]
+}
+menuOptions.push(v5CoreUiSubmenu)
+
+// === Business submenu: 12 业务模块 ===
 const businessSubmenu: MenuOption = {
   type: 'group',
   label: () => h('span', null, { default: () => '业务模块' }),
@@ -193,9 +158,7 @@ const businessSubmenu: MenuOption = {
     { label: () => h(RouterLink, { to: '/annotation-management' }, () => '标注管理'), key: 'annotation-management', icon: () => h('span', { class: 'menu-icon' }, 'N') },
     { label: () => h(RouterLink, { to: '/cleaning-management' }, () => '清洗管理'), key: 'cleaning-management', icon: () => h('span', { class: 'menu-icon' }, 'C') },
     { label: () => h(RouterLink, { to: '/scoring-management' }, () => '评分管理'), key: 'scoring-management', icon: () => h('span', { class: 'menu-icon' }, 'S') },
-    { label: () => h(RouterLink, { to: '/dataset-management' }, () => '数据集管理'), key: 'dataset-management', icon: () => h('span', { class: 'menu-icon' }, 'D') },
     { label: () => h(RouterLink, { to: '/evaluation-management' }, () => '评测管理'), key: 'evaluation-management', icon: () => h('span', { class: 'menu-icon' }, 'E') },
-    { label: () => h(RouterLink, { to: '/agent-management' }, () => '智能体管理'), key: 'agent-management', icon: () => h('span', { class: 'menu-icon' }, 'B') },
     { label: () => h(RouterLink, { to: '/workflow-management' }, () => '工作流管理'), key: 'workflow-management', icon: () => h('span', { class: 'menu-icon' }, 'W') },
     { label: () => h(RouterLink, { to: '/notification-management' }, () => '通知管理'), key: 'notification-management', icon: () => h('span', { class: 'menu-icon' }, 'M') },
     { label: () => h(RouterLink, { to: '/search-management' }, () => '全局搜索'), key: 'search-management', icon: () => h('span', { class: 'menu-icon' }, 'Q') },
@@ -204,7 +167,7 @@ const businessSubmenu: MenuOption = {
 }
 menuOptions.push(businessSubmenu)
 
-// === P4-8-W2 新增菜单组: Skills / Obsidian / Storyboard / Workflow / Multimodal / Billing / Lineage ===
+// === P4-8 能力: Skills / Obsidian / Storyboard / Workflow / Multimodal / Billing / Lineage ===
 const skillsSubmenu: MenuOption = {
   type: 'group',
   label: () => h('span', null, { default: () => 'P4-8 能力' }),
@@ -223,6 +186,18 @@ const skillsSubmenu: MenuOption = {
 }
 menuOptions.push(skillsSubmenu)
 
+// === P5-R1 数据流转链路 (T1-T6) ===
+const dataflowSubmenu: MenuOption = {
+  type: 'group',
+  label: () => h('span', null, { default: () => '数据流转链路' }),
+  key: 'dataflow',
+  children: [
+    { label: () => h(RouterLink, { to: '/collection' }, () => '采集中心'), key: 'collection', icon: () => h('span', { class: 'menu-icon' }, '⬇') },
+    { label: () => h(RouterLink, { to: '/requester-accept' }, () => '需求方验收'), key: 'requester-accept', icon: () => h('span', { class: 'menu-icon' }, '🤝') }
+  ]
+}
+menuOptions.push(dataflowSubmenu)
+
 const activeMenuKey = computed<string>(() => (route.name as string) || 'dashboard')
 
 const pageTitle = computed<string>(() => {
@@ -232,11 +207,6 @@ const pageTitle = computed<string>(() => {
 
 function onMenuSelect(key: string) {
   router.push({ name: key })
-}
-
-function onLogout() {
-  auth.logout()
-  router.replace({ name: 'login' })
 }
 </script>
 
@@ -252,7 +222,7 @@ function onLogout() {
 .brand-text {
   font-size: 22px;
   font-weight: 700;
-  color: #2080f0;
+  color: var(--app-primary, #0a5dc2);
   letter-spacing: 4px;
 }
 .brand-sub {
@@ -270,41 +240,19 @@ function onLogout() {
   color: var(--app-fg, #333);
   transition: background-color 0.18s ease, color 0.18s ease;
 }
-.header-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-}
-.header-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.username {
-  font-size: 13px;
-  color: var(--app-muted, #767676);
-}
 .menu-icon {
   display: inline-block;
   width: 20px;
   text-align: center;
-  color: #2080f0;
+  color: var(--app-primary, #0a5dc2);
   font-size: 16px;
 }
-.theme-toggle,
-.locale-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.theme-toggle-label,
-.locale-toggle-label {
-  font-size: 12px;
-  margin-left: 2px;
-  color: var(--app-muted, #767676);
-}
-.locale-toggle-label {
-  font-weight: 600;
-  letter-spacing: 0.5px;
+
+/* P17-D3: QuickNav slots beside the primary NLayoutSider. It sizes
+   itself (240px / 56px collapsed) and inherits the surface colour
+   tokens so dark mode is automatic. */
+.layout-quicknav {
+  height: 100vh;
+  flex: 0 0 auto;
 }
 </style>

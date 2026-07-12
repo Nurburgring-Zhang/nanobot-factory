@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#2080f0" />
-    <title>nanobot-factory 智影 (ZhiYing)</title>
+    <meta name="theme-color" content="#0a5dc2" />
+    <meta name="description" content="智影 (ZhiYing) — 全模态数据生成管理平台。图片/视频/短剧/绘本生成，多模态大模型各训练阶段（生产/采集/清洗/标注/审核/打分/分类/管理）一站式工业级解决方案。" />
+    <meta name="keywords" content="nanobot-factory,智影,ZhiYing,数据生成,多模态,AIGC,标注平台,模型训练" />
+    <meta property="og:title" content="nanobot-factory 智影" />
+    <meta property="og:description" content="全模态数据生成管理平台 — 工业级 AI 数据生产线" />
+    <meta property="og:type" content="website" />
+    <link rel="canonical" href="/" />
+    <title>nanobot-factory 智影 (ZhiYing) — 全模态数据生成平台</title>
     <style>
       html, body {
         margin: 0;
@@ -25,8 +31,8 @@
       .spinner {
         width: 36px;
         height: 36px;
-        border: 3px solid rgba(32, 128, 240, 0.18);
-        border-top-color: #2080f0;
+        border: 3px solid rgba(10, 93, 194, 0.18);
+        border-top-color: #0a5dc2;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
       }
@@ -34,7 +40,7 @@
         to { transform: rotate(360deg); }
       }
       .loading-text {
-        color: #888;
+        color: #767676; /* P12-A1: a11y-muted token — 4.54:1 on #f5f7fa (AA) */
         font-size: 13px;
       }
     </style>
@@ -46,6 +52,25 @@
         <div class="loading-text">智影 · nanobot-factory</div>
       </div>
     </div>
+    <script>
+      // P10R4-3: Pre-mount data-theme attribute so the SPA renders in the
+      // correct theme on first paint (no flash from default light to user-
+      // chosen dark). Mirrors the storage key + media-query fallback used
+      // by frontend-v2/src/stores/theme.ts so the two layers agree.
+      (function () {
+        try {
+          var stored = localStorage.getItem('vdp-theme')
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          var effective = stored === 'dark' || (stored === 'auto' && prefersDark) || (!stored && prefersDark)
+            ? 'dark'
+            : 'light'
+          document.documentElement.setAttribute('data-theme', effective)
+          document.documentElement.style.colorScheme = effective
+        } catch (e) {
+          /* localStorage blocked / SSR — fall back to default light */
+        }
+      })()
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

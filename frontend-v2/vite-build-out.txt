@@ -1,0 +1,28 @@
+﻿[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+node.exe : 
+所在位置 行:1 字符: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Administrator\AppData\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[1m[33mwarn[39m[22m - The `content` option in your Tailwind CSS configuration is missing or empty.
+[1m[33mwarn[39m[22m - Configure your content sources or your generated CSS will be missing styles.
+[1m[33mwarn[39m[22m - https://tailwindcss.com/docs/content-configuration
+[32m鉁?[39m 156 modules transformed.
+[31mx[39m Build failed in 1.17s
+[31merror during build:
+[31m[vite:load-fallback] Could not load D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\src/views/PackManager.vue (import
+ed by src/router/index.ts): ENOENT: no such file or directory, open 'D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\src\v
+iews\PackManager.vue'[31m
+    at async open (node:internal/fs/promises:641:25)
+    at async Object.readFile (node:internal/fs/promises:1279:14)
+    at async Object.load (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_modul
+es/vite/dist/node/chunks/dep-BK3b2jBa.js:65357:25)
+    at async PluginDriver.hookFirstAndGetPlugin (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory
+/frontend-v2/node_modules/rollup/dist/es/shared/node-entry.js:22908:28)
+    at async file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_modules/rollup/dis
+t/es/shared/node-entry.js:21894:33
+    at async Queue.work (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_module
+s/rollup/dist/es/shared/node-entry.js:23136:32)[39m

@@ -63,7 +63,13 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'jsdom',
       setupFiles: ['./tests/setup.ts'],
-      include: ['tests/**/*.spec.ts'],
+      // Include both .spec.ts (project convention) and .test.ts (P21 P2 P2 task spec)
+      include: [
+        'tests/**/*.spec.ts',
+        'tests/**/*.test.ts',
+        'src/components/__tests__/**/*.spec.ts',
+        'src/**/__tests__/**/*.spec.ts'
+      ],
       exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**'],
       css: false,
       // Keep tests fast — single thread, no isolation overhead for unit specs.

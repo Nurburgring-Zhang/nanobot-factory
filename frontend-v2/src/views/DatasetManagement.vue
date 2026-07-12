@@ -65,8 +65,11 @@ const rules: FormRules = {
   name: { required: true, message: '请输入名称', trigger: 'blur' },
   version: { required: true, message: '请输入版本', trigger: 'blur' }
 }
-const statusType: Record<DatasetItem['status'], 'default' | 'success' | 'warning'> = {
-  draft: 'default', published: 'success', archived: 'warning'
+// P21 P3 P1 fix (TS2741 + TS2344 + TS2538): DatasetItem['status'] includes
+// 'active' (and is optional/undefined). Use a Partial record with an explicit
+// fallback in the column render below.
+const statusType: Partial<Record<NonNullable<DatasetItem['status']>, 'default' | 'success' | 'warning'>> = {
+  draft: 'default', published: 'success', archived: 'warning', active: 'success'
 }
 
 const columns: DataTableColumns<DatasetItem> = [
@@ -74,7 +77,7 @@ const columns: DataTableColumns<DatasetItem> = [
   { title: '名称', key: 'name', minWidth: 180 },
   { title: '版本', key: 'version', width: 100 },
   { title: '大小', key: 'size', width: 100 },
-  { title: '状态', key: 'status', width: 100, render: (row) => h(NTag, { type: statusType[row.status] }, { default: () => row.status }) },
+  { title: '状态', key: 'status', width: 100, render: (row) => h(NTag, { type: statusType[row.status ?? 'draft'] ?? 'default' }, { default: () => row.status }) },
   { title: '创建时间', key: 'created_at', width: 180 },
   {
     title: '操作', key: 'actions', width: 180,

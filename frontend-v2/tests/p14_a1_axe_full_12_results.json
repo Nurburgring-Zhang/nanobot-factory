@@ -1,0 +1,433 @@
+{
+  "task": "p14_a1_dark_12b_full",
+  "testMode": "dark",
+  "baseUrl": "http://127.0.0.1:5173",
+  "totalViews": 12,
+  "passed": 0,
+  "failed": 12,
+  "passRate": 0.0,
+  "totalElapsedSeconds": 20.9,
+  "results": [
+    {
+      "name": "CanvasDesigner",
+      "path": "/canvas-designer",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.72
+    },
+    {
+      "name": "UserManagement",
+      "path": "/user-management",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "name": "Billing",
+      "path": "/billing",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.68
+    },
+    {
+      "name": "Tickets",
+      "path": "/tickets",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.69
+    },
+    {
+      "name": "CRM",
+      "path": "/crm",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "name": "Invoices",
+      "path": "/invoices",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "name": "Contracts",
+      "path": "/contracts",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "name": "MemoryPalace",
+      "path": "/obsidian/wiki",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "name": "KnowledgeGraph",
+      "path": "/obsidian/graph",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.66
+    },
+    {
+      "name": "Skill",
+      "path": "/skills",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.68
+    },
+    {
+      "name": "IterativeStudio",
+      "path": "/assets/storyboard",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "name": "CharacterAsset",
+      "path": "/obsidian/wiki/memory-palace",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "description": "Ensure all page content is contained by landmarks",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "#app"
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            },
+            {
+              "target": [
+                [
+                  "vite-error-overlay",
+                  ".window"
+                ]
+              ],
+              "failureSummary": "Fix any of the following:\n  Some page content is not contained by landmarks"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    }
+  ],
+  "verdict": "FAIL"
+}

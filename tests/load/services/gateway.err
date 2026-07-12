@@ -1,2 +1,4 @@
 D:\ComfyUI\.ext\Lib\site-packages\fastapi\openapi\utils.py:255: UserWarning: Duplicate Operation ID gateway_route__full_path__get for function gateway_route at D:\Hermes\生产平台\nanobot-factory\backend\gateway\main.py
   warnings.warn(message, stacklevel=1)
+2026-06-26 14:28:07,626 [gateway.proxy] WARNING upstream error service=queue-service url=http://127.0.0.1:8765/internal/api/queue/stats err=Server disconnected without sending a response.
+2026-06-26 14:28:08,142 [gateway.proxy] WARNING upstream error service=queue-service url=http://127.0.0.1:8765/internal/api/queue/health err=Server disconnected without sending a response.

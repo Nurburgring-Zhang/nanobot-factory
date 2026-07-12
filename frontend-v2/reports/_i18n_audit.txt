@@ -1,0 +1,394 @@
+=== i18n Audit ===
+Files scanned: 83
+Distinct t() keys: 786
+
+Locale key counts: zh-CN=237 en-US=237 ja-JP=237 ar-SA=237 ru-RU=237
+
+=== Keys used but MISSING from zh-CN: 590 ===
+  ,  (in 2 files)
+  Add to favorites  (in 1 files)
+  Cancel  (in 1 files)
+  Clear  (in 1 files)
+  Clear finished  (in 1 files)
+  Clear recent  (in 1 files)
+  Close  (in 2 files)
+  Collapse quick navigation  (in 1 files)
+  Drop files here  (in 1 files)
+  Expand  (in 1 files)
+  Expand quick navigation  (in 1 files)
+  Favorites  (in 1 files)
+  File upload zone  (in 1 files)
+  Global Search  (in 1 files)
+  Keyboard shortcuts  (in 1 files)
+  Navigate  (in 1 files)
+  No favorites yet — star any page  (in 1 files)
+  No matches  (in 1 files)
+  No recent pages — start navigating  (in 1 files)
+  No shortcuts registered  (in 1 files)
+  Open  (in 1 files)
+  Powered by /api/v1/search/global  (in 1 files)
+  Press ? to toggle this dialog  (in 1 files)
+  Quick Navigation  (in 1 files)
+  Recent  (in 1 files)
+  Release to add directory  (in 1 files)
+  Release to upload  (in 1 files)
+  Remove  (in 1 files)
+  Remove from favorites  (in 1 files)
+  Retry  (in 1 files)
+  Search (Ctrl+K)  (in 1 files)
+  Search datasets, projects, users, assets, agents, workflows…  (in 1 files)
+  Search failed  (in 1 files)
+  Search…  (in 1 files)
+  Star current page  (in 1 files)
+  Try a different keyword or remove filters  (in 1 files)
+  Try: test, prod, dataset, alice  (in 1 files)
+  Type to search across all domains  (in 1 files)
+  Upload  (in 1 files)
+  Upload queue  (in 1 files)
+  agent.action  (in 2 files)
+  agentManagement.actionRun  (in 1 files)
+  annotation.annotationsTitle  (in 1 files)
+  annotation.historyTitle  (in 1 files)
+  annotation.loading  (in 1 files)
+  button.cancelJob  (in 1 files)
+  button.compute  (in 1 files)
+  button.convert  (in 1 files)
+  button.copyLink  (in 1 files)
+  button.link  (in 1 files)
+  button.reinstate  (in 1 files)
+  button.uploadFile  (in 1 files)
+  canvasDesigner.deleteFailed  (in 2 files)
+  canvasDesigner.load  (in 1 files)
+  canvasDesigner.nodes  (in 1 files)
+  capabilityRegistry.t000  (in 1 files)
+  capabilityRegistry.t001  (in 1 files)
+  capabilityRegistry.t002  (in 1 files)
+  capabilityRegistry.t003  (in 1 files)
+  capabilityRegistry.t004  (in 1 files)
+  capabilityRegistry.t005  (in 1 files)
+  capabilityRegistry.t006  (in 1 files)
+  capabilityRegistry.t007  (in 1 files)
+  capabilityRegistry.t008  (in 1 files)
+  capabilityRegistry.t009  (in 1 files)
+  capabilityRegistry.t010  (in 1 files)
+  capabilityRegistry.t011  (in 1 files)
+  capabilityRegistry.t012  (in 1 files)
+  capabilityRegistry.t013  (in 1 files)
+  capabilityRegistry.t014  (in 1 files)
+  capabilityRegistry.t015  (in 1 files)
+  capabilityRegistry.t016  (in 1 files)
+  capabilityRegistry.t017  (in 1 files)
+  capabilityRegistry.t018  (in 1 files)
+  capabilityRegistry.t019  (in 1 files)
+  capabilityRegistry.t020  (in 1 files)
+  capabilityRegistry.t021  (in 1 files)
+  capabilityRegistry.t022  (in 1 files)
+  capabilityRegistry.t023  (in 1 files)
+  capabilityRegistry.t024  (in 1 files)
+  capabilityRegistry.t025  (in 1 files)
+  capabilityRegistry.t026  (in 1 files)
+  capabilityRegistry.t027  (in 1 files)
+  capabilityRegistry.t028  (in 1 files)
+  capabilityRegistry.t029  (in 1 files)
+  collectionCenter.t000  (in 1 files)
+  collectionCenter.t001  (in 1 files)
+  collectionCenter.t002  (in 1 files)
+  collectionCenter.t003  (in 1 files)
+  collectionCenter.t004  (in 1 files)
+  collectionCenter.t005  (in 1 files)
+  collectionCenter.t006  (in 1 files)
+  collectionCenter.t007  (in 1 files)
+  collectionCenter.t008  (in 1 files)
+  collectionCenter.t009  (in 1 files)
+  collectionCenter.t010  (in 1 files)
+  collectionCenter.t011  (in 1 files)
+  collectionCenter.t012  (in 1 files)
+  collectionCenter.t013  (in 1 files)
+  collectionCenter.t014  (in 1 files)
+  collectionCenter.t015  (in 1 files)
+  collectionCenter.t016  (in 1 files)
+  collectionCenter.t017  (in 1 files)
+  collectionCenter.t018  (in 1 files)
+  collectionCenter.t019  (in 1 files)
+  collectionCenter.t020  (in 1 files)
+  collectionCenter.t021  (in 1 files)
+  collectionCenter.t022  (in 1 files)
+  collectionCenter.t023  (in 1 files)
+  collectionCenter.t024  (in 1 files)
+  collectionCenter.t025  (in 1 files)
+  collectionCenter.t026  (in 1 files)
+  collectionCenter.t027  (in 1 files)
+  collectionCenter.t028  (in 1 files)
+  collectionCenter.t029  (in 1 files)
+  collectionCenter.t030  (in 1 files)
+  collectionCenter.t031  (in 1 files)
+  collectionCenter.t032  (in 1 files)
+  collectionCenter.t033  (in 1 files)
+  collectionCenter.t034  (in 1 files)
+  collectionCenter.t035  (in 1 files)
+  collectionCenter.t036  (in 1 files)
+  collectionCenter.t037  (in 1 files)
+  collectionCenter.t038  (in 1 files)
+  collectionCenter.t039  (in 1 files)
+  collectionCenter.t040  (in 1 files)
+  collectionCenter.t041  (in 1 files)
+  collectionCenter.t042  (in 1 files)
+  collectionCenter.t043  (in 1 files)
+  collectionCenter.t044  (in 1 files)
+  collectionCenter.t045  (in 1 files)
+  collectionCenter.t046  (in 1 files)
+  collectionCenter.t047  (in 1 files)
+  collectionCenter.t048  (in 1 files)
+  collectionCenter.t049  (in 1 files)
+  collectionCenter.t050  (in 1 files)
+  collectionCenter.t051  (in 1 files)
+  collectionCenter.t052  (in 1 files)
+  collectionCenter.t053  (in 1 files)
+  collectionCenter.t054  (in 1 files)
+  collectionCenter.t055  (in 1 files)
+  collectionCenter.t056  (in 1 files)
+  collectionCenter.t057  (in 1 files)
+  collectionCenter.t058  (in 1 files)
+  collectionCenter.t059  (in 1 files)
+  collectionCenter.t060  (in 1 files)
+  collectionCenter.t061  (in 1 files)
+  collectionCenter.t062  (in 1 files)
+  collectionCenter.t063  (in 1 files)
+  collectionCenter.t064  (in 1 files)
+  collectionCenter.t065  (in 1 files)
+  collectionCenter.t066  (in 1 files)
+  collectionCenter.t067  (in 1 files)
+  collectionCenter.t068  (in 1 files)
+  collectionCenter.t069  (in 1 files)
+  collectionCenter.t070  (in 1 files)
+  collectionCenter.t071  (in 1 files)
+  collectionCenter.t072  (in 1 files)
+  common.add  (in 1 files)
+  common.apply  (in 1 files)
+  common.approve  (in 3 files)
+  common.archived  (in 1 files)
+  common.automatic  (in 1 files)
+  common.backup  (in 1 files)
+  common.closed  (in 2 files)
+  common.decline  (in 1 files)
+  common.deleted  (in 1 files)
+  common.description  (in 1 files)
+  common.draft  (in 2 files)
+  common.export  (in 3 files)
+  common.goTo  (in 1 files)
+  common.import  (in 1 files)
+  common.inProgress  (in 2 files)
+  common.label  (in 1 files)
+  common.language  (in 1 files)
+  common.notStarted  (in 1 files)
+  common.operationFailed  (in 1 files)
+  common.paused  (in 1 files)
+  common.project  (in 4 files)
+  common.question  (in 1 files)
+  common.recommended  (in 1 files)
+  common.start  (in 1 files)
+  common.updatedAt  (in 1 files)
+  common.user  (in 1 files)
+  dataFlowTracker.apply  (in 1 files)
+  dataFlowTracker.clear  (in 1 files)
+  dataFlowTracker.domainEventsTitle  (in 1 files)
+  dataFlowTracker.filterByProject  (in 1 files)
+  dataFlowTracker.filterPlaceholder  (in 1 files)
+  dataFlowTracker.loadFailed  (in 6 files)
+  dataFlowTracker.noEvents  (in 1 files)
+  dataFlowTracker.pageSubtitle  (in 1 files)
+  dataFlowTracker.pageTitle  (in 1 files)
+  dataFlowTracker.pipelineTitle  (in 1 files)
+  dataFlowTracker.refresh  (in 1 files)
+  dataFlowTracker.timelineTitle  (in 1 files)
+  delivery.t000  (in 1 files)
+  delivery.t001  (in 1 files)
+  delivery.t002  (in 1 files)
+  delivery.t003  (in 1 files)
+  ... and 390 more
+
+=== Keys used but MISSING from en-US: 590 ===
+  ,
+  Add to favorites
+  Cancel
+  Clear
+  Clear finished
+  Clear recent
+  Close
+  Collapse quick navigation
+  Drop files here
+  Expand
+  Expand quick navigation
+  Favorites
+  File upload zone
+  Global Search
+  Keyboard shortcuts
+  Navigate
+  No favorites yet — star any page
+  No matches
+  No recent pages — start navigating
+  No shortcuts registered
+  Open
+  Powered by /api/v1/search/global
+  Press ? to toggle this dialog
+  Quick Navigation
+  Recent
+  Release to add directory
+  Release to upload
+  Remove
+  Remove from favorites
+  Retry
+  Search (Ctrl+K)
+  Search datasets, projects, users, assets, agents, workflows…
+  Search failed
+  Search…
+  Star current page
+  Try a different keyword or remove filters
+  Try: test, prod, dataset, alice
+  Type to search across all domains
+  Upload
+  Upload queue
+  agent.action
+  agentManagement.actionRun
+  annotation.annotationsTitle
+  annotation.historyTitle
+  annotation.loading
+  button.cancelJob
+  button.compute
+  button.convert
+  button.copyLink
+  button.link
+  button.reinstate
+  button.uploadFile
+  canvasDesigner.deleteFailed
+  canvasDesigner.load
+  canvasDesigner.nodes
+  capabilityRegistry.t000
+  capabilityRegistry.t001
+  capabilityRegistry.t002
+  capabilityRegistry.t003
+  capabilityRegistry.t004
+
+=== Keys used but MISSING from ar-SA (RTL): 590 ===
+  ,
+  Add to favorites
+  Cancel
+  Clear
+  Clear finished
+  Clear recent
+  Close
+  Collapse quick navigation
+  Drop files here
+  Expand
+  Expand quick navigation
+  Favorites
+  File upload zone
+  Global Search
+  Keyboard shortcuts
+  Navigate
+  No favorites yet — star any page
+  No matches
+  No recent pages — start navigating
+  No shortcuts registered
+  Open
+  Powered by /api/v1/search/global
+  Press ? to toggle this dialog
+  Quick Navigation
+  Recent
+  Release to add directory
+  Release to upload
+  Remove
+  Remove from favorites
+  Retry
+  Search (Ctrl+K)
+  Search datasets, projects, users, assets, agents, workflows…
+  Search failed
+  Search…
+  Star current page
+  Try a different keyword or remove filters
+  Try: test, prod, dataset, alice
+  Type to search across all domains
+  Upload
+  Upload queue
+  agent.action
+  agentManagement.actionRun
+  annotation.annotationsTitle
+  annotation.historyTitle
+  annotation.loading
+  button.cancelJob
+  button.compute
+  button.convert
+  button.copyLink
+  button.link
+  button.reinstate
+  button.uploadFile
+  canvasDesigner.deleteFailed
+  canvasDesigner.load
+  canvasDesigner.nodes
+  capabilityRegistry.t000
+  capabilityRegistry.t001
+  capabilityRegistry.t002
+  capabilityRegistry.t003
+  capabilityRegistry.t004
+
+=== Keys used but MISSING from ja-JP: 590 ===
+  ,
+  Add to favorites
+  Cancel
+  Clear
+  Clear finished
+  Clear recent
+  Close
+  Collapse quick navigation
+  Drop files here
+  Expand
+  Expand quick navigation
+  Favorites
+  File upload zone
+  Global Search
+  Keyboard shortcuts
+  Navigate
+  No favorites yet — star any page
+  No matches
+  No recent pages — start navigating
+  No shortcuts registered
+  Open
+  Powered by /api/v1/search/global
+  Press ? to toggle this dialog
+  Quick Navigation
+  Recent
+  Release to add directory
+  Release to upload
+  Remove
+  Remove from favorites
+  Retry
+  Search (Ctrl+K)
+  Search datasets, projects, users, assets, agents, workflows…
+  Search failed
+  Search…
+  Star current page
+  Try a different keyword or remove filters
+  Try: test, prod, dataset, alice
+  Type to search across all domains
+  Upload
+  Upload queue
+  agent.action
+  agentManagement.actionRun
+  annotation.annotationsTitle
+  annotation.historyTitle
+  annotation.loading
+  button.cancelJob
+  button.compute
+  button.convert
+  button.copyLink
+  button.link
+  button.reinstate
+  button.uploadFile
+  canvasDesigner.deleteFailed
+  canvasDesigner.load
+  canvasDesigner.nodes
+  capabilityRegistry.t000
+  capabilityRegistry.t001
+  capabilityRegistry.t002
+  capabilityRegistry.t003
+  capabilityRegistry.t004

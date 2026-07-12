@@ -11,6 +11,10 @@ import { i18n } from './locales'
 // Global a11y + WCAG styles (focus-visible, skip-link, high-contrast tokens)
 import './styles/a11y.css'
 
+// Global RTL stylesheet — activated by `<html dir="rtl">` set automatically
+// when locale is ar-SA. See setLocale() in `@/locales/index.ts`.
+import './styles/rtl.css'
+
 // Create app + plugins
 const app = createApp(App)
 const pinia = createPinia()

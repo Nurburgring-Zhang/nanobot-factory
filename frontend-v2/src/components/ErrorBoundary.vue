@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <!-- Normal render path -->
   <template v-if="!error">
     <slot />

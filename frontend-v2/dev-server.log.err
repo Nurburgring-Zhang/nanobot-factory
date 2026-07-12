@@ -8,3 +8,10 @@
 AggregateError [ECONNREFUSED]: 
     at internalConnectMultiple (node:net:1134:18)
     at afterConnectMultiple (node:net:1715:7)
+[2m11:39:26[22m [31m[1m[vite][22m[39m [31merror while updating dependencies:
+Error: ENOENT: no such file or directory, open 'D:\Hermes\生产平台\nanobot-factory\frontend-v2\node_modules\.vite\deps_temp_3e721558\_metadata.json'
+    at Object.writeFileSync (node:fs:2391:20)
+    at Object.commit (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:50757:19)
+    at commitProcessing (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:50259:32)
+    at runOptimizer (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:50295:15)
+    at onCrawlEnd (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:50499:9)[39m

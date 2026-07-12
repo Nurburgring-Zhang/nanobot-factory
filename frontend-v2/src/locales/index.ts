@@ -12,11 +12,58 @@
 import { createI18n } from 'vue-i18n'
 import zhCN from './zh-CN'
 import enUS from './en-US'
+import jaJP from './ja-JP'
+import koKR from './ko-KR'
+import frFR from './fr-FR'
+import deDE from './de-DE'
+import esES from './es-ES'
+import ruRU from './ru-RU'
+import arSA from './ar-SA'
+import ptPT from './pt-PT'
 
-export type LocaleCode = 'zh-CN' | 'en-US'
+export type LocaleCode = 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR' | 'fr-FR' | 'de-DE' | 'es-ES' | 'ru-RU' | 'ar-SA' | 'pt-PT'
 
-export const SUPPORTED_LOCALES: ReadonlyArray<LocaleCode> = ['zh-CN', 'en-US']
+export const SUPPORTED_LOCALES: ReadonlyArray<LocaleCode> = [
+  'zh-CN', 'en-US', 'ja-JP', 'ko-KR', 'fr-FR',
+  'de-DE', 'es-ES', 'ru-RU', 'ar-SA', 'pt-PT'
+]
 export const LOCALE_STORAGE_KEY = 'imdf.locale'
+
+/**
+ * Per-locale metadata (display name + direction).
+ * P21 P3 P2 focused: added to support App.vue / Topbar / LocaleToggle
+ * which reference LOCALE_META but it was never exported.
+ */
+export const LOCALE_META: Record<LocaleCode, {
+  name: string; nativeName: string; englishName: string; flag: string; dir: 'ltr' | 'rtl'
+}> = {
+  'zh-CN': { name: '简体中文', nativeName: '简体中文', englishName: 'Chinese (Simplified)', flag: '🇨🇳', dir: 'ltr' },
+  'en-US': { name: 'English', nativeName: 'English', englishName: 'English', flag: '🇺🇸', dir: 'ltr' },
+  'ja-JP': { name: '日本語', nativeName: '日本語', englishName: 'Japanese', flag: '🇯🇵', dir: 'ltr' },
+  'ko-KR': { name: '한국어', nativeName: '한국어', englishName: 'Korean', flag: '🇰🇷', dir: 'ltr' },
+  'fr-FR': { name: 'Français', nativeName: 'Français', englishName: 'French', flag: '🇫🇷', dir: 'ltr' },
+  'de-DE': { name: 'Deutsch', nativeName: 'Deutsch', englishName: 'German', flag: '🇩🇪', dir: 'ltr' },
+  'es-ES': { name: 'Español', nativeName: 'Español', englishName: 'Spanish', flag: '🇪🇸', dir: 'ltr' },
+  'ru-RU': { name: 'Русский', nativeName: 'Русский', englishName: 'Russian', flag: '🇷🇺', dir: 'ltr' },
+  'ar-SA': { name: 'العربية', nativeName: 'العربية', englishName: 'Arabic', flag: '🇸🇦', dir: 'rtl' },
+  'pt-PT': { name: 'Português', nativeName: 'Português', englishName: 'Portuguese', flag: '🇵🇹', dir: 'ltr' }
+}
+
+export const RTL_LOCALES: ReadonlyArray<LocaleCode> = Object.entries(LOCALE_META)
+  .filter(([, meta]) => meta.dir === 'rtl')
+  .map(([code]) => code as LocaleCode)
+
+/** Return true if the given locale is right-to-left. */
+export function isRTL(locale: LocaleCode): boolean {
+  return LOCALE_META[locale]?.dir === 'rtl'
+}
+
+/** Apply document direction (dir="rtl"/"ltr") to <html>. No-op on server. */
+export function applyDocumentDirection(locale: LocaleCode): void {
+  if (typeof document === 'undefined') return
+  const dir = isRTL(locale) ? 'rtl' : 'ltr'
+  document.documentElement.setAttribute('dir', dir)
+}
 
 export function detectInitialLocale(): LocaleCode {
   // Order matters: prefer the browser localStorage (only present in jsdom /
@@ -46,7 +93,15 @@ export const i18n = createI18n({
   fallbackLocale: 'en-US',
   messages: {
     'zh-CN': zhCN,
-    'en-US': enUS
+    'en-US': enUS,
+    'ja-JP': jaJP,
+    'ko-KR': koKR,
+    'fr-FR': frFR,
+    'de-DE': deDE,
+    'es-ES': esES,
+    'ru-RU': ruRU,
+    'ar-SA': arSA,
+    'pt-PT': ptPT
   },
   // Keep messages as const so missing keys surface as runtime warnings rather than
   // silently rendering undefined.
@@ -62,7 +117,7 @@ export async function setLocale(locale: LocaleCode): Promise<LocaleCode> {
   if (!SUPPORTED_LOCALES.includes(locale)) {
     // eslint-disable-next-line no-console
     console.warn(`[i18n] unsupported locale: ${locale}, falling back to en-US`)
-    locale = 'en-US'
+    locale = 'en-US' as LocaleCode
   }
   i18n.global.locale.value = locale
   if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {

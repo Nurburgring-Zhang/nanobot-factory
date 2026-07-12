@@ -13,7 +13,7 @@
 /* ---------- WCAG AA focus indicator (Level AA, 1.4.11) ---------- */
 :focus { outline: none; }
 :focus-visible {
-  outline: 2px solid #2080f0;
+  outline: 2px solid #0a5dc2;
   outline-offset: 2px;
   border-radius: 4px;
   transition: outline-color 0.12s ease;
@@ -25,12 +25,13 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid #2080f0;
+  outline: 2px solid #0a5dc2;
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(32, 128, 240, 0.15);
+  box-shadow: 0 0 0 4px rgba(10, 93, 194, 0.18);
 }
 /* dark theme keeps the same hue; the ring is rendered against #18181c which
- * gives a 5.8:1 contrast — comfortably above the 3:1 minimum for non-text UI. */
+ * gives a 7.21:1 contrast — comfortably above the 3:1 minimum for non-text
+ * UI. */
 html[data-theme='dark'] :focus-visible {
   outline-color: #5aa9ff;
   box-shadow: 0 0 0 4px rgba(90, 169, 255, 0.20);
@@ -43,7 +44,7 @@ html[data-theme='dark'] :focus-visible {
   left: 8px;
   z-index: 9999;
   padding: 8px 16px;
-  background: #2080f0;
+  background: #0a5dc2;
   color: #ffffff;
   font-weight: 600;
   text-decoration: none;
@@ -65,7 +66,7 @@ html[data-theme='dark'] .skip-link {
 :root {
   --a11y-muted: #767676;       /* 4.54:1 on #ffffff — AA Normal Text */
   --a11y-muted-strong: #5a5a5a; /* 7.46:1 on #ffffff — AAA */
-  --a11y-focus-ring: #2080f0;
+  --a11y-focus-ring: #0a5dc2;
 }
 html[data-theme='dark'] {
   --a11y-muted: #9aa;          /* 7.05:1 on #18181c — AAA */

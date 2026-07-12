@@ -1,0 +1,38 @@
+﻿[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+node.exe : 
+所在位置 行:1 字符: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Administrator\AppData\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[1m[33mwarn[39m[22m - The `content` option in your Tailwind CSS configuration is missing or empty.
+[1m[33mwarn[39m[22m - Configure your content sources or your generated CSS will be missing styles.
+[1m[33mwarn[39m[22m - https://tailwindcss.com/docs/content-configuration
+[32m鉁?[39m 18 modules transformed.
+[31mx[39m Build failed in 624ms
+[31merror during build:
+[31m[vite:vue] [plugin vite:vue] src/views/PackManager.vue (1:12682): Invalid end tag.[31m
+file: [36mD:/Hermes/鐢熶骇骞冲彴/nanobot-factory/frontend-v2/src/views/PackManager.vue:1:12682[31m
+SyntaxError: [plugin vite:vue] src/views/PackManager.vue (1:12682): Invalid end tag.
+    at createCompilerError (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-core\dist\compiler-
+core.cjs.prod.js:1374:17)
+    at emitError (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-core\dist\compiler-core.cjs.p
+rod.js:2980:5)
+    at Object.onclosetag (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-core\dist\compiler-co
+re.cjs.prod.js:2387:9)
+    at Tokenizer.stateInClosingTagName (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-core\di
+st\compiler-core.cjs.prod.js:799:16)
+    at Tokenizer.parse (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-core\dist\compiler-core
+.cjs.prod.js:1157:16)
+    at Object.baseParse (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-core\dist\compiler-cor
+e.cjs.prod.js:3012:13)
+    at Object.parse (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-dom\dist\compiler-dom.cjs.
+prod.js:665:23)
+    at Object.parse$1 [as parse] (D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\frontend-v2\node_modules\@vue\compiler-sfc\dist\comp
+iler-sfc.cjs.js:1824:24)
+    at createDescriptor (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_module
+s/@vitejs/plugin-vue/dist/index.mjs:71:43)
+    at transformMain (file:///D:/Hermes/%E7%94%9F%E4%BA%A7%E5%B9%B3%E5%8F%B0/nanobot-factory/frontend-v2/node_modules/@
+vitejs/plugin-vue/dist/index.mjs:2421:34)[39m

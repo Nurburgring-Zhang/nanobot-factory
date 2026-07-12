@@ -1,0 +1,658 @@
+{
+  "task": "p14_a1_theme_compare",
+  "baseUrl": "http://127.0.0.1:5173",
+  "totalRuns": 24,
+  "totalElapsedSeconds": 41.2,
+  "results": [
+    {
+      "theme": "light",
+      "name": "CanvasDesigner",
+      "path": "/canvas-designer",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.69
+    },
+    {
+      "theme": "light",
+      "name": "UserManagement",
+      "path": "/user-management",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.68
+    },
+    {
+      "theme": "light",
+      "name": "Billing",
+      "path": "/billing",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "light",
+      "name": "Tickets",
+      "path": "/tickets",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "light",
+      "name": "CRM",
+      "path": "/crm",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "light",
+      "name": "Invoices",
+      "path": "/invoices",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "light",
+      "name": "Contracts",
+      "path": "/contracts",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.66
+    },
+    {
+      "theme": "light",
+      "name": "MemoryPalace",
+      "path": "/obsidian/wiki",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.66
+    },
+    {
+      "theme": "light",
+      "name": "KnowledgeGraph",
+      "path": "/obsidian/graph",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.68
+    },
+    {
+      "theme": "light",
+      "name": "Skill",
+      "path": "/skills",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "light",
+      "name": "IterativeStudio",
+      "path": "/assets/storyboard",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.68
+    },
+    {
+      "theme": "light",
+      "name": "CharacterAsset",
+      "path": "/obsidian/wiki/memory-palace",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "dark",
+      "name": "CanvasDesigner",
+      "path": "/canvas-designer",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.66
+    },
+    {
+      "theme": "dark",
+      "name": "UserManagement",
+      "path": "/user-management",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "dark",
+      "name": "Billing",
+      "path": "/billing",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.66
+    },
+    {
+      "theme": "dark",
+      "name": "Tickets",
+      "path": "/tickets",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "theme": "dark",
+      "name": "CRM",
+      "path": "/crm",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "dark",
+      "name": "Invoices",
+      "path": "/invoices",
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.67
+    },
+    {
+      "theme": "dark",
+      "name": "Contracts",
+      "path": "/contracts",
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "theme": "dark",
+      "name": "MemoryPalace",
+      "path": "/obsidian/wiki",
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "theme": "dark",
+      "name": "KnowledgeGraph",
+      "path": "/obsidian/graph",
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "theme": "dark",
+      "name": "Skill",
+      "path": "/skills",
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.64
+    },
+    {
+      "theme": "dark",
+      "name": "IterativeStudio",
+      "path": "/assets/storyboard",
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "theme": "dark",
+      "name": "CharacterAsset",
+      "path": "/obsidian/wiki/memory-palace",
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.64
+    }
+  ],
+  "byView": {
+    "CanvasDesigner": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ]
+    },
+    "UserManagement": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ]
+    },
+    "Billing": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ]
+    },
+    "Tickets": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ]
+    },
+    "CRM": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ]
+    },
+    "Invoices": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ]
+    },
+    "Contracts": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ]
+    },
+    "MemoryPalace": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ]
+    },
+    "KnowledgeGraph": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ]
+    },
+    "Skill": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ]
+    },
+    "IterativeStudio": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ]
+    },
+    "CharacterAsset": {
+      "light": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 2
+        }
+      ],
+      "dark": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "nodeCount": 1
+        },
+        {
+          "id": "region",
+          "impact": "moderate",
+          "nodeCount": 1
+        }
+      ]
+    }
+  }
+}

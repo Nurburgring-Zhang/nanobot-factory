@@ -36,3 +36,58 @@ export async function searchByType(type: SearchHit['type'], q: string): Promise<
 export async function getSearchSuggestion(prefix: string): Promise<string[]> {
   return getOne<string[]>(`/api/v1/search/suggest?q=${encodeURIComponent(prefix)}`)
 }
+
+// ============================================================================
+// P17-D3: Global cross-domain search (/api/v1/search/global)
+// ============================================================================
+//
+// Aggregates hits across dataset / project / user / asset / agent / workflow in
+// a single round-trip. Used by the GlobalSearch palette (Ctrl+K).
+
+export type GlobalDomain = 'dataset' | 'project' | 'user' | 'asset' | 'agent' | 'workflow'
+
+export interface GlobalHit {
+  domain: GlobalDomain
+  domain_title: string
+  id: string | number
+  title: string
+  snippet?: string
+  score: number
+  url?: string
+}
+
+export interface GlobalSearchResponse {
+  query: string
+  top_k: number
+  total: number
+  counts: Partial<Record<GlobalDomain, number>>
+  hits: GlobalHit[]
+  elapsed_ms?: number
+}
+
+export interface GlobalSearchQuery {
+  q: string
+  top_k?: number
+  domains?: GlobalDomain[]
+}
+
+/**
+ * Cross-domain search.
+ *
+ * Maps cleanly to backend endpoint:
+ *   GET /api/v1/search/global?q=<query>&top_k=<n>&domains=<csv>
+ *
+ * Returns the raw response so callers can group / paginate as they wish.
+ */
+export async function searchGlobal(query: GlobalSearchQuery): Promise<GlobalSearchResponse> {
+  const q = (query.q || '').trim()
+  if (!q) {
+    return { query: '', top_k: query.top_k ?? 3, total: 0, counts: {}, hits: [] }
+  }
+  const topK = Math.max(1, Math.min(10, query.top_k ?? 3))
+  const params: Record<string, unknown> = { q, top_k: topK }
+  if (query.domains && query.domains.length > 0) {
+    params.domains = query.domains.join(',')
+  }
+  return getOne<GlobalSearchResponse>('/api/v1/search/global', { params })
+}

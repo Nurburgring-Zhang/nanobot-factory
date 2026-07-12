@@ -1,0 +1,657 @@
+{
+  "task": "p13_a2_dark_12a_full",
+  "testMode": "dark",
+  "baseUrl": "http://127.0.0.1:5173",
+  "totalViews": 12,
+  "passed": 0,
+  "failed": 12,
+  "passRate": 0.0,
+  "totalElapsedSeconds": 22.2,
+  "results": [
+    {
+      "name": "Login",
+      "path": "/login",
+      "category": "auth",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 4,
+      "nodeCount": 18,
+      "byImpact": {
+        "critical": 14,
+        "serious": 3,
+        "moderate": 0,
+        "minor": 1
+      },
+      "violations": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "aside"
+              ],
+              "failureSummary": "Fix any of the following:\n  ARIA role navigation is not allowed for given element"
+            }
+          ]
+        },
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "div[aria-label=\"任务吞吐（近 7 天）\"]"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute cannot be used on a div with no valid role attribute."
+            },
+            {
+              "target": [
+                "div[aria-label=\"引擎状态分布\"]"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute cannot be used on a div with no valid role attribute."
+            }
+          ]
+        },
+        {
+          "id": "aria-required-attr",
+          "impact": "critical",
+          "help": "Required ARIA attributes must be provided",
+          "nodeCount": 14,
+          "sampleNodes": [
+            {
+              "target": [
+                "div[data-v-7f773d42=\"\"]:nth-child(1) > .n-card--hoverable.n-card.__card-dark-4gh4v3-m > .n-card-header[role=\"heading\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-level"
+            },
+            {
+              "target": [
+                "div[data-v-7f773d42=\"\"]:nth-child(1) > .n-card--hoverable.n-card.__card-dark-4gh4v3-m > .n-card-header[role=\"heading\"] > .n-card-header__main[role=\"heading\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-level"
+            }
+          ]
+        },
+        {
+          "id": "role-img-alt",
+          "impact": "serious",
+          "help": "[role=\"img\"] elements must have alternative text",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                ".n-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  El"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.86
+    },
+    {
+      "name": "Dashboard",
+      "path": "/",
+      "category": "dashboard",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 4,
+      "nodeCount": 18,
+      "byImpact": {
+        "critical": 14,
+        "serious": 3,
+        "moderate": 0,
+        "minor": 1
+      },
+      "violations": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "aside"
+              ],
+              "failureSummary": "Fix any of the following:\n  ARIA role navigation is not allowed for given element"
+            }
+          ]
+        },
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodeCount": 2,
+          "sampleNodes": [
+            {
+              "target": [
+                "div[aria-label=\"任务吞吐（近 7 天）\"]"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute cannot be used on a div with no valid role attribute."
+            },
+            {
+              "target": [
+                "div[aria-label=\"引擎状态分布\"]"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute cannot be used on a div with no valid role attribute."
+            }
+          ]
+        },
+        {
+          "id": "aria-required-attr",
+          "impact": "critical",
+          "help": "Required ARIA attributes must be provided",
+          "nodeCount": 14,
+          "sampleNodes": [
+            {
+              "target": [
+                "div[data-v-7f773d42=\"\"]:nth-child(1) > .n-card--hoverable.n-card.__card-dark-4gh4v3-m > .n-card-header[role=\"heading\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-level"
+            },
+            {
+              "target": [
+                "div[data-v-7f773d42=\"\"]:nth-child(1) > .n-card--hoverable.n-card.__card-dark-4gh4v3-m > .n-card-header[role=\"heading\"] > .n-card-header__main[role=\"heading\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-level"
+            }
+          ]
+        },
+        {
+          "id": "role-img-alt",
+          "impact": "serious",
+          "help": "[role=\"img\"] elements must have alternative text",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                ".n-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  El"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.87
+    },
+    {
+      "name": "AssetManagement",
+      "path": "/asset-management",
+      "category": "data",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.77
+    },
+    {
+      "name": "Annotation",
+      "path": "/annotation",
+      "category": "data",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.75
+    },
+    {
+      "name": "CleaningManagement",
+      "path": "/cleaning-management",
+      "category": "data",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.77
+    },
+    {
+      "name": "Scoring",
+      "path": "/scoring",
+      "category": "data",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.76
+    },
+    {
+      "name": "EvaluationManagement",
+      "path": "/evaluation-management",
+      "category": "data",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.76
+    },
+    {
+      "name": "AgentManagement",
+      "path": "/agent-management",
+      "category": "agent",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.76
+    },
+    {
+      "name": "WorkflowManagement",
+      "path": "/workflow-management",
+      "category": "workflow",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.75
+    },
+    {
+      "name": "NotificationManagement",
+      "path": "/notification-management",
+      "category": "utility",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.76
+    },
+    {
+      "name": "SearchManagement",
+      "path": "/search-management",
+      "category": "utility",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.75
+    },
+    {
+      "name": "Dataset",
+      "path": "/dataset",
+      "category": "data",
+      "status": "FAIL",
+      "dataTheme": "dark",
+      "violationCount": 2,
+      "nodeCount": 2,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 2,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "landmark-one-main",
+          "impact": "moderate",
+          "help": "Document should have one main landmark",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Document does not have a main landmark"
+            }
+          ]
+        },
+        {
+          "id": "page-has-heading-one",
+          "impact": "moderate",
+          "help": "Page should contain a level-one heading",
+          "nodeCount": 1,
+          "sampleNodes": [
+            {
+              "target": [
+                "html"
+              ],
+              "failureSummary": "Fix all of the following:\n  Page must have a level-one heading"
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "elapsedSeconds": 1.77
+    }
+  ],
+  "verdict": "FAIL"
+}

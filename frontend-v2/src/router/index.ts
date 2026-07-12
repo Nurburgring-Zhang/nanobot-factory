@@ -106,6 +106,13 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '标注管理', icon: 'edit' }
       },
       {
+        // P5-R1-T5: annotation-workbench alias for the dataset.vue "create annotation task" CTA.
+        path: 'annotation-workbench',
+        name: 'annotation-workbench',
+        component: () => import('@/views/Annotation.vue'),
+        meta: { title: '标注工作台', icon: 'edit' }
+      },
+      {
         path: 'cleaning-management',
         name: 'cleaning-management',
         component: () => import('@/views/CleaningManagement.vue'),
@@ -158,6 +165,13 @@ const routes: RouteRecordRaw[] = [
         name: 'canvas-designer',
         component: () => import('@/views/CanvasDesigner.vue'),
         meta: { title: '画布设计器', icon: 'canvas' }
+      },
+      // ===== P5-R1-T2 需求中心 (与 T1 ProjectCenter 打通) =====
+      {
+        path: 'requirements',
+        name: 'requirements',
+        component: () => import('@/views/RequirementCenter.vue'),
+        meta: { title: '需求中心', icon: 'list' }
       },
       // ===== P4-6-W2 workflow_service dag_v2 + director studio =====
       {
@@ -287,8 +301,94 @@ const routes: RouteRecordRaw[] = [
         name: 'lineage',
         component: () => import('@/views/lineage/Graph.vue'),
         meta: { title: '数据血缘', icon: 'graph' }
+      },
+      // ===== P5-R1-T3 Pack + Collection =====
+      {
+        path: 'packs',
+        name: 'packs',
+        component: () => import('@/views/PackManager.vue'),
+        meta: { title: '数据包管理', icon: 'cube-outline' }
+      },
+      {
+        path: 'collection',
+        name: 'collection',
+        component: () => import('@/views/CollectionCenter.vue'),
+        meta: { title: '采集中心', icon: 'cloud-download-outline' }
+      },
+      // ===== P5-R1-T6: 内部质检 / 需求方验收 / 交付管理 =====
+      {
+        path: 'internal-qc',
+        name: 'internal-qc',
+        component: () => import('@/views/InternalQC.vue'),
+        meta: { title: '内部质检', icon: 'shield-checkmark' }
+      },
+      {
+        path: 'requester-accept',
+        name: 'requester-accept',
+        component: () => import('@/views/RequesterAccept.vue'),
+        meta: { title: '需求方验收', icon: 'hand-left' }
+      },
+      {
+        path: 'delivery',
+        name: 'delivery',
+        component: () => import('@/views/Delivery.vue'),
+        meta: { title: '交付管理', icon: 'archive' }
+      },
+      // ===== P19 v5.6 - V5 Chapter 38 Infinite Canvas + Chapter 1.3 Command Center =====
+      {
+        path: 'canvas',
+        name: 'infinite-canvas',
+        component: () => import('@/components/InfiniteCanvas.vue'),
+        meta: { title: 'Infinite Canvas', icon: 'canvas-outline', requiresAuth: true }
+      },
+      {
+        path: 'command',
+        name: 'command-center',
+        component: () => import('@/components/CommandCenter.vue'),
+        meta: { title: 'Command Center', icon: 'chatbubbles-outline', requiresAuth: true }
+      },
+
+      // ===== P5-R1-T1 ProjectCenter — 数据流转链路起点 =====
+      {
+        path: 'projects',
+        name: 'ProjectCenter',
+        component: () => import('@/views/ProjectCenter.vue'),
+        meta: { title: '项目中心', icon: 'FolderOpenOutline', requiresAuth: true }
+      },
+      // ===== R1 — Capability Module Registry + Data Flow Tracker =====
+      {
+        path: 'capabilities',
+        name: 'capabilities',
+        component: () => import('@/views/CapabilityRegistry.vue'),
+        meta: { title: '能力模块注册表', icon: 'cube-outline', requiresAuth: true }
+      },
+      {
+        path: 'data-flow',
+        name: 'data-flow',
+        component: () => import('@/views/DataFlowTracker.vue'),
+        meta: { title: '数据流转追踪器', icon: 'git-network-outline', requiresAuth: true }
+      },
+      // ===== R2 — Visual Workflow Builder =====
+      {
+        path: 'workflow-builder',
+        name: 'workflow-builder',
+        component: () => import('@/views/WorkflowBuilder.vue'),
+        meta: { title: '工作流搭建器', icon: 'git-branch-outline', requiresAuth: true }
+      },
+      // ===== P19 v5.6 / V5 §13.4 — Chapter 17 (Crowdsource) + 22 (CDP Billing) =====
+      {
+        path: 'admin/crowdsource',
+        name: 'admin-crowdsource',
+        component: () => import('@/components/CrowdsourceAdmin.vue'),
+        meta: { title: '众包管理', icon: 'people-circle', requiresAuth: true }
+      },
+      {
+        path: 'admin/billing',
+        name: 'admin-billing',
+        component: () => import('@/components/BillingAdmin.vue'),
+        meta: { title: 'CDP 计费', icon: 'wallet', requiresAuth: true }
       }
-    ]
+    ] 
   },
   {
     path: '/:pathMatch(.*)*',

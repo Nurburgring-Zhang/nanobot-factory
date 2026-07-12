@@ -36,7 +36,20 @@ describe('locale switching', () => {
     expect(getLocale()).toBe('en-US')
   })
 
-  it('exposes both supported locales', () => {
-    expect(SUPPORTED_LOCALES).toEqual(['zh-CN', 'en-US'])
+  it('exposes all 10 supported locales', () => {
+    // P21 P2 P2 i18n top-100: project now ships 10 locales
+    // (zh-CN, en-US, ja-JP, ko-KR, fr-FR, de-DE, es-ES, ru-RU, ar-SA, pt-PT).
+    expect(SUPPORTED_LOCALES).toEqual([
+      'zh-CN',
+      'en-US',
+      'ja-JP',
+      'ko-KR',
+      'fr-FR',
+      'de-DE',
+      'es-ES',
+      'ru-RU',
+      'ar-SA',
+      'pt-PT'
+    ])
   })
 })

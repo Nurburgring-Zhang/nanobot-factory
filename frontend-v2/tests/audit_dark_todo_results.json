@@ -1,0 +1,62 @@
+[
+  {
+    "view": "Workflows",
+    "path": "/workflows",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "VisualEditor",
+    "path": "/visual-editor",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "StoryboardEditor",
+    "path": "/storyboard",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "EvalReport",
+    "path": "/eval-report",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "KnowledgeGraph",
+    "path": "/obsidian/knowledge-graph",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "Orchestrator",
+    "path": "/skills/orchestrator",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "Billing",
+    "path": "/billing",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "CanvasDesigner",
+    "path": "/canvas-designer",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "Monitoring",
+    "path": "/monitoring",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  },
+  {
+    "view": "Engines",
+    "path": "/engines",
+    "result": "NAV_FAIL",
+    "error": "Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"header\") to be visible\n"
+  }
+]

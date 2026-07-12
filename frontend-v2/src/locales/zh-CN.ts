@@ -63,7 +63,33 @@ export default {
     healthy: '健康',
     degraded: '降级',
     down: '宕机',
-    running_: '运行中'
+    running_: '运行中',
+    add: '添加', // TODO: native review
+    apply: '应用', // TODO: native review
+    approve: '通过', // TODO: native review
+    archived: '已归档', // TODO: native review
+    automatic: '自动', // TODO: native review
+    backup: '备份', // TODO: native review
+    closed: '已关闭', // TODO: native review
+    decline: '拒绝', // TODO: native review
+    deleted: '已删除', // TODO: native review
+    description: '描述', // TODO: native review
+    draft: '草稿', // TODO: native review
+    export: '导出', // TODO: native review
+    goTo: '前往', // TODO: native review
+    import: '导入', // TODO: native review
+    inProgress: '进行中', // TODO: native review
+    label: '标签', // TODO: native review
+    language: '语言', // TODO: native review
+    notStarted: '未开始', // TODO: native review
+    operationFailed: '操作失败', // TODO: native review
+    paused: '已暂停', // TODO: native review
+    project: '项目', // TODO: native review
+    question: '问题', // TODO: native review
+    recommended: '推荐', // TODO: native review
+    start: '开始', // TODO: native review
+    updatedAt: '更新时间', // TODO: native review
+    user: '用户', // TODO: native review
   },
   nav: {
     dashboard: '仪表盘',
@@ -231,5 +257,143 @@ export default {
     colCapabilities: '能力',
     colActions: '操作',
     actionDetail: '详情 / 运行'
-  }
-} as const
+  },
+
+  workflowBuilder: {
+    t000: '工作流搭建器',
+    t001: '新工作流',
+    t002: '个能力模块拖拽组合',
+    t003: '模板',
+    t004: '上次运行',
+    t005: '完成率',
+    t006: '总耗时',
+    t007: '画布',
+    t008: '从模板开始',
+    t009: '删除节点',
+    t010: '编辑工作流',
+    t011: '使用',
+    t012: '现在',
+    t013: '需求',
+    t014: '数据包',
+    t015: '采集',
+    t016: '质检',
+    t017: '需求方验收',
+    t018: '交付',
+    t019: '打标',
+    t020: '清洗',
+    t021: '评测',
+    t022: '加载能力目录失败',
+    t023: '加载模板失败',
+    t024: '已加载模板',
+    t025: '画布为空',
+    t026: '无需保存',
+    t027: '请填写工作流名称',
+    t028: '已保存工作流',
+    t029: '保存失败',
+    t030: '运行完成',
+    t031: '运行失败',
+    t032: '加载节点失败',
+    t033: '删除节点失败',
+  },
+
+  dataFlowTracker: {
+    apply: '应用', // TODO: native review
+    clear: '清空', // TODO: native review
+    domainEventsTitle: '领域事件', // TODO: native review
+    filterByProject: '按项目筛选', // TODO: native review
+    filterPlaceholder: '筛选事件…', // TODO: native review
+    loadFailed: '加载事件失败', // TODO: native review
+    noEvents: '暂无事件', // TODO: native review
+    pageSubtitle: '跨系统事件实时时间线', // TODO: native review
+    pageTitle: '数据流转追踪', // TODO: native review
+    pipelineTitle: '流水线总览', // TODO: native review
+    refresh: '刷新', // TODO: native review
+    timelineTitle: '事件时间线', // TODO: native review
+  },
+
+  form: {
+    category: '类别', // TODO: native review
+    creator: '创建者', // TODO: native review
+    dueDate: '截止日期', // TODO: native review
+    inputRate: '输入速率', // TODO: native review
+    placeholderName: '请输入名称', // TODO: native review
+    placeholderTitle: '请输入标题', // TODO: native review
+    sectionMember: '成员', // TODO: native review
+    title: '标题', // TODO: native review
+  },
+
+  menu: {
+    contextHistory: '最近访问', // TODO: native review
+    dropdownOptions: '选项', // TODO: native review
+    sidebarCleaningManagement: '清洗管理', // TODO: native review
+    sidebarWorkflow: '工作流', // TODO: native review
+    statusbarReady: '就绪', // TODO: native review
+    statusbarUnsaved: '未保存', // TODO: native review
+    submenuData: '数据', // TODO: native review
+    tabIncidents: '事件', // TODO: native review
+    tabSchema: '数据模型', // TODO: native review
+  },
+
+  multimodalAgentChat: {
+    invoke: '调用', // TODO: native review
+  },
+
+  userManagement: {
+    createSuccess: '用户已创建', // TODO: native review
+    roleAdmin: '管理员', // TODO: native review
+  },
+
+  projectCenter: {
+    t000: '项目中心', // TODO: native review
+    t001: '未命名项目', // TODO: native review
+    t002: '项目工作区总览', // TODO: native review
+    t003: '搜索项目', // TODO: native review
+    t004: '按状态筛选', // TODO: native review
+    t005: '按优先级筛选', // TODO: native review
+    t006: '新建项目', // TODO: native review
+    t007: '编辑项目', // TODO: native review
+  },
+
+  requirementCenter: {
+    t000: '需求中心', // TODO: native review
+    t001: '未命名需求', // TODO: native review
+    t002: '浏览并管理需求', // TODO: native review
+    t003: '搜索需求', // TODO: native review
+    t004: '按项目筛选', // TODO: native review
+    t005: '按状态筛选', // TODO: native review
+    t006: '新建需求', // TODO: native review
+    t007: '编辑需求', // TODO: native review
+  },
+
+  internalQC: {
+    t000: '内部质检', // TODO: native review
+    t001: '未命名记录', // TODO: native review
+    t002: '质检工作台', // TODO: native review
+    t003: '搜索记录', // TODO: native review
+    t004: '按审核员筛选', // TODO: native review
+    t005: '执行质检', // TODO: native review
+    t006: '保存质检', // TODO: native review
+    t007: '标记通过', // TODO: native review
+    t040: '样本量',
+    t041: '置信水平',
+    t042: '误差范围',
+    t043: '评分者一致性',
+    t044: 'Kappa 分数',
+    t045: '分歧阈值',
+    t046: '裁决规则',
+    t047: '审核员轮换',
+    t048: '盲审',
+    t049: '耗时',
+    t050: '标注准确率',
+    t051: '覆盖率',
+    t052: '边缘案例',
+    t053: '错误模式',
+    t054: '质量趋势',
+    t055: '校准会议',
+    t056: '黄金标准',
+    t057: '隐藏测试',
+    t058: '审计跟踪',
+    t059: '审核员反馈'
+
+
+  },

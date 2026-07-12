@@ -1,0 +1,145 @@
+{
+  "task": "p13_a2_dark_12a",
+  "testMode": "dark",
+  "baseUrl": "http://127.0.0.1:5173",
+  "totalViews": 12,
+  "passed": 12,
+  "failed": 0,
+  "passRate": 100.0,
+  "totalElapsedSeconds": 21.9,
+  "results": [
+    {
+      "name": "Login",
+      "path": "/login",
+      "category": "auth",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.8
+    },
+    {
+      "name": "Dashboard",
+      "path": "/",
+      "category": "dashboard",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.81
+    },
+    {
+      "name": "AssetManagement",
+      "path": "/asset-management",
+      "category": "data",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.74
+    },
+    {
+      "name": "Annotation",
+      "path": "/annotation",
+      "category": "data",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.74
+    },
+    {
+      "name": "CleaningManagement",
+      "path": "/cleaning-management",
+      "category": "data",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.75
+    },
+    {
+      "name": "Scoring",
+      "path": "/scoring",
+      "category": "data",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.75
+    },
+    {
+      "name": "EvaluationManagement",
+      "path": "/evaluation-management",
+      "category": "data",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.75
+    },
+    {
+      "name": "AgentManagement",
+      "path": "/agent-management",
+      "category": "agent",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.74
+    },
+    {
+      "name": "WorkflowManagement",
+      "path": "/workflow-management",
+      "category": "workflow",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.74
+    },
+    {
+      "name": "NotificationManagement",
+      "path": "/notification-management",
+      "category": "utility",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.77
+    },
+    {
+      "name": "SearchManagement",
+      "path": "/search-management",
+      "category": "utility",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.74
+    },
+    {
+      "name": "Dataset",
+      "path": "/dataset",
+      "category": "data",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.74
+    }
+  ],
+  "verdict": "PASS"
+}

@@ -1,0 +1,242 @@
+/**
+ * RTL (right-to-left) stylesheet for Arabic / Hebrew / Persian languages.
+ *
+ * Activated by `<html dir="rtl" lang="ar-SA">` set automatically by
+ * `setLocale('ar-SA')` in `@/locales/index.ts`.
+ *
+ * Strategy: instead of writing a full mirrored stylesheet, we apply targeted
+ * `direction: rtl` to layout containers and rely on logical properties
+ * (`margin-inline-start`, `padding-inline-end`, etc.) for chrome. Naive UI
+ * components honor `dir` automatically for most layout primitives, so this
+ * file mostly covers:
+ *   - Global text direction + font-family fallback for Arabic script
+ *   - Sidebar / drawer mirror (auto via `dir`)
+ *   - Custom flex layouts that use physical properties (margin-left/right)
+ *   - Numbers, dates (kept LTR for tabular alignment)
+ *
+ * Why a separate file: makes it auditable as a cross-cutting a11y/i18n rule
+ * (mirrors the pattern in `a11y.css`).
+ */
+
+/* ============================================================
+ * Global direction + font
+ * ============================================================ */
+html[dir='rtl'],
+html[dir='rtl'] body {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Tajawal', 'Cairo', 'Noto Sans Arabic', 'Segoe UI', system-ui,
+    -apple-system, sans-serif;
+}
+
+/* ============================================================
+ * Numbers + dates: keep LTR (tabular alignment for telemetry,
+ * financial figures, table columns).
+ * ============================================================ */
+.num,
+.mono,
+[dir='rtl'] .num,
+[dir='rtl'] .mono,
+[dir='rtl'] time,
+[dir='rtl'] .number,
+[dir='rtl'] .date,
+[dir='rtl'] .timestamp,
+[dir='rtl'] .price,
+[dir='rtl'] .currency,
+[dir='rtl'] .percentage,
+[dir='rtl'] .id,
+[dir='rtl'] .hash,
+[dir='rtl'] code,
+[dir='rtl'] pre,
+[dir='rtl'] .ltr-num {
+  direction: ltr;
+  unicode-bidi: embed;
+  display: inline-block;
+  text-align: left;
+  font-family: 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+}
+
+/* Inline-block numbering when mixed with RTL text */
+[dir='rtl'] .ltr-num,
+[dir='rtl'] .num {
+  unicode-bidi: bidi-override;
+}
+
+/* ============================================================
+ * Layout chrome — sidebar, drawer, breadcrumb, etc.
+ * ============================================================ */
+
+/* P19-D2: App-level RTL class applied on the <ErrorBoundary> wrapper when the
+ * active locale is in `RTL_LOCALES` (currently ar-SA). We set `direction: rtl`
+ * and reverse the flex axis of the top-level layout so a hand-written flex
+ * container that uses `flex-direction: row` mirrors to `row-reverse`.
+ *
+ * Naive UI's <NLayout> + <NLayoutSider> auto-mirror via the [dir] attribute
+ * so most sidebars/drawers work without this. The explicit class below is the
+ * hook for layouts that opt out of attribute-selectors (e.g. legacy chrome
+ * using physical `margin-left`).
+ */
+.app-layout-rtl {
+  direction: rtl;
+  text-align: right;
+}
+.app-layout-rtl[style*='flex-direction'],
+.app-layout-rtl .layout-row,
+.app-layout-rtl .layout-row-reverse {
+  /* Flip default row layouts (LTR sidebar left → RTL sidebar right). */
+  flex-direction: row-reverse;
+}
+
+/* Naive UI n-layout + n-layout-sider auto-mirror with dir, but some custom
+ * layouts use physical margin-left/right — flip them in RTL. */
+[dir='rtl'] .ltr-only-flip {
+  transform: scaleX(-1);
+}
+
+/* Common layout patterns */
+[dir='rtl'] .sidebar-left {
+  left: auto;
+  right: 0;
+  border-left: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-right: none;
+}
+
+[dir='rtl'] .sidebar-right {
+  right: auto;
+  left: 0;
+  border-right: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-left: none;
+}
+
+/* Padding / margin flip helpers used by hand-rolled layouts */
+[dir='rtl'] .pl-flip {
+  padding-left: 0;
+  padding-right: var(--pl-value, 16px);
+}
+[dir='rtl'] .pr-flip {
+  padding-right: 0;
+  padding-left: var(--pr-value, 16px);
+}
+[dir='rtl'] .ml-flip {
+  margin-left: 0;
+  margin-right: var(--ml-value, 16px);
+}
+[dir='rtl'] .mr-flip {
+  margin-right: 0;
+  margin-left: var(--mr-value, 16px);
+}
+
+/* ============================================================
+ * Icons — most icons stay LTR; chevrons should mirror
+ * ============================================================ */
+[dir='rtl'] .icon-chevron-right::before {
+  content: '\\e6a4'; /* approximate left-chevron */
+}
+[dir='rtl'] .icon-chevron-left::before {
+  content: '\\e6a6'; /* approximate right-chevron */
+}
+
+[dir='rtl'] .icon-arrow-right,
+[dir='rtl'] .icon-arrow-left {
+  transform: scaleX(-1);
+}
+
+/* Naive UI icons: most are direction-agnostic; explicit flip for
+ * directional icons (arrow, chevron, next/prev). */
+[dir='rtl'] .n-icon[class*='arrow-'],
+[dir='rtl'] .n-icon[class*='chevron-'],
+[dir='rtl'] .n-icon[class*='caret-'] {
+  transform: scaleX(-1);
+}
+
+/* ============================================================
+ * Tables — RTL tables work natively with dir=rtl but column
+ * alignment should still be readable.
+ * ============================================================ */
+[dir='rtl'] table {
+  direction: rtl;
+}
+
+[dir='rtl'] table th,
+[dir='rtl'] table td {
+  text-align: right;
+}
+
+[dir='rtl'] table .ltr-cell {
+  direction: ltr;
+  text-align: left;
+}
+
+/* ============================================================
+ * Forms — inputs already RTL-aware via dir attribute; just
+ * ensure consistent behavior
+ * ============================================================ */
+[dir='rtl'] input[type='text'],
+[dir='rtl'] input[type='email'],
+[dir='rtl'] input[type='search'],
+[dir='rtl'] input[type='url'],
+[dir='rtl'] textarea,
+[dir='rtl'] select {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir='rtl'] input[type='number'],
+[dir='rtl'] input[type='tel'],
+[dir='rtl'] input[type='password'] {
+  direction: ltr;
+  text-align: left;
+}
+
+/* ============================================================
+ * Buttons — keep buttons LTR-aligned (centered text)
+ * ============================================================ */
+[dir='rtl'] .n-button,
+[dir='rtl'] button {
+  direction: rtl;
+}
+
+/* ============================================================
+ * Notifications + dialogs — toast slides from opposite side
+ * ============================================================ */
+[dir='rtl'] .n-message,
+[dir='rtl'] .n-notification {
+  direction: rtl;
+  text-align: right;
+}
+
+/* ============================================================
+ * Code blocks — always LTR
+ * ============================================================ */
+[dir='rtl'] pre,
+[dir='rtl'] code,
+[dir='rtl'] .code-block {
+  direction: ltr;
+  text-align: left;
+}
+
+/* ============================================================
+ * Loading skeletons + animations — unchanged
+ * ============================================================ */
+
+/* ============================================================
+ * Custom: agent / dataset workflow arrows
+ * ============================================================ */
+[dir='rtl'] .workflow-arrow {
+  transform: scaleX(-1);
+}
+
+/* ============================================================
+ * Print styles
+ * ============================================================ */
+@media print {
+  html[dir='rtl'] {
+    direction: rtl;
+  }
+  html[dir='rtl'] .ltr-num,
+  html[dir='rtl'] .num,
+  html[dir='rtl'] code,
+  html[dir='rtl'] pre {
+    direction: ltr;
+  }
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "view": "Dashboard",
+    "path": "/dashboard",
+    "violationCount": 0,
+    "elapsed_s": 15.94,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Tasks",
+    "path": "/tasks",
+    "violationCount": 0,
+    "elapsed_s": 15.92,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Datasets",
+    "path": "/datasets",
+    "violationCount": 0,
+    "elapsed_s": 15.91,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Engines",
+    "path": "/engines",
+    "violationCount": 0,
+    "elapsed_s": 15.92,
+    "result": "PASS",
+    "violations": []
+  },
+  {
+    "view": "Login",
+    "path": "/login",
+    "violationCount": 0,
+    "elapsed_s": 15.91,
+    "result": "PASS",
+    "violations": []
+  }
+]

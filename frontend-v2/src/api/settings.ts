@@ -51,7 +51,8 @@ export function loadPreferences(): UserPreferences {
   }
   return {
     theme: 'light',
-    primaryColor: '#2080f0',
+    // P11-C: brand primary updated to pass WCAG AA Normal Text on white.
+    primaryColor: '#0a5dc2',
     locale: 'zh-CN',
     pageSize: 20,
     refreshSeconds: 30,

@@ -1,0 +1,145 @@
+{
+  "task": "p14_a1_dark_12b",
+  "testMode": "dark",
+  "baseUrl": "http://127.0.0.1:5173",
+  "totalViews": 12,
+  "passed": 12,
+  "failed": 0,
+  "passRate": 100.0,
+  "totalElapsedSeconds": 26.4,
+  "results": [
+    {
+      "name": "CanvasDesigner",
+      "path": "/canvas-designer",
+      "category": "designer",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 2.17
+    },
+    {
+      "name": "UserManagement",
+      "path": "/user-management",
+      "category": "mgmt",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "name": "Billing",
+      "path": "/billing",
+      "category": "billing",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "name": "Tickets",
+      "path": "/tickets",
+      "category": "support",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.64
+    },
+    {
+      "name": "CRM",
+      "path": "/crm",
+      "category": "support",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.64
+    },
+    {
+      "name": "Invoices",
+      "path": "/invoices",
+      "category": "billing",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.63
+    },
+    {
+      "name": "Contracts",
+      "path": "/contracts",
+      "category": "billing",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.64
+    },
+    {
+      "name": "MemoryPalace",
+      "path": "/obsidian/wiki",
+      "category": "obsidian",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.65
+    },
+    {
+      "name": "KnowledgeGraph",
+      "path": "/obsidian/graph",
+      "category": "obsidian",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.64
+    },
+    {
+      "name": "Skill",
+      "path": "/skills",
+      "category": "skills",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.64
+    },
+    {
+      "name": "IterativeStudio",
+      "path": "/assets/storyboard",
+      "category": "assets",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.63
+    },
+    {
+      "name": "CharacterAsset",
+      "path": "/obsidian/wiki/memory-palace",
+      "category": "assets",
+      "status": "PASS",
+      "dataTheme": "dark",
+      "violationCount": 0,
+      "violations": [],
+      "error": null,
+      "elapsedSeconds": 1.63
+    }
+  ],
+  "verdict": "PASS"
+}

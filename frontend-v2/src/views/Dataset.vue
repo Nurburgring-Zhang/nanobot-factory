@@ -81,7 +81,7 @@
         :total="total.value"
         v-model:page="page"
         v-model:page-size="pageSize"
-        :row-key="(r: DatasetItem) => String(r.id)"
+        :row-key="(r: DatasetRow) => String(r.id)"
         @refresh="load"
       >
         <template #empty><NEmpty description="暂无数据集" /></template>
@@ -184,8 +184,12 @@ import ActionButton from '@/components/ActionButton.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import { listDatasets, createDataset, type DatasetItem } from '@/api/dataset'
 
-interface DatasetRow extends DatasetItem {
-  modality?: string
+// P21 P3 P1 fix (TS2430): DatasetItem.modality is a narrow literal union
+// ('image' | 'video' | 'audio' | 'text' | 'multimodal'). The legacy view
+// allowed `string`; use Omit to drop the field and re-add with the same
+// narrow type so the column render (which is `string | number`) still works.
+interface DatasetRow extends Omit<DatasetItem, 'modality'> {
+  modality?: DatasetItem['modality']
   description?: string
   tags?: string[]
   versions?: Array<{ version: string; status?: string; sample_count?: number; created_at?: string }>
