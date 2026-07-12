@@ -81,33 +81,8 @@ export default {
     start: 'Запустить', // TODO: native review
     updatedAt: 'Обновлено', // TODO: native review
     user: 'Пользователь', // TODO: native review,
-    add: 'Добавить', // TODO: native review
-    apply: 'Применить', // TODO: native review
-    approve: 'Одобрить', // TODO: native review
-    archived: 'В архиве', // TODO: native review
-    automatic: 'Автоматически', // TODO: native review
-    backup: 'Резервная копия', // TODO: native review
-    closed: 'Закрыто', // TODO: native review
-    decline: 'Отклонить', // TODO: native review
-    deleted: 'Удалено', // TODO: native review
-    description: 'Описание', // TODO: native review
-    draft: 'Черновик', // TODO: native review
-    export: 'Экспорт', // TODO: native review
-    goTo: 'Перейти', // TODO: native review
-    import: 'Импорт', // TODO: native review
-    inProgress: 'В процессе', // TODO: native review
-    label: 'Метка', // TODO: native review
-    language: 'Язык', // TODO: native review
-    notStarted: 'Не начато', // TODO: native review
-    operationFailed: 'Операция не выполнена', // TODO: native review
-    paused: 'Приостановлено', // TODO: native review
-    project: 'Проект', // TODO: native review
-    question: 'Вопрос', // TODO: native review
-    recommended: 'Рекомендуется', // TODO: native review
-    start: 'Запустить', // TODO: native review
-    updatedAt: 'Обновлено', // TODO: native review
-    user: 'Пользователь', // TODO: native review
   },
+
   nav: {
     dashboard: '仪表盘',
     dataset: '数据集',
@@ -416,4 +391,5 @@ export default {
     t059: 'Reviewer feedback'
 
 
-  },
+  }
+};

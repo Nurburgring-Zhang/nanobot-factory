@@ -81,33 +81,8 @@ export default {
     start: 'Starten', // TODO: native review
     updatedAt: 'Aktualisiert am', // TODO: native review
     user: 'Benutzer', // TODO: native review,
-    add: 'Hinzufügen', // TODO: native review
-    apply: 'Anwenden', // TODO: native review
-    approve: 'Genehmigen', // TODO: native review
-    archived: 'Archiviert', // TODO: native review
-    automatic: 'Automatisch', // TODO: native review
-    backup: 'Sicherung', // TODO: native review
-    closed: 'Geschlossen', // TODO: native review
-    decline: 'Ablehnen', // TODO: native review
-    deleted: 'Gelöscht', // TODO: native review
-    description: 'Beschreibung', // TODO: native review
-    draft: 'Entwurf', // TODO: native review
-    export: 'Exportieren', // TODO: native review
-    goTo: 'Gehe zu', // TODO: native review
-    import: 'Importieren', // TODO: native review
-    inProgress: 'In Bearbeitung', // TODO: native review
-    label: 'Bezeichnung', // TODO: native review
-    language: 'Sprache', // TODO: native review
-    notStarted: 'Nicht gestartet', // TODO: native review
-    operationFailed: 'Vorgang fehlgeschlagen', // TODO: native review
-    paused: 'Pausiert', // TODO: native review
-    project: 'Projekt', // TODO: native review
-    question: 'Frage', // TODO: native review
-    recommended: 'Empfohlen', // TODO: native review
-    start: 'Starten', // TODO: native review
-    updatedAt: 'Aktualisiert am', // TODO: native review
-    user: 'Benutzer', // TODO: native review
   },
+
   nav: {
     dashboard: '仪表盘',
     dataset: '数据集',
@@ -416,4 +391,5 @@ export default {
     t059: 'Reviewer feedback'
 
 
-  },
+  }
+};

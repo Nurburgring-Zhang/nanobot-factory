@@ -81,33 +81,8 @@ export default {
     start: 'بدء', // TODO: native review
     updatedAt: 'تم التحديث في', // TODO: native review
     user: 'المستخدم', // TODO: native review,
-    add: 'إضافة', // TODO: native review
-    apply: 'تطبيق', // TODO: native review
-    approve: 'موافقة', // TODO: native review
-    archived: 'مؤرشف', // TODO: native review
-    automatic: 'تلقائي', // TODO: native review
-    backup: 'نسخ احتياطي', // TODO: native review
-    closed: 'مغلق', // TODO: native review
-    decline: 'رفض', // TODO: native review
-    deleted: 'محذوف', // TODO: native review
-    description: 'الوصف', // TODO: native review
-    draft: 'مسودة', // TODO: native review
-    export: 'تصدير', // TODO: native review
-    goTo: 'انتقال إلى', // TODO: native review
-    import: 'استيراد', // TODO: native review
-    inProgress: 'قيد التنفيذ', // TODO: native review
-    label: 'تسمية', // TODO: native review
-    language: 'اللغة', // TODO: native review
-    notStarted: 'لم تبدأ', // TODO: native review
-    operationFailed: 'فشلت العملية', // TODO: native review
-    paused: 'متوقف مؤقتاً', // TODO: native review
-    project: 'المشروع', // TODO: native review
-    question: 'سؤال', // TODO: native review
-    recommended: 'موصى به', // TODO: native review
-    start: 'بدء', // TODO: native review
-    updatedAt: 'تم التحديث في', // TODO: native review
-    user: 'المستخدم', // TODO: native review
   },
+
   nav: {
     dashboard: '仪表盘',
     dataset: '数据集',
@@ -415,4 +390,5 @@ export default {
     t059: 'ملاحظات المراجعين'
 
 
-  },
+  }
+};

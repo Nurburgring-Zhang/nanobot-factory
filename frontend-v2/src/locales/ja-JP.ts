@@ -81,33 +81,8 @@ export default {
     start: '開始', // TODO: native review
     updatedAt: '更新日時', // TODO: native review
     user: 'ユーザー', // TODO: native review,
-    add: '追加', // TODO: native review
-    apply: '適用', // TODO: native review
-    approve: '承認', // TODO: native review
-    archived: 'アーカイブ済み', // TODO: native review
-    automatic: '自動', // TODO: native review
-    backup: 'バックアップ', // TODO: native review
-    closed: '終了', // TODO: native review
-    decline: '拒否', // TODO: native review
-    deleted: '削除済み', // TODO: native review
-    description: '説明', // TODO: native review
-    draft: '下書き', // TODO: native review
-    export: 'エクスポート', // TODO: native review
-    goTo: '移動', // TODO: native review
-    import: 'インポート', // TODO: native review
-    inProgress: '進行中', // TODO: native review
-    label: 'ラベル', // TODO: native review
-    language: '言語', // TODO: native review
-    notStarted: '未開始', // TODO: native review
-    operationFailed: '操作に失敗しました', // TODO: native review
-    paused: '一時停止', // TODO: native review
-    project: 'プロジェクト', // TODO: native review
-    question: '質問', // TODO: native review
-    recommended: 'おすすめ', // TODO: native review
-    start: '開始', // TODO: native review
-    updatedAt: '更新日時', // TODO: native review
-    user: 'ユーザー', // TODO: native review
   },
+
   nav: {
     dashboard: '仪表盘',
     dataset: '数据集',
@@ -416,4 +391,5 @@ export default {
     t059: 'Reviewer feedback'
 
 
-  },
+  }
+};

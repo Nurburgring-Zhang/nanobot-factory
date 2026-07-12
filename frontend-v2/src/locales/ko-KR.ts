@@ -81,33 +81,8 @@ export default {
     start: '시작', // TODO: native review
     updatedAt: '업데이트 시간', // TODO: native review
     user: '사용자', // TODO: native review,
-    add: '추가', // TODO: native review
-    apply: '적용', // TODO: native review
-    approve: '승인', // TODO: native review
-    archived: '보관됨', // TODO: native review
-    automatic: '자동', // TODO: native review
-    backup: '백업', // TODO: native review
-    closed: '종료', // TODO: native review
-    decline: '거절', // TODO: native review
-    deleted: '삭제됨', // TODO: native review
-    description: '설명', // TODO: native review
-    draft: '초안', // TODO: native review
-    export: '내보내기', // TODO: native review
-    goTo: '이동', // TODO: native review
-    import: '가져오기', // TODO: native review
-    inProgress: '진행 중', // TODO: native review
-    label: '라벨', // TODO: native review
-    language: '언어', // TODO: native review
-    notStarted: '시작 안 함', // TODO: native review
-    operationFailed: '작업 실패', // TODO: native review
-    paused: '일시 중지', // TODO: native review
-    project: '프로젝트', // TODO: native review
-    question: '질문', // TODO: native review
-    recommended: '추천', // TODO: native review
-    start: '시작', // TODO: native review
-    updatedAt: '업데이트 시간', // TODO: native review
-    user: '사용자', // TODO: native review
   },
+
   nav: {
     dashboard: '仪表盘',
     dataset: '数据集',
@@ -416,4 +391,5 @@ export default {
     t059: 'Reviewer feedback'
 
 
-  },
+  }
+};

@@ -385,4 +385,5 @@ export default {
     t059: 'Reviewer feedback'
 
 
-  },
+  }
+};
