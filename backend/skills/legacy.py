@@ -259,6 +259,17 @@ class SkillManager:
         ):
             inst = cls()
             self.skills[inst.name] = inst
+        # P22-P1c: Register 50 builtin handlers as fully-functional BaseSkill
+        # subclasses. Previously these were metadata-only; now they execute
+        # for real (HTTP fetches, hash dedup, JSON I/O, etc.). See
+        # backend/skills_builtin_handlers.py for the per-spec implementations.
+        try:
+            from backend.skills_builtin_handlers import all_handlers as _all_handlers
+            for hid, handler in _all_handlers().items():
+                self.skills[hid] = handler
+        except Exception as e:  # pragma: no cover - keep core 5 working if builtin broken
+            import logging
+            logging.getLogger(__name__).warning("could not register builtin handlers: %s", e)
 
     def get_skill(self, name: str) -> Optional[BaseSkill]:
         return self.skills.get(name)
