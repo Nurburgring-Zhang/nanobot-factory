@@ -112,6 +112,11 @@ def _verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 # ── JWT Configuration ─────────────────────────────────────────────────────
+# P10-C: RFC 7519 标准声明 (iss / aud) — 与 backend.auth.unified_auth 一致
+JWT_ISSUER = "nanobot-factory"
+JWT_AUDIENCE = "nanobot-factory-api"
+JWT_MIN_SECRET_LENGTH = 16  # 与 audit_chain.AuditChain 阈值一致
+
 JWT_SECRET = os.environ.get("JWT_SECRET")
 if JWT_SECRET is None or JWT_SECRET == "change-me-in-production":
     # 测试环境允许默认值, 但记录警告; 生产启动时由部署环境强制设置。
@@ -121,6 +126,13 @@ if JWT_SECRET is None or JWT_SECRET == "change-me-in-production":
             "或 IMDF_TEST_MODE=1 使用开发默认值。"
         )
     JWT_SECRET = "test-secret-DO-NOT-USE-IN-PROD-" + secrets.token_hex(8)
+
+# P10-C: 启动时校验 secret 强度 (与 AuditChain / unified_auth 一致)
+if len(JWT_SECRET) < JWT_MIN_SECRET_LENGTH:
+    raise RuntimeError(
+        f"JWT_SECRET too short ({len(JWT_SECRET)} chars, min {JWT_MIN_SECRET_LENGTH}). "
+        "Use a strong random secret (e.g. `python -c 'import secrets; print(secrets.token_urlsafe(32))'`)."
+    )
 
 SECRET_KEY = JWT_SECRET
 ALGORITHM = "HS256"
@@ -441,6 +453,9 @@ class AuthService:
         to_encode.update({
             "exp": expire,
             "iat": cls._now_utc(),
+            # P10-C: RFC 7519 §4.1.1 / §4.1.3 / §4.1.7 标准声明
+            "iss": JWT_ISSUER,
+            "aud": JWT_AUDIENCE,
             "jti": secrets.token_urlsafe(16),
             "type": TOKEN_TYPE_ACCESS,
         })
@@ -453,6 +468,9 @@ class AuthService:
         to_encode.update({
             "exp": expire,
             "iat": cls._now_utc(),
+            # P10-C: RFC 7519 标准声明
+            "iss": JWT_ISSUER,
+            "aud": JWT_AUDIENCE,
             "jti": secrets.token_urlsafe(16),
             "type": TOKEN_TYPE_REFRESH,
         })
@@ -461,7 +479,11 @@ class AuthService:
     @staticmethod
     def decode_token(token: str) -> dict:
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            # P10-C: 默认 disable verify_aud / verify_iss 保持向后兼容
+            payload = jwt.decode(
+                token, SECRET_KEY, algorithms=[ALGORITHM],
+                options={"verify_aud": False, "verify_iss": False},
+            )
         except JWTError as e:
             raise HTTPException(status_code=401, detail=f"Invalid or expired token: {e}")
         jti = payload.get("jti")

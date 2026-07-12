@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 SortOrder = Literal["asc", "desc"]
 MAX_LIMIT = 200
@@ -24,5 +24,4 @@ class PaginationParams(BaseModel):
     )
     order: SortOrder = Field(default="asc", description="排序方向")
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")

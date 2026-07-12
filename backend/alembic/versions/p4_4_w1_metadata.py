@@ -1,4 +1,19 @@
-"""P4-4-W1: 10 metadata tables for dataset_service (OpenMetadata-inspired).
+"""⚠️  DEPRECATED — legacy chain (P21 P2 P5, 2026-07-11) ⚠️
+
+This file lives in the **legacy alembic chain** at ``backend/alembic/``.
+Per ``reports/p21_r2_audit_db.md`` §N1, the canonical chain is
+``backend/imdf/alembic/`` (env.py:37 points to ``Base.metadata`` and
+its 7 migrations cover all 14 imdf ORM tables).  The legacy chain's
+``env.py`` points to a hand-coded ``MetaData()`` with tables
+(``assets``/``folders``/``tags``/``datasets``) that have no ORM model,
+and the legacy ``p13_c1_p99_db.py:97-100`` creates a GIN index on a
+table (``audit_chain_entries``) that the legacy chain's own env.py
+never creates.
+
+This file is kept in place (not deleted) because some test DBs stamp
+its revision into ``alembic_version``.  Use the imdf chain instead.
+
+P4-4-W1: 10 metadata tables for dataset_service (OpenMetadata-inspired).
 
 Creates:
   md_databases / md_schemas / md_tables / md_columns / md_datasets /

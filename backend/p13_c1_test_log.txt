@@ -1,0 +1,32 @@
+﻿============================= test session starts =============================
+collecting ... collected 27 items
+
+tests/test_p13_c1_p99_db.py::TestBuildPgEngineKwargs::test_default_pool_size_10 PASSED [  3%]
+tests/test_p13_c1_p99_db.py::TestBuildPgEngineKwargs::test_env_overrides PASSED [  7%]
+tests/test_p13_c1_p99_db.py::TestBuildPgEngineKwargs::test_postgres_scheme_normalized PASSED [ 11%]
+tests/test_p13_c1_p99_db.py::TestBuildPgEngineKwargs::test_statement_timeout_in_connect_args PASSED [ 14%]
+tests/test_p13_c1_p99_db.py::TestSqliteFallback::test_top_slow_queries_returns_empty_on_sqlite PASSED [ 18%]
+tests/test_p13_c1_p99_db.py::TestSqliteFallback::test_missing_index_hints_returns_empty_on_sqlite PASSED [ 22%]
+tests/test_p13_c1_p99_db.py::TestSqliteFallback::test_pool_usage_returns_empty_on_sqlite PASSED [ 25%]
+tests/test_p13_c1_p99_db.py::TestSqliteFallback::test_top_slow_queries_handles_missing_extension PASSED [ 29%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[postgresql://u@h/d-postgresql] PASSED [ 33%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[postgresql+psycopg2://u@h/d-postgresql] PASSED [ 37%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[postgresql+asyncpg://u@h/d-postgresql] PASSED [ 40%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[postgres://u@h/d-postgresql] PASSED [ 44%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[POSTGRES://U@H/D-postgresql] PASSED [ 48%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[sqlite:///foo.db-sqlite] PASSED [ 51%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[sqlite:////abs/path.db-sqlite] PASSED [ 55%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[mysql://u@h/d-unknown] PASSED [ 59%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_detect_dialect[-unknown] PASSED [ 62%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_is_postgres_url[postgres://u@h/d-True] PASSED [ 66%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_is_postgres_url[postgresql://u@h/d-True] PASSED [ 70%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_is_postgres_url[postgresql+psycopg2://u@h/d-True] PASSED [ 74%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_is_postgres_url[sqlite:///foo.db-False] PASSED [ 77%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_is_postgres_url[mysql://u@h/d-False] PASSED [ 81%]
+tests/test_p13_c1_p99_db.py::TestUrlHelpers::test_is_postgres_url[-False] PASSED [ 85%]
+tests/test_p13_c1_p99_db.py::TestPostgresManagerPool::test_pool_size_default_from_env PASSED [ 88%]
+tests/test_p13_c1_p99_db.py::TestPostgresManagerPool::test_all_overrides PASSED [ 92%]
+tests/test_p13_c1_p99_db.py::TestPostgresManagerPool::test_explicit_kwargs_override_env PASSED [ 96%]
+tests/test_p13_c1_p99_db.py::TestListTasksOffsetFix::test_offset_uses_parameter PASSED [100%]
+
+============================= 27 passed in 0.43s ==============================

@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,10 +14,11 @@ logger = logging.getLogger(__name__)
 async def data_annotation_run(request: Request):
     """运行标注管线"""
     body = await request.json()
-    image_dir = body.get("image_dir", "")
+    # P21 P2 P2 — path-traversal guard on image_dir and output_dir.
+    image_dir = validated_path(body.get("image_dir", ""))
     formats = body.get("formats", ["coco"])
     auto_label = body.get("auto_label", False)
-    output_dir = body.get("output_dir", "./data/annotations")
+    output_dir = validated_path(body.get("output_dir", "./data/annotations"))
 
     if not image_dir or not os.path.exists(image_dir):
         raise HTTPException(status_code=400, detail="Image directory not found")
@@ -39,8 +43,9 @@ async def data_annotation_convert(request: Request):
     body = await request.json()
     input_format = body.get("input_format", "coco")
     output_format = body.get("output_format", "yolo")
-    input_path = body.get("input_path", "")
-    output_dir = body.get("output_dir", "./data/annotations")
+    # P21 P2 P2 — path-traversal guard on input_path and output_dir.
+    input_path = validated_path(body.get("input_path", ""))
+    output_dir = validated_path(body.get("output_dir", "./data/annotations"))
 
     from data_annotation_pipeline import AnnotationConverter, AnnotationDataset, AnnotationFormat
 

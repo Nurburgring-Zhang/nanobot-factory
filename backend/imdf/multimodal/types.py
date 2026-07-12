@@ -17,13 +17,24 @@ from typing import Any, Dict, List, Optional, Union
 
 
 class ModalKind(str, Enum):
-    """Five first-class modalities handled by the cross-modal stack."""
+    """Nine first-class modalities handled by the cross-modal stack.
+
+    V5 §十 spec — 9 modalities. P21 R1-#1 audit (P0): prior version had only
+    5 (IMAGE/VIDEO/AUDIO/DOCUMENT/TEXT); 3D / LIDAR / MEDICAL / PANOPTIC were
+    absent. P21 P2 P2 fix (2026-07-11) added the 4 missing members; adding
+    new enum members is backward-compatible — existing string comparisons
+    (e.g. ``ModalKind("image")``) keep working unchanged.
+    """
 
     IMAGE = "image"
     VIDEO = "video"
     AUDIO = "audio"
     DOCUMENT = "document"
     TEXT = "text"
+    THREE_D = "3d"           # NEW (P21 P2 P2) — point clouds, meshes, glTF, 3D scenes
+    LIDAR = "lidar"          # NEW (P21 P2 P2) — autonomous-driving scans (.las/.pcd)
+    MEDICAL = "medical"      # NEW (P21 P2 P2) — DICOM (.dcm) / NIfTI (.nii) volumes
+    PANOPTIC = "panoptic"    # NEW (P21 P2 P2) — panoptic segmentation masks
 
 
 class UnderstandingTask(str, Enum):

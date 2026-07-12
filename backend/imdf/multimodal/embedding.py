@@ -638,6 +638,105 @@ import json  # noqa: E402  (kept near bottom to avoid early import in tests)
 import os  # noqa: E402
 
 
+# ---------------------------------------------------------------------------
+# P10-B compatibility shim — `get_embedding(ref)` for RAG / routes.
+#
+# Bridges the old ``MultimodalEmbedder.embed(ref) -> Embedding`` interface
+# (512-dim) to the new unified 1024-dim ``MultiModalEmbedder.encode_one`` API.
+# ---------------------------------------------------------------------------
+_GLOBAL_EMBEDDER: Optional[MultiModalEmbedder] = None
+_GLOBAL_EMBEDDER_LOCK = threading.Lock()
+
+
+def get_global_embedder() -> MultiModalEmbedder:
+    """Process-level singleton — lazy init."""
+    global _GLOBAL_EMBEDDER
+    if _GLOBAL_EMBEDDER is None:
+        with _GLOBAL_EMBEDDER_LOCK:
+            if _GLOBAL_EMBEDDER is None:
+                _GLOBAL_EMBEDDER = MultiModalEmbedder()
+    return _GLOBAL_EMBEDDER
+
+
+def _ref_to_embedding_request(ref: Any) -> EmbeddingRequest:
+    """Convert a ``MediaRef`` (or dict with the same shape) to ``EmbeddingRequest``."""
+    # Lazy import to avoid circular import (types imports parser base, parser imports types)
+    kind = getattr(ref, "kind", None)
+    url = getattr(ref, "url", None) or ""
+    data_b64 = getattr(ref, "data_b64", None)
+    text = getattr(ref, "text", None) or ""
+    mime = getattr(ref, "mime", None) or ""
+    short_id = getattr(ref, "short_id", lambda: "")()
+    short_id = short_id or "ref"
+    if kind is None and isinstance(ref, dict):
+        kind = ref.get("kind") or ref.get("modality")
+        url = ref.get("url") or url
+        data_b64 = ref.get("data_b64") or data_b64
+        text = ref.get("text") or text
+        mime = ref.get("mime") or mime
+        short_id = ref.get("short_id") or short_id
+    kind_str = str(getattr(kind, "value", kind) or "text").lower()
+    if kind_str == "text":
+        return EmbeddingRequest(
+            entity_type="generic", entity_id=short_id,
+            modality=MODALITY_TEXT, text=text, metadata={"url": url, "mime": mime},
+        )
+    if kind_str == "image":
+        return EmbeddingRequest(
+            entity_type="generic", entity_id=short_id,
+            modality=MODALITY_IMAGE, base64=data_b64,
+            metadata={"url": url, "mime": mime},
+        )
+    if kind_str == "audio":
+        return EmbeddingRequest(
+            entity_type="generic", entity_id=short_id,
+            modality=MODALITY_AUDIO, base64=data_b64,
+            metadata={"url": url, "mime": mime},
+        )
+    if kind_str == "video":
+        return EmbeddingRequest(
+            entity_type="generic", entity_id=short_id,
+            modality=MODALITY_VIDEO, base64=data_b64,
+            metadata={"url": url, "mime": mime},
+        )
+    # P19 v5.1: business modality tag (3d_pointcloud / lidar / medical_dicom / panoptic)
+    # is carried in metadata["modality_id"].  When present we treat the ref
+    # as a document with text pre-populated (the embedder will hash bytes).
+    biz_modality_id = None
+    try:
+        meta = getattr(ref, "meta", None)
+        if isinstance(meta, dict):
+            biz_modality_id = meta.get("modality_id") or meta.get("business_modality")
+        elif isinstance(ref, dict):
+            biz_modality_id = (ref.get("meta") or {}).get("modality_id")
+    except Exception:  # noqa: BLE001
+        biz_modality_id = None
+    if biz_modality_id in {"three_d_pointcloud", "lidar", "medical_dicom", "panoptic_segmentation"}:
+        return EmbeddingRequest(
+            entity_type=biz_modality_id, entity_id=short_id,
+            modality=MODALITY_DOCUMENT, text=text,
+            metadata={"url": url, "mime": mime, "modality_id": biz_modality_id},
+        )
+    # document + unknown — treat as document, fall back to text content
+    return EmbeddingRequest(
+        entity_type="generic", entity_id=short_id,
+        modality=MODALITY_DOCUMENT, text=text,
+        metadata={"url": url, "mime": mime},
+    )
+
+
+def get_embedding(ref: Any, *, embedder: Optional[MultiModalEmbedder] = None) -> List[float]:
+    """Compatibility shim — convert a ``MediaRef`` to a 1024-dim L2-normalised vector.
+
+    Used by ``MultimodalRAG`` (and any other code that previously called
+    ``MultimodalEmbedder.embed(ref).vector`` from the old 512-dim API).
+    """
+    emb = embedder or get_global_embedder()
+    req = _ref_to_embedding_request(ref)
+    rec = emb.encode_one(req)
+    return list(rec.vector)
+
+
 # Re-export list -----------------------------------------------------------
 __all__ = [
     "MultiModalEmbedder",
@@ -650,4 +749,6 @@ __all__ = [
     "_AudioEncoder",
     "_DocumentEncoder",
     "_VideoEncoder",
+    "get_embedding",
+    "get_global_embedder",
 ]

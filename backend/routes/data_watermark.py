@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,7 +14,8 @@ logger = logging.getLogger(__name__)
 async def data_watermark_visible(request: Request):
     """添加可见水印"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     text = body.get("text", "NanoBot")
 
     if not image_path or not os.path.exists(image_path):
@@ -33,7 +37,8 @@ async def data_watermark_visible(request: Request):
 async def data_watermark_invisible(request: Request):
     """嵌入不可见水印"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     message = body.get("message", "")
 
     if not image_path or not os.path.exists(image_path):
@@ -55,7 +60,8 @@ async def data_watermark_invisible(request: Request):
 async def data_watermark_detect(request: Request):
     """检测不可见水印"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     message = body.get("message", "")
 
     if not image_path or not os.path.exists(image_path):

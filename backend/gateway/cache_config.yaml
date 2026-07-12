@@ -1,0 +1,24 @@
+# =====================================================================
+# Cache configuration
+# =====================================================================
+# Loaded by backend/gateway/cache.py::CacheConfig
+# ---------------------------------------------------------------------
+
+cache:
+  backend: auto               # auto | redis | fakeredis | memory
+  redis_url: redis://127.0.0.1:6379/0
+  prefix: "gw:"
+  default_ttl_seconds: 60
+  max_value_bytes: 1048576   # 1 MiB
+  connect_timeout_seconds: 2.0
+
+  # Only safe methods are cached
+  methods:
+    - GET
+    - HEAD
+
+  # Bypass these paths (fnmatch)
+  bypass_paths:
+    - /healthz
+    - /readyz
+    - /_gw/*

@@ -127,17 +127,24 @@ class PostgresManager:
     def __init__(
         self,
         dsn: str = None,
-        pool_size: int = 20,
-        max_overflow: int = 10,
+        pool_size: int = None,
+        max_overflow: int = None,
+        pool_recycle: int = None,
+        statement_timeout_ms: int = None,
         echo: bool = False
     ):
         """
         初始化 PostgreSQL 管理器
 
+        P13-C1 调优: pool_size / max_overflow / pool_recycle / statement_timeout
+        都从环境变量读取, 允许 ops 调优, 默认值见函数体.
+
         Args:
             dsn: PostgreSQL 连接字符串
-            pool_size: 连接池大小
-            max_overflow: 最大溢出连接数
+            pool_size: 连接池大小 (默认 IMDF_PG_POOL_SIZE=10)
+            max_overflow: 最大溢出连接数 (默认 IMDF_PG_MAX_OVERFLOW=20)
+            pool_recycle: 连接回收秒数 (默认 1800s = 30min, 避免 stale conn)
+            statement_timeout_ms: SQL 超时 (默认 30000ms = 30s, 防止慢 SQL 拖死池)
             echo: 是否打印SQL语句
         """
         self.dsn = dsn or os.getenv(
@@ -148,8 +155,12 @@ class PostgresManager:
         # 创建异步引擎
         self.engine = None
         self.pool = None
-        self.pool_size = pool_size
-        self.max_overflow = max_overflow
+        self.pool_size = pool_size or int(os.getenv("IMDF_PG_POOL_SIZE", "10"))
+        self.max_overflow = max_overflow or int(os.getenv("IMDF_PG_MAX_OVERFLOW", "20"))
+        self.pool_recycle = pool_recycle or int(os.getenv("IMDF_PG_POOL_RECYCLE", "1800"))
+        self.statement_timeout_ms = statement_timeout_ms or int(
+            os.getenv("IMDF_PG_STATEMENT_TIMEOUT_MS", "30000")
+        )
         self.echo = echo
 
         # 连接池
@@ -165,24 +176,35 @@ class PostgresManager:
             raise RuntimeError("PostgreSQL 驱动未安装")
 
         try:
-            # 创建连接池
+            # 创建连接池 (P13-C1: 加 min_size + max_inactive_connection_lifetime + command_timeout)
             self._connection = await asyncpg.create_pool(
                 self.dsn,
-                min_size=5,
-                max_size=self.pool_size
+                min_size=int(os.getenv("IMDF_PG_POOL_MIN", "2")),
+                max_size=self.pool_size,
+                max_inactive_connection_lifetime=self.pool_recycle,
+                command_timeout=self.statement_timeout_ms / 1000.0,
             )
 
             # 创建SQLAlchemy引擎（用于ORM）
             # 转换 dsn 格式 (postgresql:// -> postgresql+asyncpg://)
             async_dsn = self.dsn.replace("postgresql://", "postgresql+asyncpg://")
 
+            # P13-C1: pool_recycle + connect_args server_settings (statement_timeout 等)
             self.engine = create_async_engine(
                 async_dsn,
                 poolclass=AsyncAdaptedQueuePool,
                 pool_size=self.pool_size,
                 max_overflow=self.max_overflow,
+                pool_recycle=self.pool_recycle,
                 echo=self.echo,
-                pool_pre_ping=True
+                pool_pre_ping=True,
+                connect_args={
+                    "server_settings": {
+                        "application_name": "imdf-backend",
+                        "statement_timeout": str(self.statement_timeout_ms),
+                        "idle_in_transaction_session_timeout": "60000",
+                    },
+                },
             )
 
             # 创建会话工厂
@@ -534,7 +556,8 @@ class PostgresManager:
             params["status"] = status
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-        query = f"SELECT * FROM tasks {where_clause} ORDER BY created_at DESC LIMIT $1 OFFSET 2"
+        # P13-C1: 修复 typo — 原 OFFSET 2 应为 OFFSET $2 (字面 2 永远只跳过 2 行)
+        query = f"SELECT * FROM tasks {where_clause} ORDER BY created_at DESC LIMIT $1 OFFSET $2"
 
         return await self.execute(query, params)
 

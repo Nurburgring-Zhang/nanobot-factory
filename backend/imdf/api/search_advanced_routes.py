@@ -22,7 +22,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from collections import Counter
 
 from fastapi import APIRouter, HTTPException, Body, Query
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,8 @@ class MultimodalRequest(BaseModel):
     top_k: int = Field(default=10, ge=1, le=100)
     content_types: Optional[List[str]] = Field(default=None)
 
-    @validator("text", "image_url", "audio_url")
+    @field_validator("text", "image_url", "audio_url")
+    @classmethod
     def at_least_one_input(cls, v, values):
         # Will be checked in endpoint
         return v
@@ -218,7 +219,8 @@ def _get_or_seed_index() -> List[Dict]:
         _seed_test_data()
 
     with _get_db() as conn:
-        rows = conn.execute("SELECT * FROM search_index").fetchall()
+        # P13-C1 优化: 加 LIMIT 1000 (避免大表全表扫描, 后续按需分页)
+        rows = conn.execute("SELECT * FROM search_index LIMIT 1000").fetchall()
 
     return [dict(r) for r in rows]
 

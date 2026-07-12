@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,7 +14,8 @@ logger = logging.getLogger(__name__)
 async def data_mllm_llava(request: Request):
     """生成LLaVA标准多轮对话"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     caption = body.get("caption", "")
     num_turns = body.get("num_turns", 3)
 
@@ -34,7 +38,8 @@ async def data_mllm_llava(request: Request):
 async def data_mllm_sharegpt4v(request: Request):
     """生成ShareGPT4V格式详细描述"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     caption = body.get("caption", "")
 
     if not image_path or not os.path.exists(image_path):
@@ -57,7 +62,14 @@ async def data_mllm_sharegpt4v(request: Request):
 async def data_mllm_interleaved(request: Request):
     """生成交错图文格式"""
     body = await request.json()
-    items = body.get("items", [])
+    # P21 P2 P2 — path-traversal guard on every nested ``image`` field.
+    raw_items = body.get("items", [])
+    items = [
+        {**it, "image": validated_path(it.get("image", ""))}
+        if isinstance(it, dict) and "image" in it
+        else it
+        for it in raw_items
+    ]
     # items: [{"text": "...", "image": "path"}, ...]
 
     if not items:
@@ -89,7 +101,8 @@ async def data_mllm_interleaved(request: Request):
 async def data_mllm_qwenvl(request: Request):
     """生成Qwen-VL格式（含OCR/版面分析）"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     caption = body.get("caption", "")
 
     if not image_path or not os.path.exists(image_path):

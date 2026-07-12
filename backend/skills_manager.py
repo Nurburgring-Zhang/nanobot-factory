@@ -1009,3 +1009,190 @@ def get_skills_api() -> SkillsAPI:
     if _skills_api is None:
         _skills_api = SkillsAPI()
     return _skills_api
+
+
+# =============================================================================
+# V5.1 附录 D — SkillRegistry (P19 v5.1-B)
+# 在已有 SkillsRegistry 的基础上,提供 V5.1 dataclass-based 风格的注册表
+# 不与既有 SkillsRegistry 冲突,作为并列组件存在。
+# =============================================================================
+
+class SkillRegistryV51:
+    """
+    V5.1 SkillRegistry — 处理 SkillSpec 的注册 / 查询 / 触发匹配
+
+    Methods:
+        register(skill)           : 注册 SkillSpec
+        get(skill_id)             : 取回 SkillSpec
+        list_by_category(cat)     : 按 category 过滤
+        search(query)             : 关键字模糊搜索
+        trigger_match(phrase)     : 根据 trigger_phrases 匹配
+        to_json() / from_json()   : 序列化 / 反序列化
+    """
+
+    def __init__(self) -> None:
+        # skill_id -> SkillSpec
+        self._skills: Dict[str, Any] = {}
+        # category -> [skill_id]
+        self._by_category: Dict[str, List[str]] = {}
+        # 触发短语 lower -> skill_id (用于 trigger_match)
+        self._trigger_index: Dict[str, str] = {}
+        # 触发短语列表缓存(用于 in-place 查询)
+        self._all_triggers: Dict[str, str] = {}
+
+    # ---------- register ----------
+    def register(self, skill: Any) -> bool:
+        """注册一个 SkillSpec;重复 id 抛 ValueError"""
+        if getattr(skill, "id", None) is None:
+            raise ValueError("SkillSpec.id is required")
+        if skill.id in self._skills:
+            raise ValueError(f"Duplicate skill id: {skill.id}")
+        self._skills[skill.id] = skill
+
+        cat = getattr(skill, "category", "general") or "general"
+        self._by_category.setdefault(cat, []).append(skill.id)
+
+        for trig in getattr(skill, "trigger_phrases", []) or []:
+            key = trig.lower().strip()
+            if key:
+                self._trigger_index[key] = skill.id
+                self._all_triggers[key] = skill.id
+
+        logger.info("SkillRegistryV51.register %s (cat=%s)", skill.id, cat)
+        return True
+
+    def register_all(self, skills) -> int:
+        n = 0
+        for s in skills:
+            try:
+                self.register(s)
+                n += 1
+            except ValueError:
+                pass
+        return n
+
+    # ---------- 查询 ----------
+    def get(self, skill_id: str) -> Optional[Any]:
+        return self._skills.get(skill_id)
+
+    def list_by_category(self, category: str) -> List[Any]:
+        ids = self._by_category.get(category, [])
+        return [self._skills[i] for i in ids if i in self._skills]
+
+    def list_categories(self) -> List[str]:
+        return sorted(self._by_category.keys())
+
+    def all_ids(self) -> List[str]:
+        return list(self._skills.keys())
+
+    def __len__(self) -> int:
+        return len(self._skills)
+
+    def __contains__(self, skill_id: str) -> bool:
+        return skill_id in self._skills
+
+    # ---------- search ----------
+    def search(self, query: str, limit: int = 10) -> List[Any]:
+        """按 name / description / category / trigger phrase 模糊搜索"""
+        if not query:
+            return []
+        q = query.lower().strip()
+        results: List[tuple] = []
+        for sid, skill in self._skills.items():
+            score = 0
+            name = (getattr(skill, "name", "") or "").lower()
+            desc = (getattr(skill, "description", "") or "").lower()
+            cat = (getattr(skill, "category", "") or "").lower()
+
+            if q in name:
+                score += 10
+            if q in desc:
+                score += 5
+            if q in cat:
+                score += 3
+            for trig in getattr(skill, "trigger_phrases", []) or []:
+                if q in trig.lower():
+                    score += 7
+                    break
+            if score > 0:
+                results.append((score, sid, skill))
+
+        results.sort(key=lambda r: (-r[0], r[1]))
+        return [r[2] for r in results[:limit]]
+
+    # ---------- trigger_match ----------
+    def trigger_match(self, trigger_phrase: str) -> Optional[Any]:
+        """根据触发短语精确匹配(若不存在则子串模糊匹配第一个)"""
+        if not trigger_phrase:
+            return None
+        key = trigger_phrase.lower().strip()
+        # 1) 精确
+        sid = self._trigger_index.get(key)
+        if sid:
+            return self._skills.get(sid)
+        # 2) 子串匹配
+        for trig, sid in self._all_triggers.items():
+            if key in trig or trig in key:
+                return self._skills.get(sid)
+        return None
+
+    # ---------- 序列化 ----------
+    def to_json(self, indent: int = 2) -> str:
+        import json
+        data = {
+            "version": "v5.1",
+            "count": len(self._skills),
+            "categories": self.list_categories(),
+            "skills": [s.to_dict() if hasattr(s, "to_dict") else dict(s) for s in self._skills.values()],
+        }
+        return json.dumps(data, indent=indent, ensure_ascii=False)
+
+    def from_json(self, json_str: str) -> int:
+        import json
+        data = json.loads(json_str)
+        n = 0
+        for sd in data.get("skills", []):
+            try:
+                if hasattr(_skill_spec_factory(), "from_dict"):
+                    skill = type(self._skills[next(iter(self._skills))]).from_dict(sd)
+                else:
+                    continue
+            except Exception:
+                # fallback: construct via kwargs
+                try:
+                    skill = next(iter(self._skills.values())).__class__(**{k: sd[k] for k in sd if k != "metadata"})
+                except Exception:
+                    continue
+            try:
+                self.register(skill)
+                n += 1
+            except ValueError:
+                pass
+        return n
+
+    # ---------- 初始化 helper ----------
+    @staticmethod
+    def from_builtin(builtin_list) -> "SkillRegistryV51":
+        """从 BUILTIN_SKILLS 列表构造一个注册表"""
+        reg = SkillRegistryV51()
+        for s in builtin_list:
+            try:
+                reg.register(s)
+            except ValueError as e:
+                logger.warning("skip duplicate: %s", e)
+        return reg
+
+
+# helper for from_json type reconstruction
+def _skill_spec_factory():
+    """返回示例 SkillSpec (用于推断 class)"""
+    try:
+        from backend.skills import SkillSpec
+        return SkillSpec(id="__sample__", name="sample", category="sample")
+    except Exception:
+        return None
+
+
+# Alias: 同时暴露 SkillRegistry 名字给任务调用方
+SkillRegistry = SkillRegistryV51
+

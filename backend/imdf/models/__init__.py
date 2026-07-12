@@ -45,6 +45,7 @@ from typing import List, Optional
 
 from sqlalchemy import (
     JSON,
+    Date,
     DateTime,
     Float,
     Index,
@@ -102,7 +103,14 @@ class User(Base):
 
 
 class Project(Base):
-    """项目表 — 业务侧 ID 为 ``proj_<8-hex>``。"""
+    """项目表 — 业务侧 ID 为 ``proj_<8-hex>``。
+
+    P5-R1-T1 ProjectCenter 扩展字段 (新增, 默认空/中等, 不破坏 legacy 数据):
+    - priority: P0/P1/P2/P3 (默认 P1)
+    - tags: JSON 列表 (默认 [])
+    - start_date: ISO date 字符串 (默认 "")
+    - due_date:   ISO date 字符串 (默认 "")
+    """
 
     __tablename__ = "projects"
 
@@ -113,12 +121,19 @@ class Project(Base):
     owner: Mapped[str] = mapped_column(String(64), default="unknown", nullable=False)
     members: Mapped[List[str]] = mapped_column(JSON, default=list)
 
+    # ── P5-R1-T1 新增字段 ────────────────────────────────────────────────────
+    priority: Mapped[str] = mapped_column(String(8), default="P1", nullable=False)
+    tags: Mapped[List[str]] = mapped_column(JSON, default=list)
+    start_date: Mapped[Optional[str]] = mapped_column(String(32), default="")
+    due_date: Mapped[Optional[str]] = mapped_column(String(32), default="")
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now, nullable=False)
 
     __table_args__ = (
         Index("ix_projects_status", "status"),
         Index("ix_projects_owner", "owner"),
+        Index("ix_projects_priority", "priority"),
     )
 
     def to_dict(self) -> dict:
@@ -128,7 +143,12 @@ class Project(Base):
             "description": self.description or "",
             "status": self.status,
             "owner": self.owner,
+            "owner_id": self.owner,  # P5-R1-T1: alias for ProjectCenter spec
             "members": list(self.members or []),
+            "priority": self.priority or "P1",
+            "tags": list(self.tags or []),
+            "start_date": self.start_date or "",
+            "due_date": self.due_date or "",
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -252,6 +272,18 @@ from models.workflow import Workflow  # noqa: E402,F401
 from models.agent import AgentTask  # noqa: E402,F401
 from models.audit_chain_entry import AuditChainEntry  # noqa: E402,F401
 
+# ════════════════════════════════════════════════════════════════════════════
+# P5-R1-T1 ProjectCenter — ProjectMember + ProjectTimelineEvent
+# ════════════════════════════════════════════════════════════════════════════
+from models.project import ProjectMember, ProjectTimelineEvent  # noqa: E402,F401
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Depth-7 — RequirementEngine 持久化 (RequirementRow + TaskRow)
+# 把 in-memory dict 升级成 SQLAlchemy ORM, 跨进程 / 跨重启持久
+# ════════════════════════════════════════════════════════════════════════════
+from models.requirement import RequirementRow, TaskRow  # noqa: E402,F401
+
 
 # ════════════════════════════════════════════════════════════════════════════
 # register_all — 触发所有 model import
@@ -278,6 +310,12 @@ __all__ = [
     "Workflow",
     "AgentTask",
     "AuditChainEntry",
+    # P5-R1-T1 ProjectCenter
+    "ProjectMember",
+    "ProjectTimelineEvent",
+    # Depth-7 RequirementEngine 持久化
+    "RequirementRow",
+    "TaskRow",
     # 注册
     "register_all",
 ]

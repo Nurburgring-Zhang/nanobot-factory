@@ -48,6 +48,15 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=6, max_length=128)
 
 
+class LogoutRequest(BaseModel):
+    """登出请求 — 可选传 token 显式吊销 (默认从 Authorization header 取)."""
+    revoke_refresh_token: bool = Field(
+        default=True,
+        description="是否同时吊销 refresh token (强烈建议 True)",
+    )
+    reason: str = Field(default="user_logout", max_length=64)
+
+
 # ---- 认证依赖 ----
 
 async def get_current_user(request: Request) -> Dict[str, Any]:
@@ -124,6 +133,60 @@ async def refresh_token(body: RefreshRequest):
 async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
     """获取当前用户信息"""
     return {"user": current_user}
+
+
+@router.post("/logout")
+async def logout(
+    request: Request,
+    body: Optional[LogoutRequest] = None,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    """
+    用户登出 — 立即吊销当前 access token (P10R4-1 / HIDDEN-2).
+
+    OWASP A07 对标: 登出必须使旧 token 立即失效, 不能依赖客户端删除.
+    流程:
+      1. 从 Authorization header 提取 access token
+      2. 调用 mgr.revoke_token(token, reason="user_logout")
+      3. 可选: 同时吊销 refresh token (防止凭 refresh 续命)
+      4. 审计日志记录
+    """
+    auth = _get_auth()
+    body = body or LogoutRequest()
+
+    # 1. 提取 access token
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[7:] if auth_header.startswith("Bearer ") else None
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Authorization header")
+
+    # 2. 吊销 access token
+    metadata = {
+        "user_id": current_user.get("user_id"),
+        "username": current_user.get("username"),
+        "ip": request.client.host if request.client else None,
+        "user_agent": request.headers.get("User-Agent", "")[:200],
+        "reason_detail": body.reason,
+    }
+    revoked = auth.revoke_token(token, reason=body.reason, metadata=metadata)
+
+    # 3. 审计日志
+    auth._audit(
+        action="auth.logout",
+        user_id=current_user.get("user_id", ""),
+        result="success" if revoked else "already_revoked",
+        ip_address=request.client.host if request.client else None,
+        details={
+            "token_revoked": revoked,
+            "reason": body.reason,
+        },
+    )
+
+    return {
+        "message": "Logged out successfully",
+        "token_revoked": revoked,
+    }
 
 
 @router.get("/users")

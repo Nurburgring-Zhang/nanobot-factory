@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,7 +14,8 @@ logger = logging.getLogger(__name__)
 async def data_video_assess(request: Request):
     """视频质量全面评估"""
     body = await request.json()
-    video_path = body.get("video_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    video_path = validated_path(body.get("video_path", ""))
     caption = body.get("caption", "")
 
     if not video_path or not os.path.exists(video_path):
@@ -50,7 +54,8 @@ async def data_video_assess(request: Request):
 async def data_video_filter(request: Request):
     """视频过滤（对齐Open-Sora标准）"""
     body = await request.json()
-    video_path = body.get("video_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    video_path = validated_path(body.get("video_path", ""))
     caption = body.get("caption", "")
 
     if not video_path or not os.path.exists(video_path):
@@ -70,7 +75,9 @@ async def data_video_filter(request: Request):
 async def data_video_dedup(request: Request):
     """视频去重（placeholder — 使用视频hash近似检测）"""
     body = await request.json()
-    video_paths = body.get("video_paths", [])
+    # P21 P2 P2 — path-traversal guard on every element of the list.
+    raw_paths = body.get("video_paths", [])
+    video_paths = [validated_path(p) for p in raw_paths]
 
     if not video_paths:
         raise HTTPException(status_code=400, detail="No video paths provided")
@@ -120,10 +127,11 @@ async def data_video_dedup(request: Request):
 async def data_video_export_jsonl(request: Request):
     """导出JSONL（Open-Sora / Panda-70M格式）"""
     body = await request.json()
-    video_path = body.get("video_path", "")
+    # P21 P2 P2 — path-traversal guard on both video_path and output_path.
+    video_path = validated_path(body.get("video_path", ""))
     caption = body.get("caption", "")
     format_type = body.get("format", "opensora")
-    output_path = body.get("output_path", "")
+    output_path = validated_path(body.get("output_path", ""))
 
     if not video_path or not os.path.exists(video_path):
         raise HTTPException(status_code=400, detail="Video path not found")

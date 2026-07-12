@@ -171,33 +171,49 @@ async def get_agent(agent_type: str) -> Dict[str, Any]:
 @router.post("/api/v1/agents/{agent_type}/run")
 async def run_agent(agent_type: str, body: RunAgentRequest) -> Dict[str, Any]:
     """Submit + run an agent inline.  Returns the execution result."""
+    import time as _t
+    _t0 = _t.perf_counter()
+    _status = "ok"
     try:
-        get_agent_config(agent_type)
-    except KeyError:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"unknown_agent_type:{agent_type}",
+        try:
+            get_agent_config(agent_type)
+        except KeyError:
+            _status = "error"
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND,
+                detail=f"unknown_agent_type:{agent_type}",
+            )
+        cfg = get_agent_config(agent_type)
+        mode = body.mode or (
+            cfg["default_mode"].value
+            if isinstance(cfg["default_mode"], ExecutionMode)
+            else cfg["default_mode"]
         )
-    cfg = get_agent_config(agent_type)
-    mode = body.mode or (
-        cfg["default_mode"].value
-        if isinstance(cfg["default_mode"], ExecutionMode)
-        else cfg["default_mode"]
-    )
-    priority = body.priority if body.priority is not None else cfg["default_priority"]
-    store = get_store()
-    task = store.create(
-        agent_type=agent_type,
-        payload=body.payload,
-        mode=mode,
-        priority=priority,
-        max_retries=cfg["max_retries"],
-        timeout_seconds=cfg["timeout_seconds"],
-        submitted_by=body.submitted_by or "anonymous",
-    )
-    executor = get_executor()
-    result = executor.run(task.task_id)
-    return {"task": task.to_dict(), "result": result}
+        priority = body.priority if body.priority is not None else cfg["default_priority"]
+        store = get_store()
+        task = store.create(
+            agent_type=agent_type,
+            payload=body.payload,
+            mode=mode,
+            priority=priority,
+            max_retries=cfg["max_retries"],
+            timeout_seconds=cfg["timeout_seconds"],
+            submitted_by=body.submitted_by or "anonymous",
+        )
+        executor = get_executor()
+        result = executor.run(task.task_id)
+        return {"task": task.to_dict(), "result": result}
+    finally:
+        try:
+            from monitoring.observability import record_request
+            record_request(
+                "agent_service",
+                status=_status,
+                latency_ms=(_t.perf_counter() - _t0) * 1000.0,
+                error_kind="not_found" if _status == "error" else None,
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
 
 # ── /api/v1/agent_tasks ────────────────────────────────────────────────────
@@ -555,52 +571,82 @@ async def tool_audit(
     since_seq: int = 0,
     verify: bool = True,
 ) -> Dict[str, Any]:
-    """Return HMAC-signed tool audit records (P6-Fix-B-3 / P6-3 F-3.5).
+    """Return tool audit records (P6-Fix-B-3 / P6-3 F-3.5 / P10-A-D1).
+
+    Two views are exposed in the response so both the lightweight
+    ``ToolRegistry`` audit contract (``chain`` key, ``duration_ms``) and
+    the HMAC-signed ``ToolAuditChain`` contract (``records`` key,
+    ``latency_ms``) are satisfied from a single endpoint:
 
     Query params
     ------------
     limit     : int  — max rows to return (default 100, capped at 1000)
     tool      : str  — filter by tool name (exact match)
     actor     : str  — filter by actor (exact match)
-    since_seq : int  — return only records with seq > since_seq
+    since_seq : int  — return only HMAC records with seq > since_seq
     verify    : bool — run HMAC verify_chain and include integrity status
 
     Response
     --------
     {
-      "count":     int,
+      "count":     int,           # echoes the applied limit
       "limit":     int,
       "tool":      str | None,
       "actor":     str | None,
       "since_seq": int,
-      "chain_ok":  bool | None,  # None when verify=False or chain unavailable
-      "bad_seq":   int,          # -1 when chain_ok=True/None
-      "records":   [ToolAuditRecord, ...]
+      "chain_ok":  bool | None,   # None when verify=False or chain unavailable
+      "bad_seq":   int,           # -1 when chain_ok=True/None
+      "chain":     [AuditEntry, ...]      # in-memory records, has duration_ms
+      "records":   [ToolAuditRecord, ...] # HMAC-signed records, has latency_ms
+      "fallback":  "in_memory" | None
     }
     """
     safe_limit = max(1, min(int(limit), 1000))
+
+    # 1. In-memory chain — always available, has ``duration_ms`` so the
+    #    lightweight ``/audit`` consumer (test_tools.py) can iterate over
+    #    the recent invocations without needing the HMAC chain.  We
+    #    apply the optional tool / actor filters in-process.
+    in_memory = get_tool_registry().audit_chain(limit=safe_limit)
+    if tool:
+        in_memory = [e for e in in_memory if e.get("tool") == tool]
+    if actor:
+        in_memory = [e for e in in_memory if e.get("actor") == actor]
+
+    # 2. HMAC chain — best effort, exposes the integrity proof
+    #    (``chain_ok`` / ``bad_seq``) and signed records.
+    chain_ok: Optional[bool] = None
+    bad_seq: int = -1
+    hmac_records: List[Dict[str, Any]] = []
+    hmac_ok = False
     try:
         from services.agent_service.tools.audit import get_tool_audit_chain
-        return get_tool_audit_chain().query(
+        hmac_result = get_tool_audit_chain().query(
             tool=tool,
             actor=actor,
             limit=safe_limit,
             since_seq=int(since_seq),
             verify=bool(verify),
         )
+        chain_ok = hmac_result.get("chain_ok")
+        bad_seq = hmac_result.get("bad_seq", -1)
+        hmac_records = list(hmac_result.get("records", []))
+        hmac_ok = True
     except Exception as exc:  # noqa: BLE001
-        logger.warning("tool audit endpoint fallback to in-memory chain: %s", exc)
-        return {
-            "count": safe_limit,
-            "limit": safe_limit,
-            "tool": tool,
-            "actor": actor,
-            "since_seq": since_seq,
-            "chain_ok": None,
-            "bad_seq": -1,
-            "records": get_tool_registry().audit_chain(limit=safe_limit),
-            "fallback": "in_memory",
-        }
+        logger.warning("tool audit endpoint HMAC fallback: %s", exc)
+
+    return {
+        "count": safe_limit,
+        "limit": safe_limit,
+        "tool": tool,
+        "actor": actor,
+        "since_seq": since_seq,
+        "chain_ok": chain_ok,
+        "bad_seq": bad_seq,
+        "chain": in_memory,
+        "records": hmac_records,
+        "fallback": None if hmac_ok else "hmac_unavailable",
+    }
 
 
 @router.get("/api/v1/agent/tools/audit/verify")

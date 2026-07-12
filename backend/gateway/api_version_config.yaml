@@ -1,0 +1,32 @@
+# =====================================================================
+# API version configuration
+# =====================================================================
+# Loaded by backend/gateway/api_version.py::ApiVersionConfig
+#
+# supported_versions  – versions advertised in X-API-Version
+# default_version     – fallback when no /api/<v>/ prefix, Accept header
+#                        or X-API-Version request header is present
+# deprecation         – per-deprecated-version messages
+# =====================================================================
+
+api_version:
+  supported_versions:
+    - v1
+    - v2
+  default_version: v1
+
+  deprecation:
+    # v1 is the legacy version; v2 ships native SSE + improved auth
+    deprecated_versions:
+      - v1
+    sunset_date: "2026-12-31"
+    # P0 #2 — enforcement date (added 2026-07-01).
+    # Past this date, requests for any version in ``deprecated_versions``
+    # return HTTP 410 Gone with a JSON migration payload.  Defaults to
+    # sunset_date + 30 days if omitted.  Set explicitly to override.
+    enforce_after: "2027-01-30"
+    successor_version: v2
+    docs_url: "https://docs.imdf.example.com/api/v1-deprecation"
+    extra:
+      reason: "v2 ships native SSE + scoped JWT; please migrate."
+      contact: "platform-team@imdf.example.com"

@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,9 +14,10 @@ logger = logging.getLogger(__name__)
 async def data_video_caption(request: Request):
     """视频Caption — 全局叙事/逐帧描述/分段描述"""
     body = await request.json()
-    video_path = body.get("video_path", "")
+    # P21 P2 P2 — path-traversal guard on video_path and output_dir.
+    video_path = validated_path(body.get("video_path", ""))
+    output_dir = validated_path(body.get("output_dir", "./data/video_caption"))
     mode = body.get("mode", "full")  # full / narrative / segments / opensora
-    output_dir = body.get("output_dir", "./data/video_caption")
     interval = body.get("frame_interval", 30)
 
     if not video_path or not os.path.exists(video_path):
@@ -50,9 +54,10 @@ async def data_video_pipeline(request: Request):
     """运行视频数据生产管线"""
     body = await request.json()
 
-    input_video = body.get("input_video", "")
-    input_dir = body.get("input_dir", "")
-    output_dir = body.get("output_dir", "./data/video_output")
+    # P21 P2 P2 — path-traversal guard on input_video / input_dir / output_dir.
+    input_video = validated_path(body.get("input_video", ""))
+    input_dir = validated_path(body.get("input_dir", ""))
+    output_dir = validated_path(body.get("output_dir", "./data/video_output"))
 
     from data_video_pipeline import VideoPipeline, VideoPipelineConfig
 

@@ -1,11 +1,28 @@
-"""Production pipeline API routes — multi-tenant batch data production"""
+"""Production pipeline API routes — multi-tenant batch data production.
 
-from fastapi import APIRouter, HTTPException, Query, Body
+P21 P2 P1 — security P0 fix (R2-09 / R2-NEW-06):
+  All state-changing endpoints now require admin role via
+  ``common.auth.require_role_dep("admin")``. Previously, ``POST /api/v2/users``
+  had **no auth check** at all, allowing unauthenticated callers to mint
+  themselves an admin user and obtain a long-lived ``api_key`` (full tenant
+  takeover). The unauthenticated ``create_user`` reproducer now returns 401
+  with no DB write and no api_key leak.
+"""
+
+from fastapi import APIRouter, HTTPException, Query, Body, Depends
 from typing import Optional, Dict, Any, List
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# P21 P2 P1: Admin guard for state-changing endpoints.
+# require_role_dep("admin") → 401 if no/invalid Authorization header,
+# 403 if role is not "admin", otherwise injects the user dict.
+from common.auth import require_role_dep
+
+_admin_required = require_role_dep("admin")
+_authenticated_only = require_role_dep("admin", "team_lead", "annotator", "reviewer", "viewer")
 
 # 延迟导入避免循环依赖
 def _get_user_mgr():
@@ -25,13 +42,23 @@ def _get_data_mgr():
 # ---- 用户管理 ----
 
 @router.get("/api/v2/users")
-async def list_users():
+async def list_users(_user: Dict[str, Any] = Depends(_admin_required)):
     um = _get_user_mgr()
     users = um.get_all_users()
     return [{"id": u.id, "username": u.username, "role": u.role.value, "is_active": u.is_active, "created_at": u.created_at} for u in users]
 
 @router.post("/api/v2/users")
-async def create_user(body: dict = Body(...)):
+async def create_user(
+    body: dict = Body(...),
+    _user: Dict[str, Any] = Depends(_admin_required),
+):
+    """P21 P2 P1: now requires admin auth (R2-09 / R2-NEW-06 fix).
+
+    Before: anyone (no Authorization header) could POST
+    ``{"username":"x","role":"admin"}`` and receive 200 with a long-lived
+    ``api_key``. After: 401 without auth, 403 for non-admin, 200 only for
+    legitimate admin callers.
+    """
     from core.multi_tenant import UserRole
     um = _get_user_mgr()
     role_str = body.get("role", "viewer")
@@ -43,7 +70,7 @@ async def create_user(body: dict = Body(...)):
     return {"id": user.id, "username": user.username, "role": user.role.value, "api_key": user.api_key}
 
 @router.get("/api/v2/users/{user_id}")
-async def get_user(user_id: str):
+async def get_user(user_id: str, _user: Dict[str, Any] = Depends(_authenticated_only)):
     um = _get_user_mgr()
     user = um.get_user(user_id)
     if not user:
@@ -53,13 +80,16 @@ async def get_user(user_id: str):
 # ---- 项目管理 ----
 
 @router.get("/api/v2/projects")
-async def list_projects(user_id: str = Query(...)):
+async def list_projects(user_id: str = Query(...), _user: Dict[str, Any] = Depends(_authenticated_only)):
     um = _get_user_mgr()
     projects = um.get_user_projects(user_id)
     return [{"id": p.id, "name": p.name, "dataset_count": p.dataset_count, "created_at": p.created_at} for p in projects]
 
 @router.post("/api/v2/projects")
-async def create_project(body: dict = Body(...)):
+async def create_project(
+    body: dict = Body(...),
+    _user: Dict[str, Any] = Depends(_admin_required),
+):
     um = _get_user_mgr()
     project = um.create_project(body.get("user_id", ""), body.get("name", "unnamed"), body.get("description", ""))
     if not project:
@@ -69,13 +99,16 @@ async def create_project(body: dict = Body(...)):
 # ---- 数据集管理 ----
 
 @router.get("/api/v2/datasets")
-async def list_datasets(project_id: str = Query(...)):
+async def list_datasets(project_id: str = Query(...), _user: Dict[str, Any] = Depends(_authenticated_only)):
     dm = _get_data_mgr()
     datasets = dm.get_project_datasets(project_id)
     return [{"id": d.id, "name": d.name, "data_type": d.data_type.value, "row_count": d.row_count, "version": d.current_version} for d in datasets]
 
 @router.post("/api/v2/datasets")
-async def create_dataset(body: dict = Body(...)):
+async def create_dataset(
+    body: dict = Body(...),
+    _user: Dict[str, Any] = Depends(_admin_required),
+):
     from core.data_manager import DataType
     dm = _get_data_mgr()
     ds = dm.create_dataset(
@@ -87,7 +120,11 @@ async def create_dataset(body: dict = Body(...)):
     return {"id": ds.id, "name": ds.name, "root_path": ds.root_path}
 
 @router.post("/api/v2/datasets/{dataset_id}/data")
-async def add_data(dataset_id: str, body: dict = Body(...)):
+async def add_data(
+    dataset_id: str,
+    body: dict = Body(...),
+    _user: Dict[str, Any] = Depends(_admin_required),
+):
     dm = _get_data_mgr()
     records = body.get("records", [])
     count = dm.add_data(dataset_id, records)
@@ -96,7 +133,11 @@ async def add_data(dataset_id: str, body: dict = Body(...)):
     return {"added": count}
 
 @router.post("/api/v2/datasets/{dataset_id}/version")
-async def create_version(dataset_id: str, notes: str = ""):
+async def create_version(
+    dataset_id: str,
+    notes: str = "",
+    _user: Dict[str, Any] = Depends(_admin_required),
+):
     dm = _get_data_mgr()
     v = dm.create_version(dataset_id, notes)
     if not v:
@@ -104,7 +145,12 @@ async def create_version(dataset_id: str, notes: str = ""):
     return {"version": v.version, "row_count": v.row_count, "total_size_mb": v.total_size_mb}
 
 @router.get("/api/v2/datasets/{dataset_id}/export")
-async def export_dataset(dataset_id: str, format: str = Query("llava_json"), output_path: str = Query("")):
+async def export_dataset(
+    dataset_id: str,
+    format: str = Query("llava_json"),
+    output_path: str = Query(""),
+    _user: Dict[str, Any] = Depends(_authenticated_only),
+):
     from core.data_manager import ExportFormat
     dm = _get_data_mgr()
     try:
@@ -119,14 +165,17 @@ async def export_dataset(dataset_id: str, format: str = Query("llava_json"), out
 # ---- 批量生产 ----
 
 @router.post("/api/v2/production/tasks")
-async def create_task(body: dict = Body(...)):
+async def create_task(
+    body: dict = Body(...),
+    _user: Dict[str, Any] = Depends(_admin_required),
+):
     from core.batch_engine import PipelineType
     be = _get_batch_engine()
     try:
         pt = PipelineType(body.get("pipeline_type", "custom"))
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid pipeline type")
-    
+
     task = be.create_task(
         body.get("project_id", ""),
         body.get("user_id", ""),
@@ -139,7 +188,7 @@ async def create_task(body: dict = Body(...)):
     return {"id": task.id, "pipeline_type": pt.value, "status": task.status.value}
 
 @router.get("/api/v2/tasks/{task_id}")
-async def get_task_status(task_id: str):
+async def get_task_status(task_id: str, _user: Dict[str, Any] = Depends(_authenticated_only)):
     be = _get_batch_engine()
     task = be.get_task(task_id)
     if not task:
@@ -151,7 +200,7 @@ async def get_task_status(task_id: str):
     }
 
 @router.post("/api/v2/tasks/{task_id}/start")
-async def start_task(task_id: str):
+async def start_task(task_id: str, _user: Dict[str, Any] = Depends(_admin_required)):
     be = _get_batch_engine()
     task = be.get_task(task_id)
     if not task:
@@ -163,7 +212,7 @@ async def start_task(task_id: str):
     return {"status": "started", "task_id": task_id}
 
 @router.post("/api/v2/tasks/{task_id}/cancel")
-async def cancel_task(task_id: str):
+async def cancel_task(task_id: str, _user: Dict[str, Any] = Depends(_admin_required)):
     be = _get_batch_engine()
     ok = be.cancel_task(task_id)
     if not ok:
@@ -171,7 +220,7 @@ async def cancel_task(task_id: str):
     return {"status": "cancelled"}
 
 @router.get("/api/v2/production/stats/{project_id}")
-async def get_project_stats(project_id: str):
+async def get_project_stats(project_id: str, _user: Dict[str, Any] = Depends(_authenticated_only)):
     dm = _get_data_mgr()
     stats = dm.get_project_stats(project_id)
     return stats

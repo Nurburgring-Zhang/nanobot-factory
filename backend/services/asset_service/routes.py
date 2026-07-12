@@ -189,6 +189,12 @@ class AddItemRequest(BaseModel):
 
 @router.post("/api/v1/items/add", response_model=Dict[str, Any])
 async def add_item(body: AddItemRequest):
+    # P19-D1 — Prometheus counter.inc() on asset write.
+    try:
+        from monitoring.observability import record_request
+        record_request("asset_service", status="ok")
+    except Exception:  # noqa: BLE001
+        pass
     db_path = os.path.join(_data_dir(), "resource_library.db")
     if not os.path.exists(db_path):
         # Auto-init a minimal table so the API is functional even before

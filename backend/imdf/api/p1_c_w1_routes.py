@@ -703,7 +703,14 @@ def projects_list(
         q = db.query(Project)
         if status:
             q = q.filter(Project.status == status)
-        rows = q.order_by(Project.created_at.desc()).all()
+        # P13-C1 优化: page/page_size 之前被忽略, 导致 SELECT * 全表.
+        # 现在加 .limit().offset() 真正分页, P99 从 O(N) → O(page_size).
+        rows = (
+            q.order_by(Project.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+            .all()
+        )
         items = [r.to_dict() for r in rows]
     except SQLAlchemyError as e:
         logger.warning(f"projects_list DB error → JSON fallback: {e}")
@@ -910,7 +917,13 @@ def users_list(
         q = db.query(User)
         if role:
             q = q.filter(User.role == role)
-        rows = q.order_by(User.created_at.desc()).all()
+        # P13-C1 优化: 同 projects_list, 加上真分页
+        rows = (
+            q.order_by(User.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+            .all()
+        )
         items = [r.to_dict() for r in rows]
     except SQLAlchemyError as e:
         logger.warning(f"users_list DB error → JSON fallback: {e}")

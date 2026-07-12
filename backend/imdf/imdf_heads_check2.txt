@@ -1,0 +1,6 @@
+﻿imdf alembic heads: ['0004_billing']
+Migration chain (just file listing):
+  0001_initial.py
+  0002_usage_log.py
+  0003_pg_models.py
+  0004_billing.py

@@ -21,6 +21,10 @@ from .webhooks import (
 )
 from .webhooks_routes import router as webhooks_router
 
+# P10-E: Field-level AES-256-GCM encryption for sensitive fields
+# (API keys, PII, payment cards) — see common/encryption.py
+from .encryption import FieldEncryption, EncryptionError
+
 
 __all__ = [
     # Original surface
@@ -36,4 +40,6 @@ __all__ = [
     "SUPPORTED_EVENTS", "SIGNATURE_HEADER", "WebhookSubscription", "EmitRecord",
     "register_webhook", "list_webhooks", "get_webhook", "delete_webhook", "update_webhook",
     "emit", "list_emits", "_reset_webhooks", "webhooks_router",
+    # P10-E encryption
+    "FieldEncryption", "EncryptionError",
 ]

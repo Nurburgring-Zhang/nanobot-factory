@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,7 +14,8 @@ logger = logging.getLogger(__name__)
 async def data_edit_generate(request: Request):
     """为单张图像生成编辑指令数据"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     edit_type = body.get("edit_type", None)
     params = body.get("params", None)
 
@@ -41,7 +45,9 @@ async def data_edit_generate(request: Request):
 async def data_edit_batch(request: Request):
     """批量生成编辑指令"""
     body = await request.json()
-    images = body.get("images", [])
+    # P21 P2 P2 — path-traversal guard on every element of the list.
+    raw_images = body.get("images", [])
+    images = [validated_path(p) for p in raw_images]
     edit_types = body.get("edit_types", None)
     n_per_image = body.get("n_per_image", 1)
 

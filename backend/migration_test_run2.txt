@@ -1,0 +1,101 @@
+﻿D:\ComfyUI\.ext\python.exe : Traceback (most recent call last):
+所在位置 行:1 字符: 101
++ ... t_test.db"; D:\ComfyUI\.ext\python.exe -m alembic -c alembic.ini upgr ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: table md_databases already exists
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\__main__.py", line 4, in <module>
+    main(prog="alembic")
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\config.py", line 988, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\config.py", line 978, in main
+    self.run_cmd(cfg, options)
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\config.py", line 912, in run_cmd
+    fn(
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\command.py", line 483, in upgrade
+    script.run_env()
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\script\base.py", line 551, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\util\pyfiles.py", line 114, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\util\pyfiles.py", line 134, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\alembic\env.py", line 226, in <module>
+    run_migrations_online()
+  File "D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\alembic\env.py", line 220, in run_migrations_online
+    context.run_migrations()
+  File "<string>", line 8, in run_migrations
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\runtime\environment.py", line 946, in run_migrations
+    self.get_context().run_migrations(**kw)
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\runtime\migration.py", line 623, in run_migrations
+    step.migration_fn(**kw)
+  File "D:\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\alembic\versions\p4_4_w1_metadata.py", line 30, in upgrade
+    op.create_table(
+  File "<string>", line 8, in create_table
+  File "<string>", line 3, in create_table
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\operations\ops.py", line 1332, in create_table
+    return operations.invoke(op)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\operations\base.py", line 441, in invoke
+    return fn(self, operation)
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\operations\toimpl.py", line 135, in create_table
+    operations.impl.create_table(table, **kw)
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\ddl\impl.py", line 423, in create_table
+    self._exec(schema.CreateTable(table, **kw))
+  File "D:\ComfyUI\.ext\Lib\site-packages\alembic\ddl\impl.py", line 246, in _exec
+    return conn.execute(construct, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\sql\ddl.py", line 187, in _execute_on_connection
+    return connection._execute_ddl(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\base.py", line 1530, in _execute_ddl
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\ComfyUI\.ext\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) table md_databases already exists
+[SQL: 
+CREATE TABLE md_databases (
+	id VARCHAR(32) NOT NULL, 
+	name VARCHAR(128) NOT NULL, 
+	service VARCHAR(64) DEFAULT 'custom' NOT NULL, 
+	description TEXT DEFAULT '', 
+	host VARCHAR(256) DEFAULT '', 
+	port VARCHAR(8) DEFAULT '', 
+	created_at VARCHAR(32) NOT NULL, 
+	updated_at VARCHAR(32) NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE (name)
+)
+
+]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)

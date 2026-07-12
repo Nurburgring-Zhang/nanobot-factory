@@ -1,0 +1,75 @@
+# =====================================================================
+# CORS configuration
+# =====================================================================
+# Loaded by backend/gateway/cors.py::CorsConfig
+# ---------------------------------------------------------------------
+
+cors:
+  enabled: true
+
+  # Fallback applied when no origin-specific entry matches
+  default:
+    origin: "*"
+    methods: [GET, POST, OPTIONS]
+    headers: ["*"]
+    credentials: false
+    max_age: 600
+
+  origins:
+    # Local development
+    - origin: http://localhost:8080
+      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+      headers: ["*"]
+      credentials: true
+      max_age: 86400
+      expose_headers:
+        - X-Request-ID
+        - X-RateLimit-Limit
+        - X-RateLimit-Burst
+        - X-API-Version
+
+    - origin: http://localhost:5173
+      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+      headers: ["*"]
+      credentials: true
+      max_age: 86400
+      expose_headers:
+        - X-Request-ID
+        - X-RateLimit-Limit
+        - X-RateLimit-Burst
+        - X-API-Version
+
+    - origin: http://127.0.0.1:8080
+      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+      headers: ["*"]
+      credentials: true
+      max_age: 86400
+
+    # Production web
+    - origin: https://app.imdf.example.com
+      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+      headers: [Content-Type, Authorization, X-Request-ID, X-API-Version]
+      credentials: true
+      max_age: 86400
+      expose_headers:
+        - X-Request-ID
+        - X-RateLimit-Limit
+        - X-RateLimit-Burst
+        - X-RateLimit-Pattern
+        - X-API-Version
+        - Deprecation
+        - Sunset
+
+    # Production marketing / docs (read-only)
+    - origin: https://docs.imdf.example.com
+      methods: [GET, OPTIONS]
+      headers: [Content-Type]
+      credentials: false
+      max_age: 604800
+
+    # Wildcard subdomain for partner tenants
+    - origin: "*.partners.imdf.example.com"
+      methods: [GET, POST, OPTIONS]
+      headers: [Content-Type, Authorization]
+      credentials: true
+      max_age: 3600

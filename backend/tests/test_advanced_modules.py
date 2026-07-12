@@ -235,14 +235,16 @@ class TestSecurityAuth:
     def test_jwt_manager_create_token(self):
         """测试JWT令牌创建"""
         from security.auth import JWTManager, Permission
-        manager = JWTManager("test_secret_key")
+        # P11-B: 使用 >= 16 字符 secret (RFC 7519 §3 + OWASP A02)
+        manager = JWTManager("test_secret_key_32chars_long_aaaa")
         token = manager.create_token("user_001", [Permission.USER_READ])
         assert len(token) > 0
 
     def test_jwt_manager_verify_token(self):
         """测试JWT令牌验证"""
         from security.auth import JWTManager, Permission
-        manager = JWTManager("test_secret_key")
+        # P11-B: 使用 >= 16 字符 secret (RFC 7519 §3 + OWASP A02)
+        manager = JWTManager("test_secret_key_32chars_long_bbbb")
         token = manager.create_token("user_001", [Permission.USER_READ])
         payload = manager.verify_token(token)
         assert payload is not None
@@ -258,20 +260,23 @@ class TestSecurityAuth:
     def test_auth_manager_init(self):
         """测试认证管理器初始化"""
         from security.auth import AuthManager
-        auth = AuthManager("jwt_secret_123")
+        # P11-B: 使用 >= 16 字符 secret (RFC 7519 §3 + OWASP A02)
+        auth = AuthManager("jwt_secret_32chars_test_aaaa")
         assert "admin" in auth.users
 
     def test_auth_manager_register(self):
         """测试用户注册"""
         from security.auth import AuthManager, UserRole
-        auth = AuthManager("jwt_secret_123")
+        # P11-B: 使用 >= 16 字符 secret (RFC 7519 §3 + OWASP A02)
+        auth = AuthManager("jwt_secret_32chars_test_bbbb")
         user_id = auth.register_user("newuser", "new@example.com", "pass123", UserRole.USER)
         assert user_id.startswith("user_")
 
     def test_auth_manager_authenticate(self):
         """测试用户认证"""
         from security.auth import AuthManager
-        auth = AuthManager("jwt_secret_123")
+        # P11-B: 使用 >= 16 字符 secret (RFC 7519 §3 + OWASP A02)
+        auth = AuthManager("jwt_secret_32chars_test_cccc")
         token = auth.authenticate("admin", "admin123")
         assert token is not None
 
@@ -285,7 +290,8 @@ class TestSecurityAuth:
     def test_access_controller(self):
         """测试访问控制器"""
         from security.auth import AccessController, AuthManager
-        auth = AuthManager("secret")
+        # P11-B: 使用 >= 16 字符 secret (RFC 7519 §3 + OWASP A02)
+        auth = AuthManager("access_controller_secret_32")
         controller = AccessController(auth)
         assert controller.auth_manager is not None
 

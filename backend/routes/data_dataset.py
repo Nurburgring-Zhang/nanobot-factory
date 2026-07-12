@@ -4,6 +4,9 @@ import os
 import logging
 from typing import Optional
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -17,9 +20,11 @@ logger = logging.getLogger(__name__)
 async def data_dataset_export(request: Request):
     """导出数据集"""
     body = await request.json()
-    input_dir = body.get("input_dir", "")
+    # P21 P2 P2 — path-traversal guard on every user-supplied path.
+    # Raises 400 (HTTPException) on '..', absolute path, '~', or empty.
+    input_dir = validated_path(body.get("input_dir", ""))
+    output_path = validated_path(body.get("output_path", "./data/dataset_export"))
     format_type = body.get("format", "hf_json")
-    output_path = body.get("output_path", "./data/dataset_export")
     split_ratios = body.get("split_ratios", [0.8, 0.1, 0.1])
 
     if not input_dir or not os.path.exists(input_dir):
@@ -47,7 +52,9 @@ async def data_dataset_export(request: Request):
 @router.get("/api/data/dataset/stats")
 async def data_dataset_stats(request: Request):
     """数据集统计"""
-    path = request.query_params.get("path", "./data/dataset_export")
+    # P21 P2 P2 — path-traversal guard on user-supplied query path.
+    raw_path = request.query_params.get("path", "./data/dataset_export")
+    path = validated_path(raw_path)
 
     if not os.path.exists(path):
         raise HTTPException(status_code=400, detail="Dataset path not found")

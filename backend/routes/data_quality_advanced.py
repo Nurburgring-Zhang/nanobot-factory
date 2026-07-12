@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,7 +14,8 @@ logger = logging.getLogger(__name__)
 async def data_quality_advanced(request: Request):
     """高级质量评分 — 美学/NSFW/人脸质量/水印检测全覆盖"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
     caption = body.get("caption", "")
 
     if not image_path or not os.path.exists(image_path):
@@ -44,7 +48,9 @@ async def data_quality_advanced(request: Request):
 async def data_quality_advanced_batch(request: Request):
     """批量高级质量评分 + 分布分析"""
     body = await request.json()
-    image_paths = body.get("image_paths", [])
+    # P21 P2 P2 — path-traversal guard on every element of the list.
+    raw_paths = body.get("image_paths", [])
+    image_paths = [validated_path(p) for p in raw_paths]
     captions = body.get("captions", [])
 
     if not image_paths:

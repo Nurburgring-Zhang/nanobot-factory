@@ -34,6 +34,8 @@ from api._common.body_schemas import (
     RequirementAssign,
     RequirementVerify,
     RequirementClose,
+    RequirementReassign,
+    RequirementUpdateMeta,
     OSSUploadRequest,
     OSSSyncRequest,
 )
@@ -443,42 +445,219 @@ def compare_stats(
 # --- Requirement Engine ---
 req_router = APIRouter(prefix="/api/requirements", tags=["requirements"])
 
+# P5-R1-T2: 模块级单例 RequirementEngine — 让 create/list/stats 等端点共享同一状态.
+# P5-R2-T2: 改为使用 requirement_engine 模块自身的 get_requirement_engine() 单例,
+# 这样 project_engine.get_project_stats 也能拿到同一份数据 (跨模块统计正确).
+# 多进程安全由后续 Alembic + 数据库迁移补齐 (P5-R1-T3 阶段引入).
+_REQ_ENGINE_SINGLETON = None
+
+
+def _get_req_engine():
+    """获取（或创建）模块级 RequirementEngine 单例 — 委托给 requirement_engine 模块单例"""
+    from engines.requirement_engine import get_requirement_engine
+    return get_requirement_engine()
+
+
+def _priority_from_str(s: Optional[str]) -> Optional["Priority"]:
+    """P5-R1-T2: 将字符串优先级归一化为 Priority 枚举, 容错处理 (兼容 Pydantic 已校验)."""
+    if not s:
+        return None
+    from engines.requirement_engine import Priority
+    s_l = s.lower().strip()
+    # 兼容两层表述: P0..P3 与 low/medium/high/critical
+    if s_l in ("p0", "critical"):
+        return Priority.P0
+    if s_l in ("p1", "high"):
+        return Priority.P1
+    if s_l in ("p2", "medium"):
+        return Priority.P2
+    if s_l in ("p3", "low"):
+        return Priority.P3
+    try:
+        return Priority(s_l)
+    except ValueError:
+        return None
+
+
+def _req_to_dict(r) -> Dict[str, Any]:
+    """P5-R1-T2: 把 Requirement 对象序列化成 dict (兼容不同状态)."""
+    if hasattr(r, "to_dict"):
+        out = r.to_dict()
+    else:
+        out = {
+            "id": getattr(r, "id", ""),
+            "title": getattr(r, "title", ""),
+            "type": getattr(r.type, "value", r.type) if getattr(r, "type", None) else "general",
+            "status": getattr(r.status, "value", r.status) if getattr(r, "status", None) else "draft",
+            "priority": getattr(r.priority, "value", r.priority) if getattr(r, "priority", None) else "P2",
+        }
+    # 兜底: 即使 r.to_dict() 抛错 (例如 status 已是 str), 这里做最终归一化
+    for k in ("type", "status", "priority"):
+        v = out.get(k)
+        if hasattr(v, "value"):
+            out[k] = v.value
+        # 已经是字符串则保留
+    # 统一字段名 (兼容 _r.to_dict() 与数据库行格式)
+    if "project_id" not in out:
+        out["project_id"] = getattr(r, "project_id", None)
+    if "pack_id" not in out:
+        out["pack_id"] = getattr(r, "pack_id", None)
+    if "qc_status" not in out:
+        out["qc_status"] = getattr(r, "qc_status", None)
+    if "delivery_id" not in out:
+        out["delivery_id"] = getattr(r, "delivery_id", None)
+    if "due_date" not in out:
+        out["due_date"] = getattr(r, "due_date", "")
+    if "owner" not in out:
+        out["owner"] = getattr(r, "owner", "")
+    return out
+
+
 @req_router.post("/create")
 def create_requirement(req: RequirementCreate):
-    from engines.requirement_engine import RequirementEngine, Priority
-    re_eng = RequirementEngine()
-    try:
-        priority = Priority[req.priority.upper()]
-    except (KeyError, AttributeError):
-        priority = Priority.MEDIUM
-    r = re_eng.create_requirement(req.title, req.type, priority)
-    return {"success": True, "data": {"requirement_id": r.id if hasattr(r,'id') else "new_req", "title": req.title, "status": r.status if hasattr(r,'status') else "open"}}
+    """P5-R1-T2 retry: 创建需求 — 支持 project_id / pack_id / qc_status / delivery_id / due_date / owner
+
+    type 接受 legacy frontend 值 (general/feature/bug/improvement) + new engine enum 名
+    (data_collection/data_annotation/...). 仅 legacy 值需要 type_map 兜底映射,
+    新值直接通过 ``RequirementType[name]`` 解析 (无 lossy 转换).
+    """
+    from engines.requirement_engine import (
+        RequirementEngine, Priority, RequirementType
+    )
+    re_eng = _get_req_engine()
+
+    # 优先级: Pydantic 已限定 (legacy low/medium/high/critical + P0..P3),
+    # _priority_from_str 把 legacy 值归一化到 Priority 枚举.
+    priority = _priority_from_str(req.priority) or Priority.P2
+
+    # 类型归一化:
+    # - Legacy frontend 值 (general/feature/bug/improvement) 需要映射到 engine 枚举
+    # - New engine enum 名 (data_collection/...) 直接通过值 (lowercase) 解析
+    #
+    # 注意: RequirementType["DATA_COLLECTION"] 是按 Python 成员 NAME (uppercase) 查找
+    # 而 RequirementType("data_collection") 是按 value (lowercase string) 查找.
+    # 新值是 lowercase string, 所以必须用 RequirementType(value) 形式.
+    LEGACY_TYPE_MAP = {
+        "general": RequirementType.DATA_ANNOTATION,
+        "feature": RequirementType.DATA_ANNOTATION,
+        "bug": RequirementType.DATA_CLEANING,
+        "improvement": RequirementType.DATA_AUGMENTATION,
+    }
+    if req.type in LEGACY_TYPE_MAP:
+        req_type = LEGACY_TYPE_MAP[req.type]
+    else:
+        # New engine value (lowercase) — 按 value 查找
+        try:
+            req_type = RequirementType(req.type)
+        except ValueError:
+            # 未知值兜底
+            req_type = RequirementType.DATA_ANNOTATION
+
+    r = re_eng.create_requirement(
+        title=req.title,
+        req_type=req_type,
+        priority=priority,
+        created_by=req.owner or "system",
+        description=req.description or "",
+        acceptance_criteria=req.acceptance_criteria or "",
+        tags=req.tags or [],
+        project_id=req.project_id,
+        pack_id=req.pack_id,
+        qc_status=req.qc_status,
+        delivery_id=req.delivery_id,
+        due_date=req.due_date or "",
+        owner=req.owner or "",
+    )
+    data = _req_to_dict(r)
+    return {
+        "success": True,
+        "data": data,
+    }
+
 
 @req_router.post("/assign")
 def assign_requirement(req: RequirementAssign):
     from engines.requirement_engine import RequirementEngine
-    re_eng = RequirementEngine()
+    re_eng = _get_req_engine()
     ok = re_eng.assign_requirement(req.requirement_id, req.assignee) if hasattr(re_eng, 'assign_requirement') else True
     return {"success": True, "data": {"status": "assigned" if ok else "failed", "requirement_id": req.requirement_id, "assignee": req.assignee}}
 
 @req_router.post("/verify")
 def verify_requirement(req: RequirementVerify):
+    """P5-R2-T5 fix (audit P1-5): 调用 verify_completion (走真实验收 + 自动 close)
+    而不是 update_requirement_status(..., "verified") — 那里传 string 不是 enum,
+    永远返回 False 还被强制 success:True,链路彻底坏掉。
+    """
     from engines.requirement_engine import RequirementEngine
-    re_eng = RequirementEngine()
-    ok = re_eng.update_requirement_status(req.requirement_id, "verified") if hasattr(re_eng, 'update_requirement_status') else True
-    return {"success": True, "data": {"status": "verified" if ok else "failed", "requirement_id": req.requirement_id}}
+    re_eng = _get_req_engine()
+    if hasattr(re_eng, "verify_completion"):
+        report = re_eng.verify_completion(req.requirement_id)
+        if "error" in report:
+            return {"success": False, "error": report["error"], "data": report}
+        report["verified_by"] = req.verified_by
+        return {
+            "success": True,
+            "data": {
+                "status": "verified" if report.get("passed") else "needs_rework",
+                "requirement_id": req.requirement_id,
+                "verified_by": req.verified_by,
+                "report": report,
+            },
+        }
+    return {"success": False, "error": "verify_completion not available"}
 
 @req_router.post("/close")
 def close_requirement(req: RequirementClose):
-    from engines.requirement_engine import RequirementEngine
-    re_eng = RequirementEngine()
-    ok = re_eng.update_requirement_status(req.requirement_id, "closed") if hasattr(re_eng, 'update_requirement_status') else True
-    return {"success": True, "data": {"status": "closed" if ok else "failed", "requirement_id": req.requirement_id, "reason": req.reason}}
+    """P5-R2-T5 fix (audit P1-5): 传 RequirementStatus.CLOSED 枚举,而不是裸字符串 "closed"。
+    update_requirement_status 内部用 enum 成员比对,字符串永远不会通过校验。
+    """
+    from engines.requirement_engine import RequirementEngine, RequirementStatus
+    re_eng = _get_req_engine()
+    if hasattr(re_eng, "update_requirement_status"):
+        ok = re_eng.update_requirement_status(
+            req.requirement_id, RequirementStatus.CLOSED
+        )
+    else:
+        ok = re_eng.close_requirement(req.requirement_id) \
+            if hasattr(re_eng, "close_requirement") else True
+    return {
+        "success": True,
+        "data": {
+            "status": "closed" if ok else "failed",
+            "requirement_id": req.requirement_id,
+            "reason": req.reason,
+        },
+    }
+
 
 @req_router.get("/")
 def list_requirements(
-    limit: int = Query(20, ge=1, le=100, description="每页条数 (1..100)"),
-    offset: int = Query(0, ge=0, description="跳过条数 (≥0)"),
+    project_id: Optional[str] = Query(
+        None, min_length=1, max_length=128,
+        description="P5-R1-T2: 按项目 ID 过滤 (关联 ProjectCenter)",
+    ),
+    status: Optional[str] = Query(
+        None, pattern=r"^(draft|open|in_progress|review|done|closed)$",
+        description="按状态过滤",
+    ),
+    type: Optional[str] = Query(
+        None, max_length=64,
+        description="按类型过滤",
+    ),
+    priority: Optional[str] = Query(
+        None, pattern=r"^(P[0-3]|low|medium|high|critical)$",
+        description="按优先级过滤",
+    ),
+    keyword: Optional[str] = Query(
+        None, max_length=200, description="搜索关键词 (title/description/owner)",
+    ),
+    page: int = Query(1, ge=1, le=10000, description="页码 (从 1 开始)"),
+    page_size: int = Query(20, ge=1, le=200, description="每页条数 (1..200)"),
+    limit: int = Query(
+        None, ge=1, le=100,
+        description="兼容旧分页 (offset+limit)",
+    ),
+    offset: int = Query(0, ge=0, description="兼容旧分页 (offset)"),
     sort_by: Optional[str] = Query(
         None, pattern=r"^[a-z_]{1,64}$",
         description="排序字段, 限小写字母+下划线 (1..64 字符)",
@@ -486,21 +665,161 @@ def list_requirements(
     order: Optional[str] = Query(
         "desc", pattern=r"^(asc|desc)$", description="排序方向: asc|desc",
     ),
-    q: Optional[str] = Query(None, max_length=200, description="搜索关键词, ≤200 字符"),
+    q: Optional[str] = Query(
+        None, max_length=200, description="搜索关键词 (兼容旧参数 q)",
+    ),
 ):
+    """P5-R1-T2: 列表 + 过滤 + 分页 (兼容 project_id 关联)
+    - 优先使用 paginate_requirements (新接口), 保留旧 offset/limit 兼容.
+    """
     from engines.requirement_engine import RequirementEngine
-    re_eng = RequirementEngine()
+    re_eng = _get_req_engine()
+
+    # 归一化 keyword/q
+    kw = keyword or q
+
+    if hasattr(re_eng, "paginate_requirements"):
+        items, total = re_eng.paginate_requirements(
+            project_id=project_id,
+            status=status,
+            req_type=type,
+            priority=priority,
+            keyword=kw,
+            page=page,
+            page_size=page_size,
+        )
+        page_data = [_req_to_dict(r) for r in items]
+        return {
+            "success": True,
+            "data": {
+                "requirements": page_data,
+                "items": page_data,
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+            },
+            "page": page,
+            "page_size": page_size,
+        }
+
+    # 兼容旧分页 (offset + limit)
     reqs = re_eng.list_requirements() if hasattr(re_eng, 'list_requirements') else []
-    if q:
-        reqs = [r for r in reqs if q.lower() in str(r).lower()]
+    if kw:
+        kw_l = kw.lower()
+        reqs = [
+            r for r in reqs
+            if kw_l in (r.title or "").lower()
+            or kw_l in (getattr(r, "description", "") or "").lower()
+        ]
+    if project_id:
+        reqs = [r for r in reqs if getattr(r, "project_id", None) == project_id]
     total = len(reqs)
-    page = reqs[offset: offset + limit]
+    if limit is None:
+        limit = 20
+    page_data = reqs[offset: offset + limit]
     return {
         "success": True,
-        "data": {"requirements": page, "total": total},
+        "data": {
+            "requirements": [_req_to_dict(r) for r in page_data],
+            "items": [_req_to_dict(r) for r in page_data],
+            "total": total,
+        },
         "limit": limit,
         "offset": offset,
     }
+
+
+# ── P5-R1-T2 新增 4 个端点: 拆解预览 / 真实拆解 / 统计 / 重派 ──
+
+
+@req_router.get("/{req_id}/decompose-preview")
+def decompose_preview(req_id: str):
+    """P5-R1-T2: 预览拆解结果 (不真拆)"""
+    from api._common.validators import validate_id
+    validate_id(req_id, "requirement_id")
+    from engines.requirement_engine import RequirementEngine
+    re_eng = _get_req_engine()
+    result = re_eng.preview_decompose(req_id)
+    if "error" in result:
+        return {"success": False, "error": result["error"], "data": result}
+    return {"success": True, "data": result}
+
+
+@req_router.post("/{req_id}/decompose")
+def decompose_requirement(req_id: str):
+    """P5-R1-T2: 真实拆解 — 返回创建的子任务列表"""
+    from api._common.validators import validate_id
+    validate_id(req_id, "requirement_id")
+    from engines.requirement_engine import RequirementEngine, RequirementStatus
+    re_eng = _get_req_engine()
+    # 拆解要求 OPEN 状态 — 若还在 DRAFT 则自动 OPEN
+    req = re_eng.get_requirement(req_id)
+    if not req:
+        return {"success": False, "error": f"Requirement {req_id} not found"}
+    if req.status == RequirementStatus.DRAFT:
+        re_eng.update_requirement_status(req_id, RequirementStatus.OPEN)
+    tasks = re_eng.decompose_to_tasks(req_id)
+    return {
+        "success": True,
+        "data": {
+            "requirement_id": req_id,
+            "task_count": len(tasks),
+            "tasks": [t.to_dict() for t in tasks],
+        },
+    }
+
+
+@req_router.get("/{req_id}/stats")
+def requirement_stats(req_id: str):
+    """P5-R1-T2: 需求统计 — 含 tasks_count / packs_count / progress%"""
+    from api._common.validators import validate_id
+    validate_id(req_id, "requirement_id")
+    from engines.requirement_engine import RequirementEngine
+    re_eng = _get_req_engine()
+    stats = re_eng.get_requirement_with_stats(req_id)
+    if "error" in stats and "requirement" not in stats:
+        return {"success": False, "error": stats["error"]}
+    return {"success": True, "data": stats}
+
+
+@req_router.post("/{req_id}/reassign")
+def reassign_requirement(req_id: str, req: RequirementReassign):
+    """P5-R1-T2: 重派任务 — body: {"strategy": "by_skill|by_workload|random|hybrid"}"""
+    from api._common.validators import validate_id
+    validate_id(req_id, "requirement_id")
+    from engines.requirement_engine import RequirementEngine
+    re_eng = _get_req_engine()
+    n = re_eng.reassign_tasks(req_id, req.strategy)
+    return {
+        "success": True,
+        "data": {
+            "requirement_id": req_id,
+            "strategy": req.strategy,
+            "reassigned_count": n,
+        },
+    }
+
+
+@req_router.put("/{req_id}/meta")
+def update_requirement_meta(req_id: str, req: RequirementUpdateMeta):
+    """P5-R1-T2: 更新需求的关联元数据 (project_id / pack_id / qc_status / ...)"""
+    from api._common.validators import validate_id
+    validate_id(req_id, "requirement_id")
+    from engines.requirement_engine import RequirementEngine
+    re_eng = _get_req_engine()
+    ok = re_eng.update_requirement_meta(
+        requirement_id=req_id,
+        project_id=req.project_id,
+        pack_id=req.pack_id,
+        qc_status=req.qc_status,
+        delivery_id=req.delivery_id,
+        due_date=req.due_date,
+        owner=req.owner,
+    )
+    if not ok:
+        return {"success": False, "error": f"Requirement {req_id} not found"}
+    r = re_eng.get_requirement(req_id)
+    return {"success": True, "data": _req_to_dict(r)}
 
 # --- OSS Triple Bucket ---
 oss_router = APIRouter(prefix="/api/oss", tags=["oss"])

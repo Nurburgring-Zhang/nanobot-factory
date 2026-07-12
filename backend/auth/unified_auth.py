@@ -29,6 +29,17 @@ except ImportError:
     jwt = None
     print("[WARN] PyJWT not installed. Run: pip install PyJWT")
 
+# P10-C: UUID for jti claim (RFC 7519 §4.1.7)
+try:
+    from uuid import uuid4 as _uuid4
+except ImportError:  # pragma: no cover
+    _uuid4 = None
+
+# P10-C: JWT issuer / audience constants (RFC 7519 §4.1.1, §4.1.3)
+JWT_ISSUER = "nanobot-factory"
+JWT_AUDIENCE = "nanobot-factory-api"
+JWT_MIN_SECRET_LENGTH = 16  # 与 AuditChain 一致 (audit_chain.py:153)
+
 # Argon2 (优先) 或 fallback 到 hashlib pbkdf2
 try:
     from argon2 import PasswordHasher
@@ -38,12 +49,25 @@ except ImportError:
     ARGON2_AVAILABLE = False
     print("[WARN] argon2-cffi not installed, falling back to PBKDF2-SHA256. Run: pip install argon2-cffi")
 
+# BruteForce protection (P10 Sprint D)
+from .bruteforce import BruteForceProtector, BruteForceConfig, ThrottleResult
+
+# Token revocation (P10R4-1 / P0-5)
+from .token_revocation import TokenRevocationStore, get_revocation_store
+
+# Audit log writer for user-management state changes (P21 P2 P3 R1-02 fix)
+from .audit import AuditLog
+
 logger = logging.getLogger("unified_auth")
 
 
 # ============================================================================
 # 角色枚举 — 与 core/rbac.py 保持兼容，并扩展 team_lead
 # ============================================================================
+
+class AdminConfigError(RuntimeError):
+    """P11-D-1: 启动时检测到 admin 账户配置错误(缺 ADMIN_INITIAL_PASSWORD 等)抛此异常。"""
+
 
 class UnifiedRole(str, Enum):
     """统一角色定义，兼容 rbac.py 的 Role 和多租户的 UserRole"""
@@ -146,6 +170,38 @@ ROLE_PERMISSIONS: Dict[UnifiedRole, List[str]] = {
 # ============================================================================
 # 数据类
 # ============================================================================
+
+@dataclass
+class LoginResult:
+    """
+    登录结果 (P10 Sprint D 加入)
+    status:
+        - "success": 登录成功, tokens 字段有值
+        - "invalid_credentials": 用户名/密码错误
+        - "locked": 触发暴力破解防护, retry_after > 0
+        - "inactive": 用户存在但 is_active=False
+    """
+    status: str
+    tokens: Optional[Dict[str, Any]] = None
+    user: Optional[Dict[str, Any]] = None
+    retry_after: int = 0
+    reason: str = ""
+    locked_dimension: str = ""  # "account" | "ip" | ""
+    lockout_level: str = "none"
+    failed_count: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "status": self.status,
+            "tokens": self.tokens,
+            "user": self.user,
+            "retry_after": self.retry_after,
+            "reason": self.reason,
+            "locked_dimension": self.locked_dimension,
+            "lockout_level": self.lockout_level,
+            "failed_count": self.failed_count,
+        }
+
 
 @dataclass
 class AuthUser:
@@ -272,13 +328,46 @@ class PasswordManager:
 # ============================================================================
 
 class JWTManager:
-    """JWT 令牌管理"""
+    """JWT 令牌管理
+
+    P11-B 强化 (RFC 7519 合规 + OWASP A02):
+      * 启动校验 secret_key 长度 >= JWT_MIN_SECRET_LENGTH (16 字符),
+        与 ``imdf.engines.audit_chain.AuditChain`` 阈值一致
+        (P10-C-1 — secret < 16 字符直接 raise ``ValueError``)。
+      * 签发 access / refresh token 时强制写入 iss / aud / jti 三标准声明
+        (RFC 7519 §4.1.1 / §4.1.3 / §4.1.7), jti 用 uuid4().hex 全局唯一,
+        可作为黑名单 / 防重放的唯一 ID。
+      * verify_token 强制校验 iss + aud (P11-B-2):
+          - iss 必须等于 ``JWT_ISSUER`` ("nanobot-factory")
+          - aud 必须等于 ``JWT_AUDIENCE`` ("nanobot-factory-api")
+        不匹配的 token 一律返回 ``None`` (``jwt.InvalidTokenError`` 被吞掉),
+        阻止伪造 token (跨系统 token 复用) 与弱密钥被绕过。
+      * secret 强度校验 + iss/aud 强制 + jti 唯一 = RFC 7519 §4.1.1 / §4.1.3 /
+        §4.1.7 三项标准声明 enforce, 对应 OWASP A02:2021 + A07:2021。
+    """
 
     def __init__(self, secret_key: str, algorithm: str = "HS256"):
+        # P10-C-1: 启动时拒绝短 secret (与 AuditChain 一致, audit_chain.py:153)
+        if not secret_key or not isinstance(secret_key, str):
+            raise ValueError(
+                "JWT secret_key must be a non-empty string"
+            )
+        if len(secret_key) < JWT_MIN_SECRET_LENGTH:
+            raise ValueError(
+                f"JWT secret must be >= {JWT_MIN_SECRET_LENGTH} chars "
+                f"(got {len(secret_key)}). Use a strong random secret."
+            )
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.access_token_expiry = 3600      # 1小时
         self.refresh_token_expiry = 86400 * 7  # 7天
+
+    def _new_jti(self) -> str:
+        """RFC 7519 §4.1.7 jti — JWT ID, 全局唯一。"""
+        if _uuid4 is not None:
+            return _uuid4().hex
+        # 极端 fallback: secrets.token_hex(16) 提供 128-bit 熵
+        return secrets.token_hex(16)
 
     def create_access_token(self, user_id: str, username: str, role: str,
                             permissions: List[str] = None, expiry: int = None) -> str:
@@ -292,6 +381,9 @@ class JWTManager:
             'role': role,
             'permissions': permissions or [],
             'type': 'access',
+            'iss': JWT_ISSUER,            # RFC 7519 §4.1.1
+            'aud': JWT_AUDIENCE,          # RFC 7519 §4.1.3
+            'jti': self._new_jti(),       # RFC 7519 §4.1.7
             'iat': now,
             'exp': now + timedelta(seconds=expiry),
         }
@@ -305,18 +397,34 @@ class JWTManager:
         payload = {
             'sub': user_id,
             'type': 'refresh',
+            'iss': JWT_ISSUER,            # RFC 7519 §4.1.1
+            'aud': JWT_AUDIENCE,          # RFC 7519 §4.1.3
+            'jti': self._new_jti(),       # RFC 7519 §4.1.7
             'iat': now,
             'exp': now + timedelta(seconds=expiry),
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
     def verify_token(self, token: str, token_type: str = None) -> Optional[Dict[str, Any]]:
-        """验证令牌"""
+        """验证令牌
+
+        P11-B: 强制校验 ``iss`` (RFC 7519 §4.1.1) + ``aud`` (RFC 7519 §4.1.3)
+        标准声明 — iss 必须是 ``JWT_ISSUER`` ("nanobot-factory"), aud 必须是
+        ``JWT_AUDIENCE`` ("nanobot-factory-api")。任何不匹配的 token 一律拒绝
+        并返回 ``None`` (而不是 raise) 以保持调用方兼容。生产 token 由本类
+        签发时已自动写入这 2 个声明, 校验不破坏现有流程; 旧 token (无 iss/aud)
+        在迁移前可能无法通过 verify。
+        """
         if not jwt:
             logger.error("PyJWT not installed")
             return None
         try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            payload = jwt.decode(
+                token, self.secret_key, algorithms=[self.algorithm],
+                audience=JWT_AUDIENCE,
+                issuer=JWT_ISSUER,
+                options={"verify_aud": True, "verify_iss": True},
+            )
             if token_type and payload.get('type') != token_type:
                 logger.warning(f"Token type mismatch: expected {token_type}")
                 return None
@@ -329,12 +437,18 @@ class JWTManager:
             return None
 
     def decode_token_unsafe(self, token: str) -> Optional[Dict[str, Any]]:
-        """不验证过期、仅解码 payload（用于调试）"""
+        """不验证过期/iss/aud、仅解码 payload（用于调试 / 吊销场景）"""
         if not jwt:
             return None
         try:
-            return jwt.decode(token, self.secret_key, algorithms=[self.algorithm],
-                             options={"verify_exp": False})
+            return jwt.decode(
+                token, self.secret_key, algorithms=[self.algorithm],
+                options={
+                    "verify_exp": False,
+                    "verify_aud": False,
+                    "verify_iss": False,
+                },
+            )
         except Exception:
             return None
 
@@ -505,20 +619,54 @@ class AuthDatabase:
                 conn.close()
 
     def update_user(self, user_id: str, updates: dict) -> bool:
-        allowed = {"email", "role", "is_active", "is_verified", "display_name",
-                   "team", "metadata", "last_login", "login_count",
-                   "password_hash", "password_salt", "hash_method"}
+        # P21 P2 P1 (R2-NEW-01): SQL injection hardening.
+        # The previous implementation used ``", ".join(k + ' = ?' for k in
+        # filtered)`` then ``f"UPDATE auth_users SET {set_clause} WHERE ..."``
+        # which mixes trusted (column names from a static allow-list) with
+        # the *values* of those columns in the same f-string. While the
+        # column names themselves are gated by ``allowed`` today, the
+        # structure lets any future caller that adds an attacker-controlled
+        # key slip through. Even with the allow-list, Bandit B608 (and
+        # the R2 pentest reproducer) flag the f-string as risky. We now
+        # build the SET clause from a *static* table that maps each
+        # allowed column to a literal "?" placeholder, so user input never
+        # touches the SQL string itself — only the bound parameter list.
+        #
+        # NOTE: ``metadata`` is a JSON-encoded string column; we re-encode
+        # non-string values so we always pass a ``str`` to the DB.
+        _COLUMN_BIND = {
+            "email": "?",
+            "role": "?",
+            "is_active": "?",
+            "is_verified": "?",
+            "display_name": "?",
+            "team": "?",
+            "metadata": "?",
+            "last_login": "?",
+            "login_count": "?",
+            "password_hash": "?",
+            "password_salt": "?",
+            "hash_method": "?",
+        }
+        allowed = set(_COLUMN_BIND)
         filtered = {k: v for k, v in updates.items() if k in allowed}
         if not filtered:
             return False
-        set_clause = ", ".join(k + " = ?" for k in filtered)
-        values = list(filtered.values()) + [user_id]
+        # Column names come ONLY from the static _COLUMN_BIND keys — never
+        # from caller input. Bind placeholders are literal "?" characters.
+        set_clause = ", ".join(f"{col} = {_COLUMN_BIND[col]}" for col in filtered)
+        values: List[Any] = []
+        for col, v in filtered.items():
+            if col == "metadata" and not isinstance(v, str):
+                v = json.dumps(v, ensure_ascii=False)
+            values.append(v)
+        values.append(user_id)
         with self._lock:
             conn = self._get_conn()
             try:
                 conn.execute(
-                    f"UPDATE auth_users SET {set_clause} WHERE user_id = ?",
-                    values
+                    "UPDATE auth_users SET " + set_clause + " WHERE user_id = ?",
+                    values,
                 )
                 conn.commit()
                 return True
@@ -592,7 +740,10 @@ class UnifiedAuthManager:
     兼容: security/auth.py 的 AuthManager 接口
     """
 
-    def __init__(self, jwt_secret: str = "", db_path: str = ""):
+    def __init__(self, jwt_secret: str = "", db_path: str = "",
+                 throttle_config: Optional[BruteForceConfig] = None,
+                 throttle_protector: Optional[BruteForceProtector] = None,
+                 enable_bruteforce_persistence: Optional[bool] = None):
         # JWT 密钥
         self.jwt_secret = jwt_secret or os.environ.get(
             "JWT_SECRET",
@@ -602,30 +753,122 @@ class UnifiedAuthManager:
         self.password_manager = PasswordManager()
         self.db = AuthDatabase(db_path)
 
+        # P10R4-1 / P0-4: BruteForce 持久化开关
+        # 优先级: 显式参数 > 环境变量 > 默认 False
+        # 环境变量: BRUTE_FORCE_PERSISTENCE (true/false/1/0/yes/no)
+        if enable_bruteforce_persistence is None:
+            _bf_persist_env = os.environ.get("BRUTE_FORCE_PERSISTENCE", "").strip().lower()
+            enable_bruteforce_persistence = _bf_persist_env in ("true", "1", "yes", "on")
+        self._bruteforce_persistence_enabled = enable_bruteforce_persistence
+
+        # BruteForce 防护 (P10 Sprint D + P10R4-1) — 可注入, 测试用
+        # 生产环境: 设 BRUTE_FORCE_PERSISTENCE=true 启用 SQLite 持久化层
+        # (多 worker / 跨重启保留 lock state)
+        if throttle_protector is not None:
+            self.throttle = throttle_protector
+        else:
+            self.throttle = BruteForceProtector(
+                config=throttle_config or BruteForceConfig(),
+                enable_persistence=enable_bruteforce_persistence,
+                db_path=self.db.db_path,
+            )
+
+        # Token Revocation (P10R4-1 / P0-5) — 可注入, 测试用
+        # 共享 unified_auth.db (新表 auth_revoked_tokens)
+        self.revocation = TokenRevocationStore(db_path=self.db.db_path)
+
+        # P21 P2 P3 / R1-02 fix: audit log writer for state-changing user
+        # management actions (user.created / password.changed /
+        # user.deleted / user.updated).  Writes to the existing
+        # ``auth_audit_log`` table; no schema change.
+        self.audit_log = AuditLog(self.db, resource="user")
+
+        # P10R4-1 / HIDDEN-4: 后台 GC 守护线程 (清理过期 revocation 条目)
+        # 默认 off (避免污染单测), 生产设 TOKEN_REVOCATION_GC=true 启用
+        _enable_gc = os.environ.get("TOKEN_REVOCATION_GC", "").strip().lower() in (
+            "true", "1", "yes", "on"
+        )
+        self._revocation_gc_enabled = _enable_gc
+        if _enable_gc:
+            _gc_interval = int(os.environ.get("TOKEN_REVOCATION_GC_INTERVAL", "300"))
+            self.revocation.start_background_gc(interval_seconds=_gc_interval)
+            logger.info(
+                "UnifiedAuthManager: token revocation background GC enabled, interval=%ds",
+                _gc_interval,
+            )
+
         # 启动时确保至少有一个 admin
         self._ensure_admin_exists()
 
     # ---- 初始化 ----
 
     def _ensure_admin_exists(self):
-        """确保至少有一个管理员账户"""
+        """确保至少有一个管理员账户 — P11-D-1: 密码从 ADMIN_INITIAL_PASSWORD 注入。
+
+        启动时读 env ``ADMIN_INITIAL_PASSWORD``:
+        * 缺省或为空 + production 模式: 抛 ``AdminConfigError`` 立即 fail-fast
+        * 缺省 + test 模式 (IMDF_TEST_MODE=1): 退化为 ephemeral random 16 字节密码
+          并把密码写 stdout, 防止硬编码 ``Admin@2026!`` 残留
+        * 显式提供: 直接使用
+
+        部署时通过 ``.env`` / Vault / KMS 注入, 杜绝源码硬编码密码泄露。
+        """
         existing = self.db.get_user_by_username("admin")
-        if not existing:
-            self._create_user(
-                username="admin",
-                password="Admin@2026!",
-                role=UnifiedRole.ADMIN.value,
-                email="admin@nanobot.local",
-                display_name="系统管理员",
-                team="system",
-                is_verified=True,
-            )
-            logger.info("Default admin account created: admin / Admin@2026!")
+        if existing:
+            return
+
+        # P11-D-1: 强制从 env 注入, 禁止源码硬编码
+        admin_password = os.environ.get("ADMIN_INITIAL_PASSWORD", "").strip()
+        if not admin_password:
+            test_mode = os.environ.get("IMDF_TEST_MODE", "").strip() == "1"
+            if test_mode:
+                # Test mode: 生成 ephemeral random 密码, 写 stdout (一次性)
+                import sys
+                admin_password = secrets.token_urlsafe(16)
+                print(
+                    f"[IMDF_TEST_MODE] Generated ephemeral admin password: "
+                    f"{admin_password}",
+                    file=sys.stderr,
+                )
+                logger.warning(
+                    "IMDF_TEST_MODE=1 — ephemeral admin password generated; "
+                    "set ADMIN_INITIAL_PASSWORD for stable admin login in CI"
+                )
+            else:
+                # Production: fail-fast, 防止默默用弱密码
+                raise AdminConfigError(
+                    "ADMIN_INITIAL_PASSWORD env var is required to bootstrap "
+                    "the default admin account. Set it in .env (e.g. "
+                    "`python -c 'import secrets; print(secrets.token_urlsafe(24))'` "
+                    "to generate a 32+ char random secret) or in your secret "
+                    "manager. The legacy hardcoded default has been removed "
+                    "for security reasons (P11-D-1)."
+                )
+
+        self._create_user(
+            username="admin",
+            password=admin_password,
+            role=UnifiedRole.ADMIN.value,
+            email="admin@nanobot.local",
+            display_name="系统管理员",
+            team="system",
+            is_verified=True,
+            actor="system",  # P21 P2 P3: bootstrap actor, not "admin"
+        )
+        logger.info("Default admin account created from ADMIN_INITIAL_PASSWORD")
 
     def _create_user(self, username: str, password: str, role: str,
                      email: str = "", display_name: str = "", team: str = "",
-                     is_verified: bool = True, metadata: dict = None) -> Optional[AuthUser]:
-        """内部创建用户"""
+                     is_verified: bool = True, metadata: dict = None,
+                     actor: Optional[str] = None) -> Optional[AuthUser]:
+        """内部创建用户
+
+        Args:
+            actor: user_id of the actor performing the creation.  When
+                ``None`` (the default), falls back to ``username``
+                (self-registration).  The bootstrap path
+                (``_ensure_admin_exists``) passes ``"system"``.
+        """
         if self.db.user_exists(username):
             logger.warning(f"User already exists: {username}")
             return None
@@ -651,6 +894,18 @@ class UnifiedAuthManager:
         )
         if self.db.insert_user(user):
             logger.info(f"User created: {username} (role={user.role}, team={team})")
+            # P21 P2 P3 / R1-02: record state-changing action in audit log
+            # so forensic queries can answer "who created this user, when?"
+            self.audit_log.write(
+                action="user.created",
+                actor=actor or username,
+                target=user.user_id,
+                details={
+                    "role": user.role,
+                    "team": user.team,
+                    "email": user.email,
+                },
+            )
             return user
         return None
 
@@ -677,6 +932,109 @@ class UnifiedAuthManager:
             email=email, display_name=display_name, team=team,
             metadata=metadata
         )
+
+    def login(self, username: str, password: str,
+              ip_address: str = None, user_agent: str = None) -> LoginResult:
+        """
+        带暴力破解防护的登录入口 (P10 Sprint D)。
+
+        流程:
+            1. 检查账号 + IP 是否被锁定 (任一锁定 → 返回 LoginResult(status='locked'))
+            2. 调用 authenticate() 验证密码
+            3. 失败: record_failure(account + ip) → 可能触发锁定
+            4. 成功: record_success(account + ip) → 清除计数
+
+        Returns:
+            LoginResult 对象, 调用方可按 status 分支处理:
+              - 'success' → 200 + tokens
+              - 'invalid_credentials' / 'inactive' → 401
+              - 'locked' → 429 + Retry-After header
+        """
+        # 1. 预检锁定
+        pre = self.throttle.check_lock(username=username, ip=ip_address)
+        if not pre.allowed:
+            logger.warning(
+                "Login BLOCKED: username=%s ip=%s reason=%s retry_after=%ds",
+                username, ip_address, pre.reason, pre.retry_after,
+            )
+            self._audit(
+                "auth.locked",
+                username=username,
+                result="blocked",
+                ip_address=ip_address,
+                details={
+                    "reason": pre.reason,
+                    "lockout_level": pre.lockout_level,
+                    "retry_after": pre.retry_after,
+                    "failed_count": pre.failed_count,
+                },
+            )
+            return LoginResult(
+                status="locked",
+                retry_after=pre.retry_after,
+                reason=pre.reason,
+                locked_dimension="ip" if pre.reason == "ip_locked" else "account",
+                lockout_level=pre.lockout_level,
+                failed_count=pre.failed_count,
+            )
+
+        # 2. 验证凭证
+        tokens = self.authenticate(username, password, ip_address=ip_address,
+                                   user_agent=user_agent)
+
+        # 3. 成功: 清除失败计数
+        if tokens:
+            self.throttle.record_success(username=username, ip=ip_address)
+            return LoginResult(
+                status="success",
+                tokens=tokens,
+                user=tokens.get("user"),
+                reason="ok",
+            )
+
+        # 4. 失败: 区分 user_not_found / wrong_password / inactive
+        #    都视为一次失败 (减少账号枚举), 但审计日志分开记录
+        user = self.db.get_user_by_username(username)
+        if not user:
+            failed_reason = "user_not_found"
+        elif not user.is_active:
+            failed_reason = "user_inactive"
+        else:
+            failed_reason = "wrong_password"
+
+        post = self.throttle.record_failure(username=username, ip=ip_address)
+
+        if not post.allowed:
+            # 这次失败触发了新锁定
+            logger.warning(
+                "Login FAIL → LOCK TRIGGERED: username=%s ip=%s level=%s",
+                username, ip_address, post.lockout_level,
+            )
+            self._audit(
+                "auth.locked",
+                username=username,
+                result="locked",
+                ip_address=ip_address,
+                details={
+                    "reason": failed_reason,
+                    "lockout_level": post.lockout_level,
+                    "retry_after": post.retry_after,
+                    "failed_count": post.failed_count,
+                },
+            )
+            return LoginResult(
+                status="locked",
+                retry_after=post.retry_after,
+                reason=post.reason or failed_reason,
+                locked_dimension="ip" if post.reason == "ip_locked" else "account",
+                lockout_level=post.lockout_level,
+                failed_count=post.failed_count,
+            )
+
+        # 未触发锁定, 仍然 invalid_credentials
+        if failed_reason == "user_inactive":
+            return LoginResult(status="inactive", reason=failed_reason)
+        return LoginResult(status="invalid_credentials", reason=failed_reason)
 
     def authenticate(self, username: str, password: str,
                      ip_address: str = None, user_agent: str = None) -> Optional[Dict[str, Any]]:
@@ -741,8 +1099,115 @@ class UnifiedAuthManager:
         }
 
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """验证 access token"""
-        return self.jwt_manager.verify_token(token, token_type="access")
+        """
+        验证 access token — 增强版 (P10R4-1)
+
+        流程:
+          1. JWT 标准校验 (签名 + iss + aud + exp + jti)
+          2. 检查 token-level 吊销 (is_revoked(jti))
+          3. 检查 user-level 吊销 (is_user_revoked(sub))
+          4. 检查全局吊销 (is_globally_revoked)
+
+        任意一步失败 → return None (与原行为兼容).
+        """
+        payload = self.jwt_manager.verify_token(token, token_type="access")
+        if not payload:
+            return None
+        # 2. token-level 吊销
+        jti = payload.get("jti")
+        if jti and self.revocation.is_revoked(jti):
+            logger.warning(f"Token revoked (jti={jti[:8]}...): access denied")
+            return None
+        # 3. user-level 吊销 (改密 / 登出 / 禁用)
+        user_id = payload.get("sub")
+        if user_id and self.revocation.is_user_revoked(user_id):
+            logger.warning(f"User-level token revoked (user={user_id}): access denied")
+            return None
+        # 4. 全局吊销 (security incident)
+        if self.revocation.is_globally_revoked():
+            logger.warning("Global token revocation active: access denied")
+            return None
+        return payload
+
+    # ------------------------------------------------------------------
+    # Token Revocation API (P10R4-1 / P0-5)
+    # ------------------------------------------------------------------
+
+    def revoke_token(self, token: str, reason: str = "logout",
+                     metadata: Optional[Dict[str, Any]] = None) -> bool:
+        """
+        吊销单个 token (通过 jti).
+
+        Args:
+            token: JWT 字符串 (会被解码取 jti + exp)
+            reason: logout / admin_action / suspicious / etc.
+            metadata: 任意附加信息 (IP / user agent)
+
+        Returns:
+            True 如果成功加入 revocation list.
+        """
+        # 用 unsafe decode 拿到 jti + exp (不必校验签名, 之后会再 verify)
+        payload = self.jwt_manager.decode_token_unsafe(token)
+        if not payload:
+            logger.warning("revoke_token: cannot decode token")
+            return False
+        jti = payload.get("jti")
+        if not jti:
+            logger.warning("revoke_token: token has no jti claim")
+            return False
+        exp_dt = payload.get("exp")
+        # exp 是 int/float epoch seconds
+        import time as _t
+        exp_epoch = float(exp_dt) if exp_dt else (_t.time() + 7 * 86400)
+        user_id = payload.get("sub", "")
+        return self.revocation.revoke(
+            jti=jti,
+            user_id=user_id,
+            reason=reason,
+            expires_at_epoch=exp_epoch,
+            metadata=metadata or {},
+        )
+
+    def revoke_user(self, user_id: str, reason: str = "user_action",
+                    metadata: Optional[Dict[str, Any]] = None) -> int:
+        """
+        吊销某用户的所有 active token (改密/登出/禁用账号).
+
+        Returns: 删除的旧 jti 数.
+        """
+        return self.revocation.revoke_user(
+            user_id=user_id,
+            reason=reason,
+            metadata=metadata or {},
+        )
+
+    def revoke_all(self, reason: str = "security_incident") -> int:
+        """紧急全场 token 吊销 (建议同时轮换 JWT_SECRET)."""
+        return self.revocation.revoke_all(reason=reason)
+
+    def clear_global_revocation(self) -> bool:
+        """
+        解除全场 token 吊销 (admin only, P10R4-1 / HIDDEN-5).
+
+        Returns: True 如果之前处于全局吊销状态 (执行了清除).
+        """
+        return self.revocation.clear_global_revocation()
+
+    def is_globally_revoked(self) -> bool:
+        """检查是否处于全局 token 吊销状态."""
+        return self.revocation.is_globally_revoked()
+
+    def is_token_revoked(self, jti: str) -> bool:
+        return self.revocation.is_revoked(jti)
+
+    def is_user_revoked(self, user_id: str) -> bool:
+        return self.revocation.is_user_revoked(user_id)
+
+    def get_revocation_stats(self) -> Dict:
+        return self.revocation.stats()
+
+    def gc_revocations(self) -> int:
+        return self.revocation.gc()
 
     def refresh_access_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
         """使用 refresh token 获取新的 access token"""
@@ -777,9 +1242,91 @@ class UnifiedAuthManager:
         users = self.db.list_users(role=role, team=team, is_active=is_active)
         return [u.to_dict() for u in users]
 
-    def delete_user(self, user_id: str) -> bool:
-        """删除用户"""
-        return self.db.delete_user(user_id)
+    def delete_user(self, user_id: str, actor: Optional[str] = None) -> bool:
+        """删除用户
+
+        Args:
+            user_id: 被删除用户
+            actor:   执行删除的用户 id (admin), 默认 ``"system"`` 防止
+                完全不知道是谁删的 (P21 P2 P3 / R1-02 forensic gap).
+        """
+        # Capture target metadata BEFORE deletion (the row will be gone
+        # after delete).  The audit log is the *only* forensic record of
+        # "who deleted what" once the user row is removed.
+        target_user = self.db.get_user_by_id(user_id)
+        target_username = target_user.username if target_user else None
+        target_role = target_user.role if target_user else None
+
+        ok = self.db.delete_user(user_id)
+        if ok:
+            # P21 P2 P3 / R1-02: record state-changing action in audit log
+            # so forensic queries can answer "who deleted this user, when?"
+            self.audit_log.write(
+                action="user.deleted",
+                actor=actor or "system",
+                target=user_id,
+                details={
+                    "username": target_username,
+                    "role": target_role,
+                },
+            )
+        return ok
+
+    def update_user(self, user_id: str, updates: dict,
+                    actor: Optional[str] = None) -> bool:
+        """Public API for user updates (P21 P2 P3 / R1-02 audit fix).
+
+        Wraps ``AuthDatabase.update_user`` and writes a
+        ``"user.updated"`` audit entry capturing the diff between
+        the previous and new state, so forensic queries can answer
+        "who changed role X to Y on user Z, when?".
+
+        Args:
+            user_id: target user
+            updates: dict of column → new_value (filtered against
+                ``_COLUMN_BIND`` allow-list inside ``db.update_user``)
+            actor:   executing user id (admin / self), default ``"system"``.
+
+        Notes:
+            * Internal callers (e.g. ``authenticate`` upgrading the
+              password hash) continue to use ``db.update_user``
+              directly — those writes are NOT audited (they are not
+              user-initiated state changes in the R1-02 sense).
+        """
+        # Snapshot the pre-state so we can compute a meaningful diff
+        # in the audit entry (without snapshot, "what changed" is unknown).
+        before = self.db.get_user_by_id(user_id)
+        if not before:
+            return False
+
+        ok = self.db.update_user(user_id, updates)
+        if not ok:
+            return False
+
+        # Compute a minimal diff (only columns that actually changed).
+        diff: Dict[str, Any] = {}
+        for key, new_val in (updates or {}).items():
+            if not hasattr(before, key):
+                continue
+            old_val = getattr(before, key, None)
+            if old_val != new_val:
+                diff[key] = {"old": old_val, "new": new_val}
+
+        # P21 P2 P3 / R1-02: record state-changing action in audit log.
+        self.audit_log.write(
+            action="user.updated",
+            actor=actor or "system",
+            target=user_id,
+            details={
+                "username": before.username,
+                "changed_fields": sorted(diff.keys()),
+                "diff": diff,
+            } if diff else {
+                "username": before.username,
+                "changed_fields": [],
+            },
+        )
+        return True
 
     def check_permission(self, user_id: str, required_permission: str) -> bool:
         """检查用户是否有某权限"""
@@ -801,7 +1348,12 @@ class UnifiedAuthManager:
 
     def change_password(self, user_id: str, old_password: str,
                         new_password: str) -> bool:
-        """修改密码"""
+        """
+        修改密码 + 强制吊销该用户所有 active token (P10R4-1).
+
+        OWASP A07 对标: 改密必须使旧 token 立即失效, 否则攻击者持有的 token
+        在密码修改后仍可访问 (直到自然过期).
+        """
         user = self.db.get_user_by_id(user_id)
         if not user:
             return False
@@ -810,11 +1362,33 @@ class UnifiedAuthManager:
         ):
             return False
         new_hash, new_salt, new_method = self.password_manager.hash_password(new_password)
-        return self.db.update_user(user.user_id, {
+        ok = self.db.update_user(user.user_id, {
             "password_hash": new_hash,
             "password_salt": new_salt,
             "hash_method": new_method,
         })
+        if ok:
+            # 强制吊销该用户所有 token (旧 token 不能继续访问)
+            deleted = self.revoke_user(
+                user_id=user_id,
+                reason="password_changed",
+                metadata={"actor": user_id, "self_service": True},
+            )
+            # P21 P2 P3 / R1-02: record password change in audit log
+            # so forensic queries can answer "who changed this password, when?"
+            self.audit_log.write(
+                action="password.changed",
+                actor=user_id,
+                target=user_id,
+                details={
+                    "tokens_revoked": deleted,
+                },
+            )
+            logger.info(
+                "Password changed for user %s — revoked %d old token markers",
+                user_id, deleted,
+            )
+        return ok
 
     # ---- 内部 ----
 

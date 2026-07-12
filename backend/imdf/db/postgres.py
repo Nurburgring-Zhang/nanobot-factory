@@ -114,15 +114,27 @@ def install_vector_extension(engine: Engine) -> bool:
 
 # ── PG 引擎配置 ──────────────────────────────────────────────────────────
 def build_pg_engine_kwargs(url: str) -> dict:
-    """给 create_engine 用 — PG 专用 pool 参数。"""
+    """给 create_engine 用 — PG 专用 pool 参数。
+
+    P13-C1 调优 (2026-06-26):
+      - ``pool_recycle`` 从硬编码 1800 改为 env 可调 (IMDF_PG_POOL_RECYCLE)
+      - 新增 ``server_settings.statement_timeout`` (默认 30s, 防慢 SQL 拖死池)
+      - 新增 ``server_settings.idle_in_transaction_session_timeout`` (60s)
+      - 新增 ``pool_timeout`` (默认 30s, 排队拿连接的超时)
+    """
     return {
         "pool_pre_ping": True,
         "pool_size": int(os.environ.get("IMDF_PG_POOL_SIZE", "10")),
         "max_overflow": int(os.environ.get("IMDF_PG_MAX_OVERFLOW", "20")),
-        "pool_recycle": 1800,  # PG idle 超时默认 8h, 提前 recycle 避免 stale conn
+        "pool_recycle": int(os.environ.get("IMDF_PG_POOL_RECYCLE", "1800")),
+        "pool_timeout": int(os.environ.get("IMDF_PG_POOL_TIMEOUT", "30")),
         "connect_args": {
             "connect_timeout": int(os.environ.get("IMDF_PG_CONNECT_TIMEOUT", "10")),
             "application_name": "imdf-backend",
+            "options": (
+                f"-c statement_timeout={os.environ.get('IMDF_PG_STATEMENT_TIMEOUT_MS', '30000')}"
+                f" -c idle_in_transaction_session_timeout={os.environ.get('IMDF_PG_IDLE_IN_TXN_TIMEOUT_MS', '60000')}"
+            ),
         },
     }
 
@@ -165,6 +177,134 @@ def detect_dialect(url: str) -> str:
     return "unknown"
 
 
+# ── P13-C1: pg_stat_statements top-20 慢查询抓取 ────────────────────────
+TOP_QUERIES_SQL = """
+SELECT
+    queryid,
+    -- 截断到 200 字符, 避免长 query 撑爆返回
+    LEFT(query, 200) AS query,
+    calls,
+    ROUND((total_exec_time)::numeric, 2)  AS total_time_ms,
+    ROUND((mean_exec_time)::numeric, 2)   AS mean_time_ms,
+    ROUND((max_exec_time)::numeric, 2)    AS max_time_ms,
+    ROUND((stddev_exec_time)::numeric, 2) AS stddev_time_ms,
+    ROUND((total_exec_time / NULLIF(SUM(total_exec_time) OVER (), 0) * 100)::numeric, 2)
+        AS pct_of_total,
+    shared_blks_hit,
+    shared_blks_read,
+    rows
+FROM pg_stat_statements
+WHERE query NOT LIKE '%pg_stat_statements%'   -- 排除自身
+  AND query NOT ILIKE '%explain%'             -- 排除 EXPLAIN 类
+ORDER BY total_exec_time DESC
+LIMIT :limit
+"""
+
+
+def get_top_slow_queries(engine: Engine, limit: int = 20) -> list:
+    """P13-C1: 返回 pg_stat_statements top-N 慢查询。
+
+    Args:
+        engine: SQLAlchemy Engine (必须是 PG 引擎, 否则返回空列表)
+        limit: 返回条数, 默认 20
+
+    Returns:
+        list[dict]: 每条 {queryid, query, calls, total_time_ms, mean_time_ms,
+                          max_time_ms, stddev_time_ms, pct_of_total, ...}
+
+    在 SQLite 上返回空列表 + warning log (开发环境无 pg_stat_statements)。
+    """
+    if not is_postgres_url(str(engine.url)):
+        logger.warning(
+            "get_top_slow_queries: 非 PG 引擎 (%s), 返回空列表",
+            engine.url,
+        )
+        return []
+
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text(TOP_QUERIES_SQL), {"limit": limit}).fetchall()
+            return [dict(r._mapping) for r in rows]
+    except Exception as exc:  # pragma: no cover - 需要 PG + extension
+        logger.warning("get_top_slow_queries failed (extension 未装?): %s", exc)
+        return []
+
+
+# ── P13-C1: 缺失索引建议 (基于 pg_stat_user_tables) ─────────────────────
+MISSING_INDEX_SQL = """
+SELECT
+    schemaname || '.' || relname        AS table_name,
+    seq_scan,
+    seq_tup_read,
+    idx_scan,
+    idx_tup_fetch,
+    n_live_tup                          AS row_estimate,
+    CASE
+        WHEN idx_scan IS NULL OR idx_scan = 0 THEN 'CRITICAL — 全表扫描, 0 索引命中'
+        WHEN seq_scan > idx_scan        THEN 'WARN — seq 扫描 > idx 扫描'
+        ELSE 'OK'
+    END                                 AS verdict
+FROM pg_stat_user_tables
+WHERE n_live_tup > 1000
+ORDER BY seq_scan DESC
+LIMIT 20
+"""
+
+
+def get_missing_index_hints(engine: Engine) -> list:
+    """P13-C1: 返回全表扫描多、索引命中少的表 (添加索引的优先级排序)。
+
+    PG only; SQLite / 其他返回空列表。
+    """
+    if not is_postgres_url(str(engine.url)):
+        return []
+
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text(MISSING_INDEX_SQL)).fetchall()
+            return [dict(r._mapping) for r in rows]
+    except Exception as exc:  # pragma: no cover
+        logger.warning("get_missing_index_hints failed: %s", exc)
+        return []
+
+
+# ── P13-C1: 池利用率实时监控 (通过 pg_stat_activity) ────────────────────
+POOL_USAGE_SQL = """
+SELECT
+    state,
+    COUNT(*) AS n,
+    ROUND(AVG(EXTRACT(EPOCH FROM (now() - state_change)) * 1000)::numeric, 1) AS avg_age_ms
+FROM pg_stat_activity
+WHERE datname = current_database()
+GROUP BY state
+ORDER BY n DESC
+"""
+
+
+def get_pool_usage(engine: Engine) -> list:
+    """P13-C1: 返回 PG 端 connection 状态分布 (idle / active / idle in txn)。
+
+    用法: 通过 ``active / total`` 估算池利用率, 触发 pool 调优.
+    PG only; 其他返回空列表。
+    """
+    if not is_postgres_url(str(engine.url)):
+        return []
+
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text(POOL_USAGE_SQL)).fetchall()
+            return [dict(r._mapping) for r in rows]
+    except Exception as exc:  # pragma: no cover
+        logger.warning("get_pool_usage failed: %s", exc)
+        return []
+
+
 __all__ = [
     "is_postgres_url",
     "normalize_pg_url",
@@ -173,4 +313,7 @@ __all__ = [
     "build_pg_engine_kwargs",
     "get_jsonb_column",
     "detect_dialect",
+    "get_top_slow_queries",
+    "get_missing_index_hints",
+    "get_pool_usage",
 ]

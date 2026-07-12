@@ -818,3 +818,217 @@ def init_external_skills(config: Dict[str, Any] = None):
     manager = get_external_skills_manager(config)
     logger.info("External Skills initialized")
     return manager
+
+
+# =============================================================================
+# V5.1 (P19 v5.1-B) — SkillExecutor (async + timeout + retry + audit)
+# 与既存 SkillsExecutor 并列,通过 SkillRegistryV51 调度 SkillSpec。
+# =============================================================================
+
+import asyncio
+from datetime import datetime
+
+
+@dataclass
+class SkillExecutionRecord:
+    """单次 skill 执行审计记录"""
+    skill_id: str
+    started_at: str
+    ended_at: str
+    duration_ms: float
+    success: bool
+    error: str
+    attempts: int
+    inputs: Dict[str, Any]
+    output_preview: str
+
+
+class SkillExecutorV51:
+    """
+    V5.1 SkillExecutor:
+        execute(skill_id, inputs) -> Result
+    Features:
+        - 异步执行(asyncio)
+        - 超时控制(默认 30s)
+        - 错误处理 + 重试(最多 3 次)
+        - 审计日志(SkillExecutionRecord)
+    """
+
+    def __init__(
+        self,
+        registry: Any = None,
+        default_timeout_sec: float = 30.0,
+        max_retries: int = 3,
+        retry_backoff_sec: float = 0.1,
+    ):
+        self.registry = registry
+        self.default_timeout_sec = default_timeout_sec
+        self.max_retries = max_retries
+        self.retry_backoff_sec = retry_backoff_sec
+
+        # 审计日志(对外只读 list)
+        self.audit_log: List[SkillExecutionRecord] = []
+
+    # ---------- 内部: 实际 handler 解析 ----------
+    def _resolve_handler(self, skill: Any):
+        """
+        从 SkillSpec 解析 handler:
+        1) 若 SkillSpec.metadata 含 handler_callable / handler_coro / handler_factory 则用
+        2) 否则 default: 返回一个 echo coroutine,把 inputs 镜像到 output
+        """
+        meta = getattr(skill, "metadata", {}) or {}
+        for k in ("handler_coro", "handler_callable", "handler_factory"):
+            h = meta.get(k)
+            if h is None:
+                continue
+            if asyncio.iscoroutinefunction(h):
+                return h
+            if callable(h):
+                return h
+
+        # 2) builtin category -> 默认 handler
+        cat = getattr(skill, "category", "")
+        skill_id = getattr(skill, "id", "")
+        sid = skill_id.lower()
+
+        async def default_coro(inputs: Dict[str, Any]) -> Dict[str, Any]:
+            return {
+                "ok": True,
+                "skill_id": skill_id,
+                "category": cat,
+                "echo": dict(inputs),
+                "stub": True,
+            }
+        return default_coro
+
+    # ---------- execute ----------
+    async def execute(
+        self,
+        skill_id: str,
+        inputs: Optional[Dict[str, Any]] = None,
+        timeout_sec: Optional[float] = None,
+        max_retries: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        异步执行:
+            skill_id: SkillSpec.id
+            inputs: 参数字典
+            timeout_sec: 超时秒,None 用 default
+            max_retries: 重试次数(包含首次),None 用 default (3)
+        Returns:
+            {"ok": bool, "skill_id": str, "result": Any, "error": str|None, "attempts": int, "duration_ms": float}
+        """
+        inputs = inputs or {}
+        timeout_sec = self.default_timeout_sec if timeout_sec is None else timeout_sec
+        retries = self.max_retries if max_retries is None else max_retries
+        if retries < 1:
+            retries = 1
+
+        if self.registry is None:
+            return {
+                "ok": False, "skill_id": skill_id,
+                "result": None, "error": "registry not configured",
+                "attempts": 0, "duration_ms": 0.0,
+            }
+
+        skill = self.registry.get(skill_id)
+        if skill is None:
+            return {
+                "ok": False, "skill_id": skill_id,
+                "result": None, "error": f"skill not found: {skill_id}",
+                "attempts": 0, "duration_ms": 0.0,
+            }
+        if not getattr(skill, "enabled", True):
+            return {
+                "ok": False, "skill_id": skill_id,
+                "result": None, "error": f"skill disabled: {skill_id}",
+                "attempts": 0, "duration_ms": 0.0,
+            }
+
+        handler = self._resolve_handler(skill)
+        started = datetime.now()
+        last_error: Optional[str] = None
+        attempt = 0
+        for attempt in range(1, retries + 1):
+            try:
+                res = await asyncio.wait_for(handler(inputs), timeout=timeout_sec)
+                duration_ms = (datetime.now() - started).total_seconds() * 1000.0
+                rec = SkillExecutionRecord(
+                    skill_id=skill_id,
+                    started_at=started.isoformat(),
+                    ended_at=datetime.now().isoformat(),
+                    duration_ms=duration_ms,
+                    success=True,
+                    error="",
+                    attempts=attempt,
+                    inputs=inputs,
+                    output_preview=_truncate_preview(res),
+                )
+                self.audit_log.append(rec)
+                return {
+                    "ok": True, "skill_id": skill_id,
+                    "result": res, "error": None,
+                    "attempts": attempt, "duration_ms": duration_ms,
+                }
+            except asyncio.TimeoutError:
+                last_error = f"timeout after {timeout_sec}s"
+                logger.warning(
+                    "SkillExecutorV51 timeout skill_id=%s attempt=%d/%d",
+                    skill_id, attempt, retries,
+                )
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {e}"
+                logger.warning(
+                    "SkillExecutorV51 error skill_id=%s attempt=%d/%d err=%s",
+                    skill_id, attempt, retries, last_error,
+                )
+
+            # backoff between retries (exponential)
+            if attempt < retries:
+                await asyncio.sleep(self.retry_backoff_sec * (2 ** (attempt - 1)))
+
+        duration_ms = (datetime.now() - started).total_seconds() * 1000.0
+        rec = SkillExecutionRecord(
+            skill_id=skill_id,
+            started_at=started.isoformat(),
+            ended_at=datetime.now().isoformat(),
+            duration_ms=duration_ms,
+            success=False,
+            error=last_error or "unknown",
+            attempts=attempt,
+            inputs=inputs,
+            output_preview="",
+        )
+        self.audit_log.append(rec)
+        return {
+            "ok": False, "skill_id": skill_id,
+            "result": None, "error": last_error or "unknown",
+            "attempts": attempt, "duration_ms": duration_ms,
+        }
+
+    # ---------- 审计查询 ----------
+    def get_audit_log(self, skill_id: Optional[str] = None) -> List[SkillExecutionRecord]:
+        if skill_id is None:
+            return list(self.audit_log)
+        return [r for r in self.audit_log if r.skill_id == skill_id]
+
+    def clear_audit_log(self) -> int:
+        n = len(self.audit_log)
+        self.audit_log.clear()
+        return n
+
+
+def _truncate_preview(obj: Any, max_len: int = 200) -> str:
+    """生成可读的输出预览 (避免 audit 日志过大)"""
+    try:
+        s = str(obj)
+    except Exception:
+        s = "<unrepr>"
+    if len(s) <= max_len:
+        return s
+    return s[:max_len] + f"...<+{len(s) - max_len}>"
+
+
+# Alias: 任务要求类名 SkillExecutor
+SkillExecutor = SkillExecutorV51
+

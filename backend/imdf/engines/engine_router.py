@@ -271,3 +271,69 @@ class EngineRouter:
             ],
         }
         return templates.get(engine, [])
+
+
+# ============================================================================
+#  P19-B4 — 6 V5 microservice-style engines (lazy singleton registry)
+# ============================================================================
+#  The 6 engines (CrawlerEngine, AgentEngine, OctoEngine, VidaEngine,
+#  MetaKimEngine, DramaEngine) are exposed through lazy factory functions so
+#  the existing router module stays cheap to import.  Each function returns
+#  a process-wide singleton via a module-level cache; tests can reset them
+#  by calling the explicit ``reset_engine_singletons()`` helper.
+
+from .crawler_engine import CrawlerEngine, CrawlJobState, CrawlerMetrics
+from .agent_engine import AgentEngine, AgentEngineState, AgentInvocation, AgentSession
+from .octo_engine import OctoEngine, OctoEngineState, OctoCollabMode
+from .vida_engine import VidaEngine, VidaEngineState
+from .meta_kim_engine import MetaKimEngine, MetaKimState, GovernanceStage
+from .drama_harness import DramaEngine, DramaHarnessState
+
+_engine_singletons: dict = {}
+
+
+def get_engine(name: str):
+    """Return a process-wide singleton for the named engine."""
+    if name not in _engine_singletons:
+        if name == "crawler":
+            _engine_singletons[name] = CrawlerEngine()
+        elif name == "agent":
+            _engine_singletons[name] = AgentEngine()
+        elif name == "octo":
+            _engine_singletons[name] = OctoEngine()
+        elif name == "vida":
+            _engine_singletons[name] = VidaEngine()
+        elif name == "meta_kim":
+            _engine_singletons[name] = MetaKimEngine()
+        elif name == "drama":
+            _engine_singletons[name] = DramaEngine()
+        else:
+            raise KeyError(f"unknown engine: {name!r}")
+    return _engine_singletons[name]
+
+
+def start_all_engines() -> dict:
+    """Start every registered engine.  Returns status per engine."""
+    statuses = {}
+    for name in ("crawler", "agent", "octo", "vida", "meta_kim", "drama"):
+        engine = get_engine(name)
+        if hasattr(engine, "start"):
+            engine.start()
+        statuses[name] = engine.status() if hasattr(engine, "status") else {}
+    return statuses
+
+
+def stop_all_engines() -> dict:
+    """Stop every registered engine.  Returns status per engine."""
+    statuses = {}
+    for name in ("crawler", "agent", "octo", "vida", "meta_kim", "drama"):
+        engine = get_engine(name)
+        if hasattr(engine, "stop"):
+            engine.stop()
+        statuses[name] = engine.status() if hasattr(engine, "status") else {}
+    return statuses
+
+
+def reset_engine_singletons() -> None:
+    """Drop every cached singleton — test helper only."""
+    _engine_singletons.clear()

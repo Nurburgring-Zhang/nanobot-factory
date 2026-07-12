@@ -1,0 +1,2 @@
+﻿IMDF_P2_DB_URL = sqlite:///./data/imdf.db
+Tables in Base.metadata: ['agent_tasks', 'assets', 'audit_chain_entries', 'datasets', 'embeddings', 'projects', 'tasks', 'usage_logs', 'users', 'workflows']

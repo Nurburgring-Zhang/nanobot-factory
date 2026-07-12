@@ -32,7 +32,10 @@ from .subscriptions import (
     SubscriptionService, SubscriptionStatus,
     InMemorySubscriptionStore, LoggingNotificationHook,
 )
-from .quotas import QuotaService, InMemoryQuotaTracker
+from .quotas import (
+    QuotaService, InMemoryQuotaTracker,
+    build_default_tracker, should_log_decisions,
+)
 from .admin import BillingAdminService
 from .payments import (
     get_provider, get_providers, register_provider, reset_providers,
@@ -66,14 +69,42 @@ from .customers import (
 # ============================================================================
 
 def _build_state() -> Dict[str, Any]:
-    """Build default state (in-memory; can be replaced via env or fixture)."""
+    """Build default state (in-memory; can be replaced via env or fixture).
+
+    P15-B: ``quota_tracker`` is now built via :func:`quotas.build_default_tracker`,
+    which honors the ``QUOTA_TRACKER_BACKEND`` env var (``db`` is the production-safe
+    default; ``memory`` for tests / ephemeral usage). When ``db`` is selected,
+    ``ensure_quota_schema()`` is called once so the 4 quota tables exist before
+    any traffic — startup is idempotent.
+
+    To force a tracker choice without touching code::
+
+        export QUOTA_TRACKER_BACKEND=memory    # use InMemoryQuotaTracker
+        export QUOTA_TRACKER_BACKEND=db        # use DBQuotaTracker (default)
+        export BILLING_DB_URL=sqlite:///path/to/billing.db   # optional
+    """
     order_store = InMemoryOrderStore()
     sub_store = InMemorySubscriptionStore()
-    quota_tracker = InMemoryQuotaTracker()
+    # P15-B: honor QUOTA_TRACKER_BACKEND env. Default is "db" (production-safe).
+    quota_tracker = build_default_tracker()
+    # Make sure the 4 quota tables exist when we boot in db mode (idempotent).
+    try:
+        from .db_init import ensure_quota_schema
+        ensure_quota_schema()
+    except Exception as _exc:
+        # Schema bootstrap failures shouldn't crash module import — the tracker
+        # itself raises later if writes fail.
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "ensure_quota_schema at startup skipped: %s", _exc,
+        )
     notification_hook = LoggingNotificationHook()
     order_service = OrderService(order_store)
     sub_service = SubscriptionService(sub_store, order_service, notification_hook)
     quota_service = QuotaService(quota_tracker)
+    # P15-B: optional decision-logger wiring (opt-in via QUOTA_LOG_DECISIONS=1).
+    if should_log_decisions() and hasattr(quota_tracker, "log_decision"):
+        quota_service.attach_decision_logger(quota_tracker.log_decision)
     admin_service = BillingAdminService(order_service, sub_service, quota_service)
     return {
         "order_store": order_store,
@@ -90,15 +121,60 @@ def _build_state() -> Dict[str, Any]:
 _STATE: Dict[str, Any] = _build_state()
 
 
-def reset_state() -> Dict[str, Any]:
-    """Reset all in-memory state. Test helper."""
+def reset_state(*, reset_db: bool = True) -> Dict[str, Any]:
+    """Reset all in-memory state. Test helper.
+
+    Args:
+        reset_db: if True (default), also wipe the persisted quota tables so
+            that each test starts from a clean slate (mimics the original
+            InMemoryQuotaTracker semantics where each process saw fresh
+            counts). Pass ``False`` to keep DB state — useful when a test
+            deliberately wants to read prior writes (e.g. cross-restart
+            scenarios in ``test_quota_persistence.py``).
+    """
     global _STATE
+    if reset_db:
+        try:
+            from .db_init import reset_quota_schema
+            reset_quota_schema()
+        except Exception as _exc:
+            import logging as _logging
+            _logging.getLogger(__name__).debug(
+                "reset_state: quota schema reset skipped: %s", _exc,
+            )
     _STATE = _build_state()
     return _STATE
 
 
 def get_state() -> Dict[str, Any]:
     return _STATE
+
+
+def set_quota_tracker_backend(backend: str, url: Optional[str] = None) -> None:
+    """P15-B: runtime swap of the quota tracker backend.
+
+    Replaces ``_STATE['quota_tracker']`` with a freshly-built tracker of the
+    requested backend (``"memory"`` or ``"db"``) and re-attaches the decision
+    logger if ``QUOTA_LOG_DECISIONS=1`` is set.
+
+    Args:
+        backend: ``"memory"`` or ``"db"`` (matches :data:`quotas.VALID_TRACKER_BACKENDS`).
+        url: optional SQLAlchemy URL for the ``"db"`` backend.
+
+    Raises:
+        ValueError: If ``backend`` is unknown.
+    """
+    new_tracker = build_default_tracker(backend=backend, url=url)
+    if should_log_decisions() and hasattr(new_tracker, "log_decision"):
+        _STATE["quota_service"].attach_decision_logger(new_tracker.log_decision)
+    else:
+        _STATE["quota_service"].attach_decision_logger(None)
+    _STATE["quota_service"].set_tracker(new_tracker)
+    _STATE["quota_tracker"] = new_tracker
+    # Re-wire admin service so global_usage() sees the fresh tracker.
+    _STATE["admin_service"] = BillingAdminService(
+        _STATE["order_service"], _STATE["sub_service"], _STATE["quota_service"],
+    )
 
 
 # ============================================================================

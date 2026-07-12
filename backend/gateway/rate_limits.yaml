@@ -1,0 +1,124 @@
+# =====================================================================
+# Per-endpoint rate-limit configuration
+# =====================================================================
+# Loaded by ``backend/gateway/rate_limit_config.py::RateLimitConfig``
+# Pattern matching uses fnmatch wildcards (``*``, ``**``).
+# First-match wins; order matters.
+# ---------------------------------------------------------------------
+
+rate_limits:
+  # Defaults applied when no pattern matches.
+  defaults:
+    capacity: 100
+    refill_per_second: 50.0
+    burst: 200
+
+  # ----- P0 #1 — proxy-trust controls (added 2026-07-01) -----
+  # Trusted upstream IPs that are allowed to set X-Forwarded-For.
+  # When the direct client is NOT in this list, XFF is ignored and
+  # bucketing falls back to ``request.client.host``.  Defaults to
+  # loopback + RFC1918 + IPv6 ULA if unset.
+  trusted_proxies:
+    - 127.0.0.1/32
+    - ::1/128
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - fc00::/7
+    - fe80::/10
+
+  # How many proxy hops to trust when walking the X-Forwarded-For
+  # chain.  Each trusted hop on the right of the chain is skipped;
+  # the next non-trusted IP is the effective client.  ``1`` is the
+  # safe default for a single nginx/cloudfront in front of us.
+  proxy_chain_depth: 1
+
+  endpoints:
+    # --- 内部端点 bypass -----------------------------------------------------
+    - pattern: "/_gw/*"
+      bypass: true
+      description: "Gateway control endpoints — never throttle"
+
+    - pattern: "/healthz"
+      bypass: true
+      description: "Liveness probe"
+
+    - pattern: "/readyz"
+      bypass: true
+      description: "Readiness probe"
+
+    - pattern: "/"
+      bypass: true
+      description: "Gateway root — informational only"
+
+    # --- 限流严格 ----------------------------------------------------------
+    - pattern: "/api/v1/auth/login"
+      capacity: 10
+      refill_per_second: 1.0
+      burst: 20
+      description: "Anti-bruteforce login"
+
+    - pattern: "/api/v1/auth/register"
+      capacity: 5
+      refill_per_second: 0.5
+      burst: 10
+      description: "Anti-spam registration"
+
+    - pattern: "/api/v1/auth/*"
+      capacity: 50
+      refill_per_second: 10.0
+      burst: 100
+      description: "All other auth endpoints"
+
+    # --- 高吞吐 -----------------------------------------------------------
+    - pattern: "/api/v1/search"
+      capacity: 500
+      refill_per_second: 200.0
+      burst: 1000
+      description: "Search latency-sensitive"
+
+    - pattern: "/api/v1/export"
+      capacity: 30
+      refill_per_second: 5.0
+      burst: 60
+      trust_proxy: true
+      description: "Export jobs are heavy"
+
+    - pattern: "/api/v1/upload"
+      capacity: 50
+      refill_per_second: 10.0
+      burst: 100
+      trust_proxy: true
+      description: "File uploads — bursty"
+
+    # --- 中等吞吐 -------------------------------------------------------
+    - pattern: "/api/v1/agents/**"
+      capacity: 200
+      refill_per_second: 80.0
+      burst: 400
+
+    - pattern: "/api/v1/datasets/**"
+      capacity: 200
+      refill_per_second: 80.0
+      burst: 400
+
+    - pattern: "/api/v1/workflows/**"
+      capacity: 150
+      refill_per_second: 60.0
+      burst: 300
+
+    # --- 默认 gateway 前缀 ----------------------------------------------
+    - pattern: "/api/v1/**"
+      capacity: 100
+      refill_per_second: 50.0
+      burst: 200
+
+    - pattern: "/api/v2/**"
+      capacity: 100
+      refill_per_second: 50.0
+      burst: 200
+
+    - pattern: "/api/**"
+      capacity: 100
+      refill_per_second: 50.0
+      burst: 200

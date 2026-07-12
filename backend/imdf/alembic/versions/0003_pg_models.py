@@ -212,7 +212,11 @@ def upgrade() -> None:
                 prev_hash VARCHAR(80) NOT NULL,
                 entry_hash VARCHAR(80) NOT NULL,
                 signature VARCHAR(80) NOT NULL,
-                extra TEXT DEFAULT ''
+                -- P21 P2 P1: was TEXT — p13_c1_p99_db:97-100 creates a GIN
+                -- index on this column using ``jsonb_path_ops`` which only
+                -- works on JSONB. Switching the column to JSONB so the GIN
+                -- index becomes a real, queryable index.
+                extra JSONB NOT NULL DEFAULT '{}'::jsonb
             )
         """)
     else:
@@ -232,7 +236,11 @@ def upgrade() -> None:
             sa.Column("prev_hash", sa.String(length=80), nullable=False),
             sa.Column("entry_hash", sa.String(length=80), nullable=False),
             sa.Column("signature", sa.String(length=80), nullable=False),
-            sa.Column("extra", sa.Text(), nullable=True, server_default=""),
+            # P21 P2 P1: was ``sa.Text()``. Switched to ``sa.JSON()`` so the
+            # column type matches the model (``get_jsonb_column()``) and the
+            # cross-dialect behaviour is consistent. The GIN index in
+            # p13_c1_p99_db:97-100 is PG-only, so SQLite is unaffected.
+            sa.Column("extra", sa.JSON(), nullable=True),
         )
     op.create_index("ix_audit_chain_entries_timestamp", "audit_chain_entries", ["timestamp"])
     op.create_index("ix_audit_chain_entries_occurred_at", "audit_chain_entries", ["occurred_at"])

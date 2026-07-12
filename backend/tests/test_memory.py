@@ -137,12 +137,20 @@ class TestDatabase:
 class TestRateLimiter:
     """Test cases for rate limiter"""
 
-    def test_rate_limiter_init(self):
-        """Test rate limiter initialization"""
-        from server import RateLimiter
-        
-        limiter = RateLimiter(requests=60, window=60)
+    def test_rate_limiter_init(self, rate_limiter_cls):
+        """Test rate limiter initialization.
+
+        P12-B3: 用 ``rate_limiter_cls`` fixture 替代 ``from server import
+        RateLimiter``。直接 ``import server`` 会触发 server.py 顶层
+        ``from task_queue import TaskExecutor`` 等, 在 imdf 命名空间下与
+        imdf/engines/task_queue.py 冲突。fixture 用 AST 切片 + 独立 namespace
+        exec 干净加载 RateLimiter 类, 无副作用。
+        """
+        limiter = rate_limiter_cls(requests=60, window=60)
         assert limiter is not None
+        assert limiter.requests == 60
+        assert limiter.window == 60
+        assert limiter.burst == 20  # default burst
 
 
 if __name__ == "__main__":

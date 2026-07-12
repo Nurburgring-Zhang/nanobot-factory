@@ -533,3 +533,75 @@ class TestProviderIntegration:
         latest = matching[-1]
         assert latest.method == "AI_PROVIDER"
         assert "openai-compatible" in latest.path
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 7. P11-A: 默认 provider enabled=True — 路由可达性修复
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestP11ADefaultProvidersEnabled:
+    """P11-A: 验证 ``_get_default_providers()`` 默认开启 OpenAI 兼容 provider.
+
+    历史: 之前所有 provider 都 ``enabled=False``, 导致 ``/api/chat`` 调用
+    ``call_provider_smart`` 时找不到任何 enabled provider, 总是 fallback 到
+    ``NanobotAdapter.chat()`` 老链路。
+    """
+
+    def test_openai_compatible_default_enabled(self):
+        """openai-compatible 默认 ``enabled=True``, 让 call_provider_smart 命中."""
+        defaults = pr._get_default_providers()
+        openai = next((p for p in defaults if p["id"] == "openai-compatible"), None)
+        assert openai is not None, "默认 provider 列表里必须有 openai-compatible"
+        assert openai["enabled"] is True, (
+            "P11-A 修复: openai-compatible 必须默认 enabled=True, "
+            "否则 /api/chat 永远 fallback 到 NanobotAdapter 老链路"
+        )
+        # 必须有默认 baseUrl 和 chatModels
+        assert openai["baseUrl"], "openai-compatible 必须有默认 baseUrl"
+        assert openai["chatModels"], "openai-compatible 必须有默认 chatModels"
+        # chatModels 里至少包含一个常见的便宜模型 (gpt-4o-mini)
+        assert any("gpt-4o-mini" in m for m in openai["chatModels"]), (
+            "默认 chatModels 应包含 gpt-4o-mini 作为低成本默认"
+        )
+
+    def test_at_least_one_default_provider_enabled(self):
+        """默认列表里至少要有一个 enabled=True 的 provider — 路由可达."""
+        defaults = pr._get_default_providers()
+        enabled = [p for p in defaults if p.get("enabled")]
+        assert len(enabled) >= 1, (
+            f"P11-A 修复: 默认 providers 里至少要有一个 enabled=True, "
+            f"否则 call_provider_smart 路径永远命中不到. 当前: {[(p['id'], p.get('enabled')) for p in defaults]}"
+        )
+
+    def test_other_providers_require_explicit_enable(self):
+        """其他 provider (modelscope/volcengine/comfyui/jimeng-cli) 仍默认 disabled,
+        因为它们需要各自的 API key 或本地守护进程."""
+        defaults = pr._get_default_providers()
+        for p in defaults:
+            if p["id"] == "openai-compatible":
+                continue  # 跳过 openai-compatible (P11-A 默认开启)
+            assert p.get("enabled") is False, (
+                f"非 openai-compatible provider ({p['id']}) 默认应 enabled=False, "
+                f"避免无 key 时路由撞死"
+            )
+
+    @pytest.mark.asyncio
+    async def test_call_provider_smart_works_with_default_provider(self, monkeypatch):
+        """call_provider_smart 用默认 provider 命中 → mock 降级 (无 key) 返回 ok."""
+        # 用默认 enabled 的 openai-compatible
+        defaults = pr._get_default_providers()
+        provider = next(p for p in defaults if p["id"] == "openai-compatible" and p.get("enabled"))
+        # 默认没 apiKey → 自动 mock 降级
+        monkeypatch.setenv("AI_RATE_LIMIT_PER_HOUR", "10000")
+        result = await pr.call_provider_smart(
+            provider,
+            {"model": provider["chatModels"][0], "messages": [{"role": "user", "content": "hi"}]},
+            kind="chat", user_id="p11a-default",
+        )
+        assert result["ok"] is True, (
+            f"call_provider_smart 用默认 provider 应直接 ok (mock 降级), "
+            f"实际: {result}"
+        )
+        assert result.get("mock") is True, "无 apiKey 时应自动 mock 降级"
+        assert result.get("provider_id") == "openai-compatible"
+        assert "cost_usd" in result

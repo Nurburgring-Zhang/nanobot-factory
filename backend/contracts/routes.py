@@ -14,11 +14,19 @@ from . import (
     sign_contract,
     save_contract_pdf,
     on_order_paid,
+    sign_contract_real,
+    verify_contract_signature,
+    generate_admin_cert_pair,
 )
 from .expiration import (
     check_expiring, send_expiration_notices,
     expire_overdue, renew_contract, get_expiration_stats,
     EXPIRATION_DEFAULT_WINDOW_DAYS,
+)
+from .signing import (
+    ensure_dev_ca,
+    issue_leaf_for_subject,
+    SignMode,
 )
 
 router = APIRouter(prefix="/api/v1/contracts", tags=["contracts"])
@@ -107,6 +115,82 @@ def hook_on_order_paid(order_id: str, plan_name: str, amount: float, company: st
     """W1 Order paid 钩子."""
     c = on_order_paid(order_id, plan_name, amount, company, email)
     return c.to_dict()
+
+
+# ============================================================================
+# F-6.7: 第三方电子签名 (PKI + 真实 SM2 / ECDSA / RSA + 时间戳)
+# ============================================================================
+class SignRealRequest(BaseModel):
+    signer: str = Field(..., min_length=1, max_length=200,
+                        description="签名人 / 公司名 (用于查 / 颁发叶子证书)")
+
+
+class GenerateCertRequest(BaseModel):
+    subject: str = Field(..., min_length=1, max_length=200,
+                        description="Subject CN (公司 / 个人 / 服务)")
+    email: Optional[str] = Field(None, max_length=120,
+                        description="可选 Email, 写入 SAN")
+    validity_days: int = Field(1095, ge=1, le=3650,
+                        description="证书有效期 (默认 3 年 = 1095 天)")
+
+
+@router.post("/{contract_id}/sign-pki", summary="F-6.7 PKI 签名 (真实证书链 + 时间戳)")
+def sign_pki(contract_id: str, req: SignRealRequest):
+    """对合同进行真实 PKI 签名 — 替代旧的 /sign 占位 SM2.
+
+    流程: 颁发叶子证书 → 选 alg (env SIGN_MODE) → 签 doc_bytes → 时间戳.
+    """
+    try:
+        result = sign_contract_real(contract_id, req.signer)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="contract not found")
+    # 同步重新保存 PDF 含签名信息
+    c = get_contract(contract_id)
+    if c:
+        save_contract_pdf(c)
+    return result
+
+
+@router.post("/{contract_id}/verify-pki", summary="F-6.7 PKI 验签")
+def verify_pki(contract_id: str):
+    """验证合同签名 — 含证书链 + 时间戳 + 篡改检测."""
+    try:
+        result = verify_contract_signature(contract_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="contract not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return result
+
+
+@router.post("/certs/generate", summary="F-6.7 管理员: 颁发叶子证书")
+def admin_generate_cert(req: GenerateCertRequest):
+    """管理员 API: 给指定 subject 颁发叶子证书 (默认 3 年有效期)."""
+    try:
+        return generate_admin_cert_pair(
+            subject=req.subject,
+            validity_days=req.validity_days,
+            email=req.email,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"cert_generation_failed: {e}")
+
+
+@router.get("/certs/ca", summary="F-6.7 读取当前 CA 信息 (供客户端离线验签)")
+def get_ca_info():
+    """返回当前 CA 证书 + 指纹 (供外部系统嵌入验签逻辑)."""
+    ca = ensure_dev_ca()
+    return {
+        "subject_cn": ca.subject_cn,
+        "issuer_cn": ca.issuer_cn,
+        "serial": ca.serial,
+        "not_before": ca.not_before,
+        "not_after": ca.not_after,
+        "fingerprint": ca.fingerprint,
+        "public_key_alg": ca.public_key_alg,
+        "cert_pem": ca.cert_pem.decode("ascii"),
+        "sign_mode": SignMode.from_env().value,
+    }
 
 
 # ============================================================================

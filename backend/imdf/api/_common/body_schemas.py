@@ -624,10 +624,72 @@ class ReviewDeployRequest(BaseModel):
 # ============================================================================
 
 class RequirementCreate(BaseModel):
+    """需求创建请求体 — 接受 legacy 前端值 + 新 engine 枚举名 (P5-R1-T2 retry)
+    type 接受值:
+      - Legacy frontend values: general / feature / bug / improvement
+      - New engine enum names: data_collection / data_annotation / data_cleaning /
+        model_evaluation / data_augmentation / quality_review
+    priority 接受值:
+      - Legacy frontend values: low / medium / high / critical
+      - New engine enum names: P0 / P1 / P2 / P3
+    routes_extended.py 内的 _normalize_req_type / _priority_from_str 负责把 legacy
+    值映射到 engine 枚举, 新值直接走 ``RequirementType[name]`` / ``Priority[name]``.
+    """
     title: str = Field(..., min_length=1, max_length=256, description="需求标题")
-    type: Literal["general", "feature", "bug", "improvement"] = Field("general", description="类型")
-    priority: Literal["low", "medium", "high", "critical"] = Field("medium", description="优先级")
+    type: Literal[
+        # Legacy frontend values (向后兼容)
+        "general", "feature", "bug", "improvement",
+        # New engine enum names (P5-R1-T2 直接接受)
+        "data_collection", "data_annotation", "data_cleaning",
+        "model_evaluation", "data_augmentation", "quality_review",
+    ] = Field("general", description="类型")
+    priority: Literal[
+        # Legacy frontend values (向后兼容)
+        "low", "medium", "high", "critical",
+        # New engine enum names (P5-R1-T2 直接接受)
+        "P0", "P1", "P2", "P3",
+    ] = Field("medium", description="优先级")
     description: Optional[str] = Field(None, max_length=4096, description="详细描述")
+    # P5-R1-T2 新增: 与 ProjectCenter 打通
+    project_id: Optional[str] = Field(None, min_length=1, max_length=128,
+                                      description="关联项目 ID (ProjectCenter)")
+    pack_id: Optional[str] = Field(None, min_length=1, max_length=128,
+                                    description="关联成果包 ID")
+    qc_status: Optional[Literal["not_started", "in_progress", "passed", "failed"]] = Field(
+        None, description="质检状态")
+    delivery_id: Optional[str] = Field(None, min_length=1, max_length=128,
+                                       description="关联交付 ID")
+    due_date: Optional[str] = Field(None, max_length=32,
+                                    description="截止日期 ISO 格式")
+    owner: Optional[str] = Field(None, min_length=1, max_length=64,
+                                 description="责任人 user_id")
+    acceptance_criteria: Optional[str] = Field(None, max_length=4096,
+                                               description="验收标准")
+    tags: Optional[List[str]] = Field(default=None, max_length=32,
+                                      description="标签列表")
+
+
+class RequirementReassign(BaseModel):
+    """P5-R1-T2 新增 — 重派任务请求体"""
+    strategy: Literal["by_skill", "by_workload", "random", "hybrid"] = Field(
+        "hybrid", description="分配策略")
+    skill_requirements: Optional[List[str]] = Field(
+        default=None, max_length=32, description="指定技能列表 (可选)")
+
+
+class RequirementDecomposePreview(BaseModel):
+    """P5-R1-T2 新增 — 拆解预览请求 (目前不需要 body, 保留扩展)"""
+    force: bool = Field(False, description="是否强制预览 (忽略 status 检查)")
+
+
+class RequirementUpdateMeta(BaseModel):
+    """P5-R1-T2 新增 — 更新需求关联元数据"""
+    project_id: Optional[str] = Field(None, min_length=1, max_length=128)
+    pack_id: Optional[str] = Field(None, min_length=1, max_length=128)
+    qc_status: Optional[Literal["not_started", "in_progress", "passed", "failed"]] = None
+    delivery_id: Optional[str] = Field(None, min_length=1, max_length=128)
+    due_date: Optional[str] = Field(None, max_length=32)
+    owner: Optional[str] = Field(None, min_length=1, max_length=64)
 
 
 class RequirementAssign(BaseModel):
@@ -1240,3 +1302,102 @@ class OSSSyncRequest(BaseModel):
 class TransferCleanupRequest(BaseModel):
     older_than_days: int = Field(30, ge=0, le=3650, description="清理多少天前的")
     confirm: bool = Field(False, description="确认")
+
+
+# ============================================================================
+# P5-R1-T6 — Internal QC + Requester Acceptance + Delivery Workflow
+# ============================================================================
+
+class QCFullRequest(BaseModel):
+    dataset_id: str = Field(..., min_length=1, max_length=128, description="数据集 ID")
+    qcer_id: str = Field("system", min_length=1, max_length=64, description="质检员 ID")
+    project_id: str = Field("", max_length=64, description="项目 ID")
+    requirement_id: str = Field("", max_length=64, description="需求 ID")
+    pack_id: str = Field("", max_length=64, description="交付包 ID")
+    severity_bias: float = Field(0.0, ge=-0.5, le=0.5, description="缺陷率偏差 (-0.5..0.5)")
+    notes: str = Field("", max_length=2048, description="备注")
+
+
+class QCSampleRequest(BaseModel):
+    dataset_id: str = Field(..., min_length=1, max_length=128)
+    sample_rate: float = Field(0.05, gt=0.0, le=1.0, description="抽样率 (0,1]")
+    qcer_id: str = Field("system", min_length=1, max_length=64)
+    project_id: str = Field("", max_length=64)
+    requirement_id: str = Field("", max_length=64)
+    pack_id: str = Field("", max_length=64)
+    severity_bias: float = Field(0.0, ge=-0.5, le=0.5)
+    notes: str = Field("", max_length=2048)
+    seed: Optional[int] = Field(None, ge=0, le=2**31 - 1, description="随机种子")
+
+
+class QCAQLRequest(BaseModel):
+    dataset_id: str = Field(..., min_length=1, max_length=128)
+    aql_level: float = Field(1.0, description="AQL 等级 (0.1/0.65/1.0/1.5/2.5/4.0/6.5)")
+    lot_size: int = Field(0, ge=0, le=10_000_000, description="批量大小 (0=自动)")
+    qcer_id: str = Field("system", min_length=1, max_length=64)
+    project_id: str = Field("", max_length=64)
+    requirement_id: str = Field("", max_length=64)
+    pack_id: str = Field("", max_length=64)
+    severity_bias: float = Field(0.0, ge=-0.5, le=0.5)
+    notes: str = Field("", max_length=2048)
+    seed: Optional[int] = Field(None, ge=0, le=2**31 - 1)
+
+    @field_validator("aql_level")
+    @classmethod
+    def _check_aql(cls, v: float) -> float:
+        valid = {0.1, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5}
+        if v not in valid:
+            raise ValueError(f"aql_level 必须是 {sorted(valid)} 之一, 收到 {v}")
+        return v
+
+
+class QCStratifiedRequest(BaseModel):
+    dataset_id: str = Field(..., min_length=1, max_length=128)
+    strata: Optional[Dict[str, Dict[str, float]]] = Field(
+        default=None, description="分层配置 (None=按 asset.type 自动)"
+    )
+    sample_size: int = Field(100, ge=1, le=10000, description="总抽样数")
+    qcer_id: str = Field("system", min_length=1, max_length=64)
+    project_id: str = Field("", max_length=64)
+    requirement_id: str = Field("", max_length=64)
+    pack_id: str = Field("", max_length=64)
+    severity_bias: float = Field(0.0, ge=-0.5, le=0.5)
+    notes: str = Field("", max_length=2048)
+    seed: Optional[int] = Field(None, ge=0, le=2**31 - 1)
+
+
+class QCRerunRequest(BaseModel):
+    severity_bias: float = Field(0.0, ge=-0.5, le=0.5)
+
+
+class AcceptanceCreateRequest(BaseModel):
+    delivery_id: str = Field(..., min_length=1, max_length=128)
+    requester_id: str = Field(..., min_length=1, max_length=64)
+    sample_rate: float = Field(0.05, gt=0.0, le=1.0)
+    metadata: Optional[Dict[str, str]] = Field(None, description="扩展元数据")
+    seed: Optional[int] = Field(None, ge=0, le=2**31 - 1)
+
+
+class AcceptanceSubmitRequest(BaseModel):
+    status: Literal["accepted", "rejected", "needs_revision"] = Field(..., description="验收结论")
+    comments: str = Field("", max_length=4096)
+    accepted_assets: Optional[List[str]] = Field(None, max_length=10000, description="通过资产")
+    rejected_assets: Optional[List[str]] = Field(None, max_length=10000, description="拒绝资产")
+    issues: Optional[List[Dict[str, str]]] = Field(None, max_length=1000, description="问题列表")
+
+
+class AcceptanceRevisionRequest(BaseModel):
+    reason: str = Field(..., min_length=1, max_length=4096, description="退回原因")
+    issues: Optional[List[Dict[str, str]]] = Field(None, max_length=1000)
+
+
+class DeliveryFinalizeRequest(BaseModel):
+    delivery_id: str = Field(..., min_length=1, max_length=128)
+    owner_id: str = Field("system", min_length=1, max_length=64)
+    resource_path: Optional[str] = Field(None, max_length=4096, description="资源路径 (None=默认)")
+    resource_type: Literal["file", "directory", "dataset"] = Field("dataset")
+    expiry_hours: int = Field(72, ge=1, le=8760, description="过期小时")
+    max_downloads: int = Field(0, ge=0, le=1000000, description="最大下载次数 (0=无限)")
+    password: Optional[str] = Field(None, max_length=128, description="访问密码")
+    note: str = Field("", max_length=2048, description="备注")
+    snapshot_files: Optional[List[str]] = Field(None, max_length=10000, description="快照文件列表")

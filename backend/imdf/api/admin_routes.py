@@ -133,8 +133,18 @@ def _get_all_user_quotas_bulk() -> dict:
         return result
     try:
         db = next(get_sql_db())
+        # P13-C1 优化: 只 SELECT quota 字段 (避免 SELECT *), 加 LIMIT 10000
         # 单次查询, 批量加载所有用户的配额 (代替循环里的 N 次查询)
-        rows = db.query(UserModel).all()
+        rows = (
+            db.query(
+                UserModel.username,
+                UserModel.max_datasets,
+                UserModel.max_storage_mb,
+                UserModel.max_api_calls_per_day,
+            )
+            .limit(10000)
+            .all()
+        )
         db.close()
         for row in rows:
             result.setdefault(row.username, {

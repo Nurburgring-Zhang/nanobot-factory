@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,7 +14,8 @@ logger = logging.getLogger(__name__)
 async def data_face_detect(request: Request):
     """人脸检测"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard on image_path.
+    image_path = validated_path(body.get("image_path", ""))
     min_size = body.get("min_size", 30)
 
     if not image_path or not os.path.exists(image_path):
@@ -45,7 +49,8 @@ async def data_face_detect(request: Request):
 async def data_face_landmarks(request: Request):
     """人脸关键点（68点）"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard on image_path.
+    image_path = validated_path(body.get("image_path", ""))
 
     if not image_path or not os.path.exists(image_path):
         raise HTTPException(status_code=400, detail="Image path not found")
@@ -79,9 +84,10 @@ async def data_face_landmarks(request: Request):
 async def data_face_format(request: Request):
     """人脸格式转换 (IP-Adapter / ArcFace / FaceSwap)"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard on image_path and output_path.
+    image_path = validated_path(body.get("image_path", ""))
     format_type = body.get("format", "ip_adapter")
-    output_path = body.get("output_path", "./data/face_output")
+    output_path = validated_path(body.get("output_path", "./data/face_output"))
 
     if not image_path or not os.path.exists(image_path):
         raise HTTPException(status_code=400, detail="Image path not found")

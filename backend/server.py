@@ -1636,6 +1636,26 @@ app.add_middleware(
     max_age=SecurityConfig.MAX_AGE,
 )
 
+# ============================================================================
+# CSRF 中间件 — P21 P2 P2 (R2-NEW-03 + R2-NEW-07 修复)
+# ----------------------------------------------------------------------------
+# 检查 state-changing 请求 (POST/PUT/PATCH/DELETE) 的 Origin header 是否
+# 在 SecurityConfig.ALLOWED_ORIGINS 白名单中。缺 Origin 或非白名单 → 403。
+# 与 CORS 共用同一 allow-list 来源, 保证两层不会失同步。
+# 顺序: CORS 先添加 (inner) → CSRF 后添加 (中间) → rate_limit 最后 (outer)。
+# 请求流: rate_limit → CSRF → CORS → endpoint。
+#   * OPTIONS preflight 被 CORS 短路, CSRF 看不到。
+#   * 真实 unsafe 请求先过 rate_limit, 再过 CSRF (拒绝 untrusted origin),
+#     再过 CORS (加 headers), 最后到 endpoint。
+# ============================================================================
+from common.middleware import CSRFMiddleware  # noqa: E402
+app.add_middleware(
+    CSRFMiddleware,
+    allowed_origins=SecurityConfig.ALLOWED_ORIGINS,
+    # ``enabled`` 留 None: 让 CSRFMiddleware 自己读 CSRF_ENABLED env。
+    # 测试环境会设 CSRF_ENABLED=false; 生产环境默认 enabled。
+)
+
 # 速率限制中间件
 app.middleware("http")(rate_limit_middleware)
 
@@ -1935,7 +1955,18 @@ async def reset_pipeline(pipeline_id: str):
 # ============================================================================
 # 数据集版本管理 API
 # ============================================================================
-from core.dataset_version import get_version_manager
+# P11-D-3: 容错导入 — 如果 core.dataset_version 缺失(简化 dev 安装),
+# 替换为 stub, 让 RateLimiter 等无关测试不因 server.py import 失败而崩。
+try:
+    from core.dataset_version import get_version_manager  # type: ignore
+except ImportError:  # pragma: no cover — 容错
+    def get_version_manager(*args, **kwargs):  # type: ignore
+        """Stub for missing core.dataset_version; logs warning on first use."""
+        import logging
+        logging.getLogger("server").warning(
+            "core.dataset_version missing — dataset version API disabled (stub)"
+        )
+        return None
 
 @app.post("/api/v2/datasets/{dataset_id}/init")
 async def init_dataset(dataset_id: str, request: Request):
@@ -10789,6 +10820,32 @@ except Exception as e:
 # ============================================================================
 # Main Entry Point
 # ============================================================================
+
+# P10R4-1 / HIDDEN-3: 启动时初始化第三方集成 (Sentry + structlog)
+# 在 uvicorn.run 之前调用 — 这样 early-stage 日志也被 structlog 接管
+try:
+    from common.third_party import init_all_third_party
+    import os as _os
+    _third_party_status = init_all_third_party(
+        sentry_dsn=_os.environ.get("SENTRY_DSN", ""),
+        sentry_environment=_os.environ.get("ENVIRONMENT", "development"),
+        sentry_release=_os.environ.get("GIT_COMMIT", "unknown"),
+        structlog_json=_os.environ.get("STRUCTLOG_JSON", "true").lower() in ("true", "1", "yes"),
+        structlog_level=_os.environ.get("LOG_LEVEL", "INFO"),
+    )
+    logger.info(
+        "Third-party integration initialized: sentry=%s structlog=%s",
+        _third_party_status.get("sentry", False),
+        _third_party_status.get("structlog", False),
+    )
+except Exception as _e:
+    logger.warning("Third-party init failed (graceful degradation): %s", _e)
+
+# P10R4-1 / HIDDEN-1: 启动时确保 UnifiedAuthManager 用 BRUTE_FORCE_PERSISTENCE env 决策
+# (UnifiedAuthManager 内部已读该 env var, 这里仅显式 log 提醒)
+import os as _os2
+if _os2.environ.get("BRUTE_FORCE_PERSISTENCE", "").lower() in ("true", "1", "yes", "on"):
+    logger.info("BRUTE_FORCE_PERSISTENCE=true — brute force state will be persisted to SQLite")
 
 if __name__ == "__main__":
     uvicorn.run(

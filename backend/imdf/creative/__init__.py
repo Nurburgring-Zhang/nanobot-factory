@@ -1,0 +1,1 @@
+"""imdf.creative — 创意生成子包 (RedFox 多平台集成,后续扩展)."""

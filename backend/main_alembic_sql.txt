@@ -1,0 +1,188 @@
+﻿CREATE TABLE alembic_version (
+    version_num VARCHAR(32) NOT NULL, 
+    CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+);
+
+-- Running upgrade  -> p4_4_w1_metadata
+
+CREATE TABLE md_databases (
+    id VARCHAR(32) NOT NULL, 
+    name VARCHAR(128) NOT NULL, 
+    service VARCHAR(64) DEFAULT 'custom' NOT NULL, 
+    description TEXT DEFAULT '', 
+    host VARCHAR(256) DEFAULT '', 
+    port VARCHAR(8) DEFAULT '', 
+    created_at VARCHAR(32) NOT NULL, 
+    updated_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    UNIQUE (name)
+);
+
+CREATE INDEX ix_md_databases_service ON md_databases (service);
+
+CREATE TABLE md_schemas (
+    id VARCHAR(32) NOT NULL, 
+    database_id VARCHAR(32) NOT NULL, 
+    name VARCHAR(128) NOT NULL, 
+    description TEXT DEFAULT '', 
+    created_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    CONSTRAINT fk_md_schemas_database FOREIGN KEY(database_id) REFERENCES md_databases (id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_md_schemas_database ON md_schemas (database_id);
+
+CREATE UNIQUE INDEX uq_md_schemas_db_name ON md_schemas (database_id, name);
+
+CREATE TABLE md_tables (
+    id VARCHAR(32) NOT NULL, 
+    schema_id VARCHAR(32) NOT NULL, 
+    name VARCHAR(256) NOT NULL, 
+    table_type VARCHAR(32) DEFAULT 'table', 
+    description TEXT DEFAULT '', 
+    owner VARCHAR(128) DEFAULT '', 
+    row_count_estimate VARCHAR(32) DEFAULT '0', 
+    extra TEXT DEFAULT '{}', 
+    created_at VARCHAR(32) NOT NULL, 
+    updated_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    CONSTRAINT fk_md_tables_schema FOREIGN KEY(schema_id) REFERENCES md_schemas (id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_md_tables_schema ON md_tables (schema_id);
+
+CREATE UNIQUE INDEX uq_md_tables_schema_name ON md_tables (schema_id, name);
+
+CREATE TABLE md_columns (
+    id VARCHAR(32) NOT NULL, 
+    table_id VARCHAR(32) NOT NULL, 
+    name VARCHAR(256) NOT NULL, 
+    data_type VARCHAR(64) DEFAULT 'string', 
+    nullable VARCHAR(8) DEFAULT 'true', 
+    description TEXT DEFAULT '', 
+    ordinal VARCHAR(16) DEFAULT '0', 
+    extra TEXT DEFAULT '{}', 
+    created_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    CONSTRAINT fk_md_columns_table FOREIGN KEY(table_id) REFERENCES md_tables (id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_md_columns_table ON md_columns (table_id);
+
+CREATE UNIQUE INDEX uq_md_columns_table_name ON md_columns (table_id, name);
+
+CREATE TABLE md_datasets (
+    id VARCHAR(32) NOT NULL, 
+    name VARCHAR(256) NOT NULL, 
+    format VARCHAR(32) DEFAULT 'parquet', 
+    size_bytes VARCHAR(32) DEFAULT '0', 
+    row_count VARCHAR(32) DEFAULT '0', 
+    columns_json TEXT DEFAULT '[]', 
+    description TEXT DEFAULT '', 
+    owner VARCHAR(128) DEFAULT '', 
+    tier VARCHAR(16) DEFAULT 'bronze', 
+    location VARCHAR(512) DEFAULT '', 
+    extra TEXT DEFAULT '{}', 
+    created_at VARCHAR(32) NOT NULL, 
+    updated_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    UNIQUE (name)
+);
+
+CREATE INDEX ix_md_datasets_tier ON md_datasets (tier);
+
+CREATE TABLE md_tags (
+    id VARCHAR(32) NOT NULL, 
+    name VARCHAR(128) NOT NULL, 
+    category VARCHAR(64) DEFAULT 'general', 
+    description TEXT DEFAULT '', 
+    color VARCHAR(16) DEFAULT '#888888', 
+    source VARCHAR(32) DEFAULT 'manual', 
+    sensitivity_level VARCHAR(8) DEFAULT '0', 
+    created_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    UNIQUE (name)
+);
+
+CREATE INDEX ix_md_tags_category ON md_tags (category);
+
+CREATE INDEX ix_md_tags_source ON md_tags (source);
+
+CREATE TABLE md_tag_assignments (
+    id VARCHAR(32) NOT NULL, 
+    tag_id VARCHAR(32) NOT NULL, 
+    target_type VARCHAR(32) NOT NULL, 
+    target_id VARCHAR(32) NOT NULL, 
+    source VARCHAR(32) DEFAULT 'manual', 
+    created_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    CONSTRAINT fk_md_tag_assignments_tag FOREIGN KEY(tag_id) REFERENCES md_tags (id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_md_tag_assignments_tag ON md_tag_assignments (tag_id);
+
+CREATE INDEX ix_md_tag_assignments_target ON md_tag_assignments (target_type, target_id);
+
+CREATE UNIQUE INDEX uq_md_tag_assignments ON md_tag_assignments (tag_id, target_type, target_id);
+
+CREATE TABLE md_glossaries (
+    id VARCHAR(32) NOT NULL, 
+    name VARCHAR(128) NOT NULL, 
+    description TEXT DEFAULT '', 
+    owner VARCHAR(128) DEFAULT '', 
+    created_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    UNIQUE (name)
+);
+
+CREATE TABLE md_glossary_terms (
+    id VARCHAR(32) NOT NULL, 
+    glossary_id VARCHAR(32) NOT NULL, 
+    name VARCHAR(256) NOT NULL, 
+    definition TEXT DEFAULT '', 
+    related_terms_json TEXT DEFAULT '[]', 
+    extra TEXT DEFAULT '{}', 
+    created_at VARCHAR(32) NOT NULL, 
+    updated_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    CONSTRAINT fk_md_glossary_terms_glossary FOREIGN KEY(glossary_id) REFERENCES md_glossaries (id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_md_glossary_terms_glossary ON md_glossary_terms (glossary_id);
+
+CREATE UNIQUE INDEX uq_md_glossary_terms_glossary_name ON md_glossary_terms (glossary_id, name);
+
+CREATE TABLE md_term_relations (
+    id VARCHAR(32) NOT NULL, 
+    from_term_id VARCHAR(32) NOT NULL, 
+    to_term_id VARCHAR(32) NOT NULL, 
+    relation_type VARCHAR(32) NOT NULL, 
+    note TEXT DEFAULT '', 
+    created_at VARCHAR(32) NOT NULL, 
+    PRIMARY KEY (id), 
+    CONSTRAINT fk_md_term_relations_from FOREIGN KEY(from_term_id) REFERENCES md_glossary_terms (id) ON DELETE CASCADE, 
+    CONSTRAINT fk_md_term_relations_to FOREIGN KEY(to_term_id) REFERENCES md_glossary_terms (id) ON DELETE CASCADE
+);
+
+CREATE INDEX ix_md_term_relations_from ON md_term_relations (from_term_id);
+
+CREATE INDEX ix_md_term_relations_to ON md_term_relations (to_term_id);
+
+CREATE UNIQUE INDEX uq_md_term_relations ON md_term_relations (from_term_id, to_term_id, relation_type);
+
+INSERT INTO alembic_version (version_num) VALUES ('p4_4_w1_metadata') RETURNING version_num;
+
+-- Running upgrade p4_4_w1_metadata -> p13_c1_p99_db
+
+CREATE INDEX ix_audit_chain_method_path_seq ON audit_chain_entries (method, path, seq);
+
+CREATE INDEX ix_embeddings_entity_created ON embeddings (entity_type, entity_id, created_at);
+
+CREATE INDEX ix_agent_tasks_status_priority_queued ON agent_tasks (status, priority, queued_at);
+
+CREATE INDEX ix_workflows_owner_status_updated ON workflows (owner, status, updated_at);
+
+CREATE INDEX ix_usage_logs_provider_kind_created ON usage_logs (provider_id, kind, created_at);
+
+UPDATE alembic_version SET version_num='p13_c1_p99_db' WHERE alembic_version.version_num = 'p4_4_w1_metadata';
+

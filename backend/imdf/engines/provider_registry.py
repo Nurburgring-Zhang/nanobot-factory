@@ -330,11 +330,20 @@ def normalize_providers(raw_providers: Any, current: Optional[List[Dict]] = None
 
 
 def _get_default_providers() -> List[Dict]:
-    """返回默认 provider 模板"""
+    """返回默认 provider 模板.
+
+    P11-A: 默认开启 OpenAI 兼容协议 (``enabled=True``), 让 ``call_provider_smart``
+    路径在没有任何 settings.json 配置时也能命中 (无 apiKey 时自动 mock 降级,
+    有 apiKey 时直接打 https://api.openai.com/v1)。其他 provider 仍默认关闭,
+    因为它们需要各自平台的 API key 或本地守护进程。
+    """
     return [
         {"id": "openai-compatible", "label": "OpenAI 兼容", "protocol": "openai-compatible",
-         "baseUrl": "", "enabled": False, "imageModels": [], "videoModels": [], "chatModels": [],
-         "defaults": {}},
+         "baseUrl": "https://api.openai.com/v1", "enabled": True,
+         "imageModels": ["dall-e-3", "gpt-image-1"],
+         "videoModels": [],
+         "chatModels": ["gpt-4o-mini", "gpt-4o", "o1-mini", "claude-3-5-sonnet", "deepseek-chat"],
+         "defaults": {"chatModel": "gpt-4o-mini", "imageModel": "dall-e-3"}},
         {"id": "modelscope", "label": "ModelScope", "protocol": "modelscope",
          "baseUrl": DEFAULT_MODELSCOPE_BASE, "enabled": False,
          "imageModels": DEFAULT_MODELSCOPE_IMAGE_MODELS, "videoModels": [], "chatModels": DEFAULT_MODELSCOPE_CHAT_MODELS,

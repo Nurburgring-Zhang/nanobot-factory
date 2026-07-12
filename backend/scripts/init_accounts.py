@@ -12,6 +12,7 @@ Nanobot Factory - 预设账号初始化脚本
 import os
 import sys
 import argparse
+import secrets
 
 # 确保 backend 目录在 sys.path 中
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,24 +34,25 @@ from auth.unified_auth import (
 
 PRESET_ACCOUNTS = [
     # (username, password, role, display_name, team, email)
-    # ---- 管理员 ----
-    ("admin",       "Admin@2026!",  "admin",      "系统管理员",     "system",       "admin@nanobot.local"),
+    # ---- 管理员 (P11-D-1: 密码从 ADMIN_INITIAL_PASSWORD 注入) ----
+    # 注意: 在运行时会被 _resolve_admin_password() 替换为 env 提供的值
+    ("admin",       "ENV:ADMIN_INITIAL_PASSWORD",  "admin",      "系统管理员",     "system",       "admin@nanobot.local"),
 
-    # ---- 生产团队 ----
-    ("prod_lead",   "Prod@2026!",   "team_lead",  "生产负责人",     "production",   "prod_lead@nanobot.local"),
-    ("qc_lead",     "QC@20261!",    "reviewer",   "质检负责人",     "production",   "qc_lead@nanobot.local"),
-    ("prod_user1",  "Prod1@2026!",  "annotator",  "生产人员-01",    "production",   "prod_user1@nanobot.local"),
-    ("prod_user2",  "Prod2@2026!",  "annotator",  "生产人员-02",    "production",   "prod_user2@nanobot.local"),
-    ("prod_user3",  "Prod3@2026!",  "annotator",  "生产人员-03",    "production",   "prod_user3@nanobot.local"),
+    # ---- 生产团队 (P12-B1: 全部从 env 注入,严禁硬编码) ----
+    ("prod_lead",   "ENV:PROD_LEAD_PASSWORD",     "team_lead",  "生产负责人",     "production",   "prod_lead@nanobot.local"),
+    ("qc_lead",     "ENV:QC_LEAD_PASSWORD",       "reviewer",   "质检负责人",     "production",   "qc_lead@nanobot.local"),
+    ("prod_user1",  "ENV:PROD_USER1_PASSWORD",    "annotator",  "生产人员-01",    "production",   "prod_user1@nanobot.local"),
+    ("prod_user2",  "ENV:PROD_USER2_PASSWORD",    "annotator",  "生产人员-02",    "production",   "prod_user2@nanobot.local"),
+    ("prod_user3",  "ENV:PROD_USER3_PASSWORD",    "annotator",  "生产人员-03",    "production",   "prod_user3@nanobot.local"),
 
     # ---- 众包团队 ----
-    ("crowd_lead",  "Crowd@2026!",  "team_lead",  "众包负责人",     "crowdsource",  "crowd_lead@nanobot.local"),
-    ("crowd_mgr",   "CrowdM@2026!", "reviewer",   "众包管理员",     "crowdsource",  "crowd_mgr@nanobot.local"),
-    ("crowd_qc",    "CrowdQ@2026!", "reviewer",   "众包质检",       "crowdsource",  "crowd_qc@nanobot.local"),
-    ("crowd_user1", "Crowd1@2026!", "annotator",  "众包生产人员",   "crowdsource",  "crowd_user1@nanobot.local"),
+    ("crowd_lead",  "ENV:CROWD_LEAD_PASSWORD",    "team_lead",  "众包负责人",     "crowdsource",  "crowd_lead@nanobot.local"),
+    ("crowd_mgr",   "ENV:CROWD_MGR_PASSWORD",     "reviewer",   "众包管理员",     "crowdsource",  "crowd_mgr@nanobot.local"),
+    ("crowd_qc",    "ENV:CROWD_QC_PASSWORD",      "reviewer",   "众包质检",       "crowdsource",  "crowd_qc@nanobot.local"),
+    ("crowd_user1", "ENV:CROWD_USER1_PASSWORD",   "annotator",  "众包生产人员",   "crowdsource",  "crowd_user1@nanobot.local"),
 
     # ---- 需求方 ----
-    ("client1",     "Client@2026!", "viewer",     "需求方代表",     "client",       "client1@nanobot.local"),
+    ("client1",     "ENV:CLIENT1_PASSWORD",       "viewer",     "需求方代表",     "client",       "client1@nanobot.local"),
 ]
 
 # 角色描述映射
@@ -75,14 +77,62 @@ TEAM_DESCRIPTIONS = {
 # 初始化逻辑
 # ============================================================================
 
+def _resolve_admin_password() -> str:
+    """P11-D-1: 从 env ``ADMIN_INITIAL_PASSWORD`` 解析 admin 密码。
+
+    优先: env ``ADMIN_INITIAL_PASSWORD``
+    回退: 测试模式 ``IMDF_TEST_MODE=1`` 时生成 ephemeral random 密码
+    """
+    return _resolve_env_password(
+        "ADMIN_INITIAL_PASSWORD",
+        purpose="admin account",
+    )
+
+
+def _resolve_env_password(env_name: str, purpose: str = "account") -> str:
+    """P12-B1: 通用 env 密码解析函数 (替代所有硬编码密码)。
+
+    优先: env ``env_name``
+    回退: 测试模式 ``IMDF_TEST_MODE=1`` 时生成 ephemeral random 密码
+    """
+    pw = os.environ.get(env_name, "").strip()
+    if pw:
+        return pw
+    if os.environ.get("IMDF_TEST_MODE", "").strip() == "1":
+        return secrets.token_urlsafe(16)
+    # 强制 fail-fast (生产模式)
+    raise RuntimeError(
+        f"{env_name} env var is required to bootstrap {purpose} "
+        f"via init_accounts.py. Set it in .env (e.g. `python -c "
+        f"'import secrets; print(secrets.token_urlsafe(24))'` to generate a "
+        f"32+ char random secret) or set IMDF_TEST_MODE=1 for ephemeral "
+        f"test password. The legacy hardcoded passwords have been removed "
+        f"for security reasons (P12-B1)."
+    )
+
+
 def init_accounts(auth: UnifiedAuthManager, reset: bool = False) -> dict:
     """
     批量初始化预设账号
     Returns: {"created": [...], "skipped": [...], "errors": [...]}
+
+    P11-D-1: admin 密码从 env ``ADMIN_INITIAL_PASSWORD`` 注入, 不再硬编码。
     """
     result = {"created": [], "skipped": [], "errors": [], "total": 0}
 
     for username, password, role_str, display_name, team, email in PRESET_ACCOUNTS:
+        # P11-D-1 / P12-B1: 解析 env 占位符
+        if password.startswith("ENV:"):
+            env_name = password[4:]
+            try:
+                password = _resolve_env_password(env_name, purpose=username)
+            except RuntimeError as e:
+                result["errors"].append({
+                    "username": username,
+                    "reason": str(e),
+                })
+                print(f"  [FAIL]  {username}: {e}")
+                continue
         existing = auth.get_user(username=username)
         if existing:
             if reset:
@@ -179,8 +229,8 @@ def print_confirmation_table(result: dict):
 
     print("=" * 90)
 
-    # 打印 JWT 测试信息 (仅用于验证)
-    print("\n  💡 测试登录: POST /api/auth/login {\"username\":\"admin\",\"password\":\"Admin@2026!\"}")
+    # 打印 JWT 测试信息 (仅用于验证) — P11-D-1: 不再硬编码密码
+    print("\n  💡 测试登录: POST /api/auth/login {\"username\":\"admin\",\"password\":\"<ADMIN_INITIAL_PASSWORD>\"}")
     print("  💡 查看用户: GET /api/auth/users?token=<access_token>")
     print("  💡 重置所有: python scripts/init_accounts.py --reset")
     print()
@@ -234,9 +284,11 @@ def main():
         print("\n  " + fmt.format("用户名", "密码", "角色", "团队", "说明"))
         print("  " + "-" * 85)
         for username, password, role_str, display_name, team, email in PRESET_ACCOUNTS:
+            # P11-D-1: DRY RUN 中也隐藏 admin 真实密码
+            display_pw = password if not password.startswith("ENV:") else "<env:ADMIN_INITIAL_PASSWORD>"
             desc = ROLE_DESCRIPTIONS.get(role_str, "")
             team_desc = TEAM_DESCRIPTIONS.get(team, team)
-            print("  " + fmt.format(username, password, role_str, team_desc, desc))
+            print("  " + fmt.format(username, display_pw, role_str, team_desc, desc))
         print("  " + "-" * 85)
         print(f"  共 {len(PRESET_ACCOUNTS)} 个预设账号\n")
         return

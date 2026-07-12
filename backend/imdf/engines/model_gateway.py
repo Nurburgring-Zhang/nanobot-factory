@@ -767,6 +767,223 @@ class ModelGateway:
             })
         return info
 
+    # ─── P10-B: observability wrapper ─────────────────────────────────────
+    async def chat_with_observability(
+        self,
+        messages: List[Dict[str, str]],
+        model: str = "auto",
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        max_fallbacks: int = 3,
+        *,
+        tenant_id: str = "anonymous",
+    ) -> ChatResponse:
+        """P10-B: ``chat()`` + cost / usage_tracker / audit_chain 集成。
+
+        在 ``chat()`` 基础上, 在每次成功/失败时:
+        1. 用 ``compute_cost_usd`` 算 USD 成本
+        2. ``usage_tracker.record(...)`` 写 UsageLog (DB 或 fallback jsonl)
+        3. ``audit_chain.record(...)`` 写 HMAC 签名审计链 (P3-8-W2)
+
+        所有 observability 调用都 try/except 降级, 不影响主调用。
+        """
+        resp = await self.chat(
+            messages=messages, model=model,
+            temperature=temperature, max_tokens=max_tokens,
+            max_fallbacks=max_fallbacks,
+        )
+        try:
+            usage = _usage_dict_compat(resp)
+            cost = compute_cost_usd(
+                model=resp.model or model,
+                tokens=usage,
+                provider=resp.provider or _infer_provider(resp.model or model),
+            )
+            _record_call_observability(
+                tenant_id=str(tenant_id or "anonymous"),
+                model=str(resp.model or model or "unknown")[:240],
+                provider=str(resp.provider or _infer_provider(resp.model or model) or "unknown")[:60],
+                usage=usage,
+                cost_usd=cost,
+                latency_ms=float(resp.latency_ms or 0.0),
+                success=bool(resp.success),
+                error=str(resp.error or ""),
+            )
+            # 把 cost / usage 标准化字段挂到 resp 上, 方便上游消费
+            resp_dict = resp.to_dict()
+            resp_dict["cost_usd"] = cost
+            resp_dict["usage_standardized"] = usage
+            # ChatResponse 是 dataclass, 加 _extras dict 给路由读
+            if not hasattr(resp, "_extras") or resp._extras is None:  # type: ignore[attr-defined]
+                resp._extras = {}  # type: ignore[attr-defined]
+            resp._extras["cost_usd"] = cost  # type: ignore[attr-defined]
+            resp._extras["usage"] = usage  # type: ignore[attr-defined]
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"chat_with_observability post-process failed: {e}")
+        return resp
+
+
+# ============================================================================
+# P10-B: cost / usage / audit integration
+# ============================================================================
+
+# 默认 USD per 1K tokens (input, output) — 与 provider_registry 保持一致
+# 格式: provider -> model -> (input_per_1k, output_per_1k)
+_DEFAULT_MODEL_COST_TABLE: Dict[str, Dict[str, Tuple[float, float]]] = {
+    "deepseek": {
+        "deepseek-chat": (0.00014, 0.00028),
+        "deepseek-reasoner": (0.00055, 0.0022),
+        "deepseek-v4-pro": (0.0007, 0.0028),
+        "deepseek-v4-flash": (0.00014, 0.00028),
+        "*": (0.0003, 0.0012),
+    },
+    "openai": {
+        "gpt-4o": (0.005, 0.015),
+        "gpt-4o-mini": (0.00015, 0.0006),
+        "gpt-4-turbo": (0.01, 0.03),
+        "o1": (0.015, 0.06),
+        "o1-mini": (0.003, 0.012),
+        "*": (0.005, 0.015),
+    },
+    "anthropic": {
+        "claude-sonnet-4-20250514": (0.003, 0.015),
+        "claude-3-5-sonnet-20241022": (0.003, 0.015),
+        "claude-3-haiku-20240307": (0.00025, 0.00125),
+        "claude-opus-4-20250514": (0.015, 0.075),
+        "*": (0.003, 0.015),
+    },
+    "google": {
+        "gemini-2.5-pro": (0.00125, 0.01),
+        "gemini-2.5-flash": (0.000075, 0.0003),
+        "gemini-2.0-flash": (0.0001, 0.0004),
+        "*": (0.001, 0.005),
+    },
+    "zhipu": {
+        "glm-4-plus": (0.0007, 0.0007),
+        "glm-4-flash": (0.0001, 0.0001),
+        "glm-4-air": (0.0001, 0.0001),
+        "glm-4v-plus": (0.0007, 0.0007),
+        "*": (0.0005, 0.0005),
+    },
+}
+
+
+def compute_cost_usd(model: str, tokens: Dict[str, int], provider: str = "") -> float:
+    """P10-B: 根据 model + tokens 算 USD 成本。
+
+    Args:
+        model: 模型 ID (e.g. "deepseek-chat", "gpt-4o")
+        tokens: usage dict — 支持 ``prompt_tokens/completion_tokens/total_tokens`` (OpenAI 风格)
+                或 ``input_tokens/output_tokens`` (Anthropic 风格)
+                或 ``promptTokenCount/candidatesTokenCount/totalTokenCount`` (Google 风格)
+        provider: provider 标识 (e.g. "deepseek"), 缺省则按 model 前缀推断
+
+    Returns:
+        float USD 成本 (4 位小数), tokens=0 时返回 0
+    """
+    pt = int(tokens.get("prompt_tokens") or tokens.get("input_tokens")
+             or tokens.get("promptTokenCount") or 0)
+    ct = int(tokens.get("completion_tokens") or tokens.get("output_tokens")
+             or tokens.get("candidatesTokenCount") or 0)
+    if pt <= 0 and ct <= 0:
+        return 0.0
+    if not provider:
+        provider = _infer_provider(model)
+    table = _DEFAULT_MODEL_COST_TABLE.get(provider, _DEFAULT_MODEL_COST_TABLE["deepseek"])
+    in_p, out_p = table.get(model) or table.get("*", (0.001, 0.003))
+    cost = (pt / 1000.0) * in_p + (ct / 1000.0) * out_p
+    return round(max(0.0, cost), 6)
+
+
+def _infer_provider(model: str) -> str:
+    """从 model id 推断 provider。"""
+    m = (model or "").lower()
+    if m.startswith("deepseek"):
+        return "deepseek"
+    if m.startswith("gpt-") or m.startswith("o1"):
+        return "openai"
+    if m.startswith("claude"):
+        return "anthropic"
+    if m.startswith("gemini"):
+        return "google"
+    if m.startswith("glm"):
+        return "zhipu"
+    return "deepseek"
+
+
+def _record_call_observability(
+    *,
+    tenant_id: str,
+    model: str,
+    provider: str,
+    usage: Dict[str, int],
+    cost_usd: float,
+    latency_ms: float,
+    success: bool,
+    error: str = "",
+) -> None:
+    """P10-B: 写 usage_tracker + audit_chain (降级, 失败不抛)。
+
+    调用 ``usage_tracker.record(...)`` (P2-3-W2) + ``audit_chain.record(...)``
+    (P3-8-W2 HMAC 签名)。任何一环失败都降级 log warning, 不影响主调用。
+    """
+    pt = int(usage.get("prompt_tokens") or usage.get("input_tokens")
+             or usage.get("promptTokenCount") or 0)
+    ct = int(usage.get("completion_tokens") or usage.get("output_tokens")
+             or usage.get("candidatesTokenCount") or 0)
+    tt = int(usage.get("total_tokens") or usage.get("totalTokenCount") or pt + ct)
+
+    # 1. usage_tracker — 写 UsageLog
+    try:
+        from engines.usage_tracker import get_tracker
+        get_tracker().record(
+            user_id=str(tenant_id or "anonymous")[:60],
+            provider_id=str(provider or "unknown")[:60],
+            protocol=str(provider or "openai-compatible")[:40],
+            kind="chat",
+            model=str(model or "")[:240],
+            status="ok" if success else "error",
+            prompt_tokens=pt,
+            completion_tokens=ct,
+            total_tokens=tt,
+            cost_usd=cost_usd,
+            latency_ms=int(latency_ms),
+            error_code="" if success else "model_call_failed",
+            error_message=str(error or "")[:2000],
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"model_gateway: usage_tracker.record failed: {e}")
+
+    # 2. audit_chain — HMAC 签名记录 (P3-8-W2 OWASP A08)
+    try:
+        from engines.audit_chain import get_chain
+        from datetime import datetime, timezone
+        chain = get_chain()
+        import hashlib as _h
+        body_str = f"{provider}|{model}|{tenant_id}|{success}|{cost_usd:.6f}|{tt}"
+        body_hash = _h.sha256(body_str.encode("utf-8")).hexdigest()[:16]
+        chain.append(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            method="MODEL_CALL",
+            path=f"/v1/{provider}/{model}/chat",
+            user=str(tenant_id or "anonymous")[:60],
+            body_hash=body_hash,
+            status_code=200 if success else 500,
+            actor=f"model_call|provider={provider}|cost_usd={cost_usd:.6f}",
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"model_gateway: audit_chain.record failed: {e}")
+
+
+def _usage_dict_compat(resp: ChatResponse) -> Dict[str, int]:
+    """把 ChatResponse.usage 标准化为 {prompt_tokens, completion_tokens, total_tokens}。"""
+    u = dict(resp.usage or {})
+    pt = int(u.get("prompt_tokens") or u.get("input_tokens") or u.get("promptTokenCount") or 0)
+    ct = int(u.get("completion_tokens") or u.get("output_tokens")
+             or u.get("candidatesTokenCount") or 0)
+    tt = int(u.get("total_tokens") or u.get("totalTokenCount") or pt + ct)
+    return {"prompt_tokens": pt, "completion_tokens": ct, "total_tokens": tt}
+
 
 # ============================================================================
 # Singleton

@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,11 +14,12 @@ logger = logging.getLogger(__name__)
 async def data_benchmark_generate(request: Request):
     """多模态评测数据生成 — MMMU/VQA/LLaVA/VBench"""
     body = await request.json()
+    # P21 P2 P2 — path-traversal guard on image_path and output_dir.
     dataset_name = body.get("name", "multimodal_benchmark")
-    image_path = body.get("image_path", "")
+    image_path = validated_path(body.get("image_path", ""))
     subjects = body.get("subjects", None)
     num_vqa = body.get("num_vqa", 10)
-    output_dir = body.get("output_dir", "./data/benchmark")
+    output_dir = validated_path(body.get("output_dir", "./data/benchmark"))
 
     from data_multimodal_benchmark import get_benchmark_generator
     gen = get_benchmark_generator()

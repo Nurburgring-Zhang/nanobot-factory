@@ -122,8 +122,10 @@ class TestJWTTTLAndStructure:
         token = AuthService.create_access_token({"sub": "x", "role": "viewer"})
         from jose import jwt
 
+        # P10-C: token 含 aud 声明, 解码需传 audience= 或 options={"verify_aud": False}
         payload = jwt.decode(
-            token, _AUTH_SECRET_KEY, algorithms=["HS256"]
+            token, _AUTH_SECRET_KEY, algorithms=["HS256"],
+            options={"verify_aud": False, "verify_iss": False},
         )
         assert "jti" in payload and len(payload["jti"]) > 8
         assert payload["type"] == TOKEN_TYPE_ACCESS
@@ -132,8 +134,10 @@ class TestJWTTTLAndStructure:
         token = AuthService.create_refresh_token({"sub": "x", "role": "viewer"})
         from jose import jwt
 
+        # P10-C: token 含 aud 声明, 解码需传 audience= 或 options={"verify_aud": False}
         payload = jwt.decode(
-            token, _AUTH_SECRET_KEY, algorithms=["HS256"]
+            token, _AUTH_SECRET_KEY, algorithms=["HS256"],
+            options={"verify_aud": False, "verify_iss": False},
         )
         assert "jti" in payload
         assert payload["type"] == TOKEN_TYPE_REFRESH

@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import List, Optional, Any, Dict
 
 from fastapi import APIRouter, HTTPException, Body, Query
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 # 兼容直接 `python aesthetic_routes.py` 与 canvas_web 加载两种入口
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -87,13 +87,15 @@ class EloCompareRequest(BaseModel):
     image_b_name: str = Field("", description="图片 B 名称(可选)")
     judge_id: Optional[str] = Field(None, description="评委 ID(众包追踪)")
 
-    @validator("winner")
+    @field_validator("winner")
+    @classmethod
     def _check_winner(cls, v: str) -> str:
         if v not in ("a", "b", "draw"):
             raise ValueError("winner must be 'a', 'b', or 'draw'")
         return v
 
-    @validator("image_a_id", "image_b_id")
+    @field_validator("image_a_id", "image_b_id")
+    @classmethod
     def _check_ids(cls, v: str) -> str:
         if not _VALID_IMAGE_ID.match(v or ""):
             raise ValueError(f"image id must match {_VALID_IMAGE_ID.pattern}")
@@ -105,7 +107,8 @@ class EloRegisterRequest(BaseModel):
     image_name: str = Field("", description="图片名称")
     initial_rating: float = Field(1500.0, description="初始 Elo 分")
 
-    @validator("image_id")
+    @field_validator("image_id")
+    @classmethod
     def _check_id(cls, v: str) -> str:
         if not _VALID_IMAGE_ID.match(v or ""):
             raise ValueError(f"image_id must match {_VALID_IMAGE_ID.pattern}")

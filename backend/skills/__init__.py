@@ -59,4 +59,92 @@ Endpoints
 """
 from __future__ import annotations
 
+from backend.skills.legacy import (
+    BaseSkill,
+    BatchProductionSkill,
+    DataAnalysisSkill,
+    MediaProductionSkill,
+    PromptGenerationSkill,
+    PromptOptimizationSkill,
+    SkillInput,
+    SkillManager,
+    SkillOutput,
+    get_skill_manager,
+)
+
+# V5.1 (P19 v5.1-B) — 显式从本文件直接定义 SkillSpec,绕过 skills.py 的 shadow
+from dataclasses import dataclass, field
+from typing import Any, Dict, List
+
+
+@dataclass
+class SkillSpec:
+    """
+    V5.1 附录 D — Skill 规格描述 (与 backend/skills.py 同源)
+
+    与 ``SkillInput/SkillOutput`` 不同,这里只描述元数据/接口契约,
+    不涉及具体执行逻辑。便于 registry / executor / builtin 工厂统一管理。
+    """
+    id: str
+    name: str
+    category: str
+    trigger_phrases: List[str] = field(default_factory=list)
+    inputs: Dict[str, Any] = field(default_factory=dict)
+    outputs: Dict[str, Any] = field(default_factory=dict)
+    description: str = ""
+    enabled: bool = True
+    version: str = "1.0.0"
+    dependencies: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "category": self.category,
+            "trigger_phrases": list(self.trigger_phrases),
+            "inputs": dict(self.inputs),
+            "outputs": dict(self.outputs),
+            "description": self.description,
+            "enabled": self.enabled,
+            "version": self.version,
+            "dependencies": list(self.dependencies),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SkillSpec":
+        return cls(
+            id=data["id"],
+            name=data.get("name", data["id"]),
+            category=data.get("category", "general"),
+            trigger_phrases=list(data.get("trigger_phrases", [])),
+            inputs=dict(data.get("inputs", {})),
+            outputs=dict(data.get("outputs", {})),
+            description=data.get("description", ""),
+            enabled=bool(data.get("enabled", True)),
+            version=data.get("version", "1.0.0"),
+            dependencies=list(data.get("dependencies", [])),
+        )
+
+
+# Alias: 任务要求 class 名 `Skill`,但已有 SkillManager, 默认导出 SkillSpec
+Skill = SkillSpec
+
+
+__all__ = [
+    # legacy (P19 前)
+    "BaseSkill",
+    "BatchProductionSkill",
+    "DataAnalysisSkill",
+    "MediaProductionSkill",
+    "PromptGenerationSkill",
+    "PromptOptimizationSkill",
+    "SkillInput",
+    "SkillManager",
+    "SkillOutput",
+    "get_skill_manager",
+    # V5.1 (P19 v5.1-B)
+    "SkillSpec",
+    "Skill",
+]
+
 __version__ = "1.0.0"

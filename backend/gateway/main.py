@@ -32,7 +32,6 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 import yaml  # PyYAML
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -43,6 +42,12 @@ from .middleware.circuit_breaker import (
     CircuitBreakerRegistry,
     CircuitOpenError,
 )
+
+# New P17-A2 modules: replace hard-coded CORS,RateLimit,add API version + cache
+from .cors import CorsConfig, CorsMiddleware
+from .api_version import ApiVersionConfig, ApiVersionMiddleware
+from .cache import CacheConfig, CacheClient, CacheMiddleware
+from .rate_limit_config import RateLimitConfig, PerEndpointRateLimiter
 
 log = logging.getLogger("gateway")
 logging.basicConfig(
@@ -197,24 +202,51 @@ def create_app(routes_path: Optional[Path] = None) -> FastAPI:
         upstream_timeout=float(gw_cfg.get("upstream_timeout_seconds", 30.0)),
     )
 
+    # ----- P17-A2: load configs (YAML preferred, ENV fallback) -----
+    backend_root = Path(__file__).resolve().parent
+    cors_config = CorsConfig.from_yaml(backend_root / "cors_config.yaml")
+    if not cors_config.enabled or not cors_config.origins:
+        cors_config = CorsConfig.from_env_legacy()
+    api_version_config = ApiVersionConfig.from_yaml(
+        backend_root / "api_version_config.yaml",
+    )
+    cache_config = CacheConfig.from_yaml(backend_root / "cache_config.yaml")
+
+    rate_limit_yaml = backend_root / "rate_limits.yaml"
+    if rate_limit_yaml.exists():
+        rate_limit_config = RateLimitConfig.from_yaml(rate_limit_yaml)
+    else:
+        rate_limit_config = RateLimitConfig.from_env()
+        if not rate_limit_config.endpoints:
+            rate_limit_config = RateLimitConfig.from_dict({
+                "rate_limits": {
+                    "defaults": {
+                        "capacity": int(rl_cfg.get("capacity", 100)),
+                        "refill_per_second": float(rl_cfg.get("refill_per_second", 50.0)),
+                    },
+                },
+            })
+
+    app.state.cors_config = cors_config
+    app.state.api_version_config = api_version_config
+    app.state.cache_config = cache_config
+    app.state.rate_limit_config = rate_limit_config
+
     # ----- middleware order matters (outermost first) -----
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=os.environ.get(
-            "CORS_ALLOWED_ORIGINS",
-            "http://localhost:8080,http://localhost:5173,http://127.0.0.1:8080",
-        ).split(","),
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["X-Request-ID", "X-RateLimit-Burst", "X-Upstream-Service"],
-    )
+    # Per-origin CORS with preflight caching
+    app.add_middleware(CorsMiddleware, config=cors_config)
+
+    # API version header injection + deprecation warnings
+    app.add_middleware(ApiVersionMiddleware, config=api_version_config)
+
+    # Cache middleware (GET responses only)
+    app.add_middleware(CacheMiddleware, config=cache_config)
+
+    # Access log middleware (X-Request-ID + JSON line)
     app.add_middleware(AccessLogMiddleware)
-    app.add_middleware(
-        TokenBucketRateLimiter,
-        capacity=int(rl_cfg.get("capacity", 100)),
-        refill_per_second=float(rl_cfg.get("refill_per_second", 50.0)),
-    )
+
+    # Per-endpoint rate limiter
+    app.add_middleware(PerEndpointRateLimiter, config=rate_limit_config)
 
     # ----- control endpoints -----
 
@@ -256,6 +288,64 @@ def create_app(routes_path: Optional[Path] = None) -> FastAPI:
     @app.get("/_gw/breakers")
     async def list_breakers():
         return {"breakers": app.state.breakers.snapshot()}
+
+    # ----- P17-A2: diagnostic endpoints for new modules -----
+
+    @app.get("/_gw/cors")
+    async def cors_diag():
+        cfg: CorsConfig = app.state.cors_config
+        return {
+            "enabled": cfg.enabled,
+            "default": {
+                "origin": cfg.default.origin,
+                "methods": cfg.default.methods,
+                "headers": cfg.default.headers,
+                "credentials": cfg.default.credentials,
+                "max_age": cfg.default.max_age,
+            },
+            "origins": [
+                {
+                    "origin": pol.origin,
+                    "methods": pol.methods,
+                    "headers": pol.headers,
+                    "credentials": pol.credentials,
+                    "max_age": pol.max_age,
+                }
+                for pol in cfg.origins
+            ],
+        }
+
+    @app.get("/_gw/api-version")
+    async def api_version_diag():
+        cfg: ApiVersionConfig = app.state.api_version_config
+        return {
+            "supported_versions": cfg.supported_versions,
+            "default_version": cfg.default_version,
+            "deprecation": {
+                "deprecated_versions": cfg.deprecation.deprecated_versions,
+                "sunset_date": cfg.deprecation.sunset_date,
+                "successor_version": cfg.deprecation.successor_version,
+            },
+        }
+
+    @app.get("/_gw/cache")
+    async def cache_diag():
+        from . import cache as _cache_mod  # noqa: WPS433
+        cfg: CacheConfig = app.state.cache_config
+        return {
+            "config": {
+                "backend": cfg.backend,
+                "redis_url": cfg.redis_url,
+                "prefix": cfg.prefix,
+                "default_ttl_seconds": cfg.default_ttl_seconds,
+            },
+            "stats": _cache_mod.cache_stats(),
+        }
+
+    @app.get("/_gw/rate-limit")
+    async def rate_limit_diag():
+        cfg: RateLimitConfig = app.state.rate_limit_config
+        return {"stats": cfg.stats()}
 
     # ----- main proxy endpoint -----
 

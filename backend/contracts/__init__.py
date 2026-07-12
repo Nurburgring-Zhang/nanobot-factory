@@ -1,16 +1,24 @@
 """
-P4-10-W2: 合同模块 — PDF 合同生成 (3 模板) + 数字签名
+P4-10-W2 + P15-A2 F-6.7: 合同模块 — PDF 合同生成 (3 模板) + 数字签名
 - 服务协议 (service_agreement)
 - 数据处理协议 (data_processing_agreement / DPA)
 - SLA 协议 (sla_agreement)
 - 国密 SM3 哈希 (防篡改) + 可选 SM2 签名 (env 切换)
+- F-6.7 真实 PKI: 自签 CA → 叶子证书 → 链式验证 + 时间戳 (RFC 3161 + 3 签名算法)
 - 复用 reportlab 4.3 (避免 WeasyPrint GTK 依赖)
+
+F-6.7 入口:
+- sign_contract_real(contract_id, signer)        真实 PKI 签名
+- verify_contract_signature(contract_id)           验证签名 (含证书链 + 时间戳)
+- generate_admin_cert_pair(subject, email)        管理员颁发叶子证书
+- signing_dir()                                   CA / 叶子证书持久化目录
 """
 import os
 import hashlib
 import json
 import uuid
 import logging
+import datetime as _dt
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -337,7 +345,11 @@ def save_contract_pdf(c: Contract) -> Path:
 
 
 def sign_contract(contract_id: str, signer: str) -> Contract:
-    """对合同进行数字签名 (SM3 / SM2 / placeholder)."""
+    """对合同进行数字签名 (SM3 / SM2 / placeholder).
+
+    兼容旧行为: SIGN_MODE in ('sm3', 'placeholder') 时走简化逻辑.
+    新流程建议用 ``sign_contract_real()`` (F-6.7 PKI + 3 签名 + 时间戳).
+    """
     c = _STORE.get(contract_id)
     if c is None:
         raise KeyError(f"contract not found: {contract_id}")
@@ -352,6 +364,289 @@ def sign_contract(contract_id: str, signer: str) -> Contract:
     c.status = "signed"
     c.hash_chain.append(_sm3_hex(canonical.encode("utf-8")))
     return c
+
+
+# ---------------------------------------------------------------------------
+# F-6.7 第三方电子签名 (PKI + 真实签名 + 时间戳)
+# ---------------------------------------------------------------------------
+def sign_contract_real(contract_id: str, signer: str) -> Dict[str, Any]:
+    """F-6.7 真实 PKI 签名 — 替换占位 SM2 实现.
+
+    流程:
+    1. 给 signer 颁发叶子证书 (按需缓存到 backend/data/contracts_leaves/).
+    2. 计算合同规范化的 doc_bytes (canonical JSON).
+    3. 根据 SIGN_MODE 选 SM2 / ECDSA / RSA signer, 计算签名.
+    4. 签发 RFC 3161 时间戳 (本地 TSA).
+    5. 打包 SignedContract, 写入 Contract.signed_bundle.
+    6. 审计日志 append.
+
+    Returns:
+        dict (含合同 dict + 签名结果 + 时戳 + 证书指纹).
+    """
+    from . import signing  # 延迟 import 避免循环
+    from .signing.timestamp import issue_timestamp
+    from .signing.audit import audit_sign_event
+    from .signing.factory import SignMode, issue_leaf_for_subject, get_signer
+
+    c = _STORE.get(contract_id)
+    if c is None:
+        raise KeyError(f"contract not found: {contract_id}")
+
+    # 1. 叶子证书 — 缓存路径 contracts_leaves/<signer>.json
+    leaf_cache_dir = signing_dir() / "contracts_leaves"
+    leaf_cache_path = leaf_cache_dir / f"{_safe_name(signer)}.json"
+    leaf_loaded_from_cache = False
+    if leaf_cache_path.exists():
+        try:
+            d = json.loads(leaf_cache_path.read_text(encoding="utf-8"))
+            from .signing.pki import CertBundle
+            # 从 JSON 读回来的是 str, 需转回 bytes (PEM 编码)
+            cert_pem_bytes = d["cert_pem"].encode("ascii") if isinstance(d["cert_pem"], str) else d["cert_pem"]
+            key_pem_bytes = d["key_pem"].encode("ascii") if isinstance(d["key_pem"], str) else d["key_pem"]
+            leaf = CertBundle(
+                cert_pem=cert_pem_bytes,
+                key_pem=key_pem_bytes,
+                serial=d["serial"],
+                subject_cn=d["subject_cn"],
+                issuer_cn=d["issuer_cn"],
+                not_before=d["not_before"],
+                not_after=d["not_after"],
+                public_key_alg=d["public_key_alg"],
+                fingerprint=d["fingerprint"],
+            )
+            leaf_loaded_from_cache = True
+        except Exception:
+            leaf = None
+    if not leaf_loaded_from_cache:
+        leaf = issue_leaf_for_subject(subject_cn=signer)
+        leaf_cache_dir.mkdir(parents=True, exist_ok=True)
+        leaf_cache_path.write_text(
+            json.dumps({
+                "cert_pem": leaf.cert_pem.decode("ascii"),
+                "key_pem": leaf.key_pem.decode("ascii"),
+                "serial": leaf.serial,
+                "subject_cn": leaf.subject_cn,
+                "issuer_cn": leaf.issuer_cn,
+                "not_before": leaf.not_before,
+                "not_after": leaf.not_after,
+                "public_key_alg": leaf.public_key_alg,
+                "fingerprint": leaf.fingerprint,
+            }, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    ca_bundle = signing.ensure_dev_ca()
+
+    # 2. 合同规范化 — 用最终状态 (含未来签名) 排除 signature / hash_chain / signed_bundle 本身.
+    #    关键: status / signed_at / signed_by 在签前后保持, 仅 signature 字段本身可变.
+    #    为了 verify 时也能复算同一 canonical, 我们 build a "frozen" snapshot — 把
+    #    signature 设为 None, status 设为 "signed", signed_at = 签时时间, signed_by = signer.
+    #    这些值签后不会变, 所以 verify 时 c.to_dict() 减 signature 后与签时一致.
+    #
+    # P15-B: **CRITICAL** — ``signed_at`` must be computed ONCE and shared
+    # across the canonical snapshot, the SignResult, and the contract object's
+    # fields. Earlier revisions called ``datetime.utcnow()`` independently in
+    # each spot, which produced 20-40% false-tamper failures on
+    # ``verify_contract_signature`` (the stored canonical was built from
+    # timestamp t1, but c.signed_at reflected t2 from the SignResult, so the
+    # reconstructed canonical at verify-time mismatched).
+    t = _dt.datetime.utcnow().isoformat() + "Z"
+    pre_snap = c.to_dict()
+    pre_snap.pop("signature", None)  # 留下 None 占位 (verify 时会 pop 这字段)
+    pre_snap["status"] = "signed"
+    pre_snap["signed_at"] = t
+    pre_snap["signed_by"] = signer
+    pre_snap.pop("hash_chain", None)
+    pre_snap.pop("signed_bundle", None)
+    canonical = json.dumps(pre_snap, sort_keys=True, ensure_ascii=False)
+    doc_bytes = canonical.encode("utf-8")
+
+    # 3. 签名 (按 SIGN_MODE)
+    mode = SignMode.from_env()
+    signer_obj = get_signer(mode=mode, key_pem=leaf.key_pem, cert=leaf)
+    sign_result = signer_obj.get_result(doc_bytes)
+    # P15-B: overwrite the signer's own timestamp with the shared ``t`` so
+    # all downstream artifacts agree.
+    sign_result.signed_at = t
+
+    # 4. 时间戳 (本地 TSA)
+    # P15-B: pass sign_result.doc_hash through so the timestamp token's
+    # doc_hash matches the algorithm-specific hash used by the signer.
+    # For ``sm2-p256-sm3`` that's SM3(ZA || doc_bytes); for legacy
+    # algorithms it's SHA-256(doc_bytes). Without this, the timestamp
+    # ``expected_doc_hash`` check at verify time would mismatch the
+    # signer's hash and falsely flag the contract as tampered.
+    ts = issue_timestamp(doc_bytes, doc_hash=sign_result.doc_hash)
+
+    # 5. 打包 SignedContract
+    from .signing.verifier import SignedContract
+    signed = SignedContract(
+        contract_id=contract_id,
+        doc_hash=sign_result.doc_hash,
+        alg=sign_result.alg,
+        signature_b64=sign_result.value_b64,
+        cert_pem=leaf.cert_pem.decode("ascii"),
+        ca_cert_pem=ca_bundle.cert_pem.decode("ascii"),
+        cert_serial=leaf.serial,
+        cert_subject_cn=leaf.subject_cn,
+        cert_issuer_cn=leaf.issuer_cn,
+        cert_fingerprint=leaf.fingerprint,
+        timestamp=ts.to_dict(),
+        signed_at=t,
+        signed_by=signer,
+    )
+
+    # 6. 更新合同对象 (向后兼容旧字段)
+    # P15-B: every reference uses the shared ``t`` so the canonical reconstructed
+    # at verify-time matches the stored canonical bytes.
+    c.signature = f"{sign_result.alg}:{sign_result.value_b64}"
+    c.signed_at = t
+    c.signed_by = signer
+    c.status = "signed"
+    c.hash_chain.append(_sm3_hex(canonical.encode("utf-8")))
+    # 新字段: signed_bundle (含原始 canonical bytes 用于重验)
+    bundle_dict = signed.to_dict()
+    bundle_dict["_canonical_bytes_b64"] = __import__("base64").b64encode(doc_bytes).decode("ascii")
+    bundle_dict["_canonical_format"] = "json-sort_keys-utf8-snapshot-method"
+    setattr(c, "signed_bundle", bundle_dict)
+
+    # 7. 审计
+    audit_sign_event(
+        contract_id=contract_id,
+        signer=signer,
+        alg=sign_result.alg,
+        doc_hash=sign_result.doc_hash,
+        cert_serial=leaf.serial,
+        cert_fingerprint=leaf.fingerprint,
+        signature_b64=sign_result.value_b64,
+        timestamp_token_id=ts.token_id,
+        extra={"mode": mode.value, "key_alg_used": sign_result.alg},
+    )
+
+    return {
+        "contract": c.to_dict(),
+        "sign": sign_result.to_dict(),
+        "timestamp": ts.to_dict(),
+        "cert_fingerprint": leaf.fingerprint,
+        "cert_serial": leaf.serial,
+    }
+
+
+def verify_contract_signature(contract_id: str, doc_bytes: Optional[bytes] = None) -> Dict[str, Any]:
+    """F-6.7 验证合同签名.
+
+    检查:
+    1. 证书链有效 (CA → 叶子, 时间窗内, 无吊销).
+    2. 签名算法正确 (per `alg` 字段).
+    3. 时间戳签名有效 (HMAC + 防篡改).
+    4. 当前合同状态 == 签名前原始 canonical (检测 post-signature mutate).
+    """
+    from . import signing
+    from .signing.verifier import SignedContract, verify_signature
+    import base64
+
+    c = _STORE.get(contract_id)
+    if c is None:
+        raise KeyError(f"contract not found: {contract_id}")
+    bundle = getattr(c, "signed_bundle", None)
+    if not bundle:
+        raise ValueError(f"contract {contract_id} not signed with PKI (no signed_bundle)")
+    sc = SignedContract(
+        contract_id=bundle["contract_id"],
+        doc_hash=bundle["doc_hash"],
+        alg=bundle["alg"],
+        signature_b64=bundle["signature_b64"],
+        cert_pem=bundle["cert_pem"],
+        ca_cert_pem=bundle["ca_cert_pem"],
+        cert_serial=bundle["cert_serial"],
+        cert_subject_cn=bundle["cert_subject_cn"],
+        cert_issuer_cn=bundle["cert_issuer_cn"],
+        cert_fingerprint=bundle["cert_fingerprint"],
+        timestamp=bundle.get("timestamp", {}),
+        signed_at=bundle.get("signed_at"),
+        signed_by=bundle.get("signed_by"),
+    )
+    # 4. 检测 post-signature mutate: 当前去 sig 的 canonical bytes 是否等于 stored original
+    #    用与签时一致的 snapshot 方法 (status='signed', signed_at 来自 bundle, signed_by 来自 bundle).
+    if bundle.get("_canonical_bytes_b64"):
+        original = base64.b64decode(bundle["_canonical_bytes_b64"])
+        snap_now = c.to_dict()
+        snap_now.pop("signature", None)
+        snap_now.pop("hash_chain", None)
+        snap_now.pop("signed_bundle", None)
+        # 用 bundle 中的 signed_at / signed_by 保证与签时一致
+        snap_now["status"] = "signed"
+        snap_now["signed_at"] = bundle.get("signed_at") or c.signed_at
+        snap_now["signed_by"] = bundle.get("signed_by") or c.signed_by
+        current_canonical = json.dumps(snap_now, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        mutated = (original != current_canonical)
+    else:
+        mutated = False
+
+    # 1-3. 签名验证 (用 stored canonical bytes — 与签时一致)
+    if doc_bytes is None:
+        if bundle.get("_canonical_bytes_b64"):
+            doc_bytes = base64.b64decode(bundle["_canonical_bytes_b64"])
+        else:
+            snap = c.to_dict()
+            snap.pop("signature", None)
+            snap.pop("hash_chain", None)
+            snap.pop("signed_bundle", None)
+            canonical = json.dumps(snap, sort_keys=True, ensure_ascii=False)
+            doc_bytes = canonical.encode("utf-8")
+    res = verify_signature(sc, doc_bytes=doc_bytes)
+    if mutated and res.ok:
+        # 显式标记: 当前 contract 状态已被篡改 (签名本身在 stored bytes 上有效,
+        # 但 contract 在 verify 时已不匹配)
+        res.reasons.append("contract_state_tampered: current contract content != signed-original canonical bytes")
+        res.ok = False
+    return res.to_dict()
+
+
+def generate_admin_cert_pair(
+    subject: str,
+    *,
+    validity_days: int = 1095,
+    email: Optional[str] = None,
+) -> Dict[str, Any]:
+    """管理员 API: 给指定 subject 颁发(签发)叶子证书, 返回 PEM."""
+    from . import signing
+    from .signing.factory import issue_leaf_for_subject
+    leaf = issue_leaf_for_subject(
+        subject_cn=subject, subject_email=email, validity_days=validity_days,
+    )
+    return {
+        "cert_pem": leaf.cert_pem.decode("ascii"),
+        "key_pem": leaf.key_pem.decode("ascii"),
+        "serial": leaf.serial,
+        "subject_cn": leaf.subject_cn,
+        "issuer_cn": leaf.issuer_cn,
+        "not_before": leaf.not_before,
+        "not_after": leaf.not_after,
+        "public_key_alg": leaf.public_key_alg,
+        "fingerprint": leaf.fingerprint,
+    }
+
+
+def _safe_name(name: str) -> str:
+    """把任意字符串转为文件名安全的 hash (避免特殊字符)."""
+    import re
+    s = re.sub(r"[^A-Za-z0-9._-]", "_", name)[:64]
+    if not s:
+        s = "default"
+    return s
+
+
+def signing_dir() -> Path:
+    """获取合同签名数据目录 (CA / 叶子证书 / 审计).
+
+    与 signing.factory._default_ca_path() 同源, 优先 CONTRACT_CA_DIR env,
+    fallback 到 backend/data. 保持 CA 与 叶子缓存同目录, 避免测试间 path 不一致.
+    """
+    custom = os.getenv("CONTRACT_CA_DIR")
+    base = Path(custom) if custom else (Path(__file__).resolve().parent.parent / "data")
+    base.mkdir(parents=True, exist_ok=True)
+    return base
 
 
 def get_contract(contract_id: str) -> Optional[Contract]:

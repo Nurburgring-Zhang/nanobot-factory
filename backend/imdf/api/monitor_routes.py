@@ -104,9 +104,9 @@ async def pipeline_history(
     try:
         conn = sqlite3.connect(_SCHEDULER_DB)
         cursor = conn.cursor()
-        # 获取所有历史记录
+        # P13-C1 优化: 加 LIMIT 500 (job_history 频繁写入, 大表全扫会拖死监控接口)
         rows = cursor.execute(
-            "SELECT id, job_id, job_name, run_at, status, result, error, retry_count, duration_ms FROM job_history ORDER BY run_at DESC"
+            "SELECT id, job_id, job_name, run_at, status, result, error, retry_count, duration_ms FROM job_history ORDER BY run_at DESC LIMIT 500"
         ).fetchall()
         conn.close()
 

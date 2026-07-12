@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import secrets
 import time
+import uuid
 import jwt
 from typing import Dict, List, Optional, Set, Any
 from dataclasses import dataclass, field
@@ -19,6 +20,11 @@ from collections import defaultdict
 import logging
 
 logger = logging.getLogger(__name__)
+
+# P10-C: JWT issuer / audience / secret-length 阈值 (RFC 7519 合规 + OWASP A02)
+JWT_ISSUER = "nanobot-factory"
+JWT_AUDIENCE = "nanobot-factory-api"
+JWT_MIN_SECRET_LENGTH = 16  # 与 imdf.engines.audit_chain.AuditChain 一致
 
 
 # ==================== 枚举类型 ====================
@@ -160,9 +166,29 @@ class PasswordManager:
 # ==================== JWT管理器 ====================
 
 class JWTManager:
-    """JWT令牌管理"""
+    """JWT令牌管理
+
+    P11-B 强化 (RFC 7519 合规 + OWASP A02):
+      * 启动校验 secret_key 长度 >= JWT_MIN_SECRET_LENGTH (16 字符),
+        与 ``imdf.engines.audit_chain.AuditChain`` 阈值一致
+        (P10-C-1 — secret < 16 字符直接 raise ``ValueError``)。
+      * create_token 强制写入 iss / aud / jti 三标准声明
+        (RFC 7519 §4.1.1 / §4.1.3 / §4.1.7), jti 用 uuid4().hex 全局唯一。
+      * verify_token 强制校验 iss + aud (P11-B-2):
+          - iss 必须等于 ``JWT_ISSUER`` ("nanobot-factory")
+          - aud 必须等于 ``JWT_AUDIENCE`` ("nanobot-factory-api")
+        不匹配的 token 一律返回 ``None``, 阻止伪造 token 跨系统复用。
+    """
 
     def __init__(self, secret_key: str, algorithm: str = "HS256"):
+        # P10-C-1: 启动时拒绝短 secret
+        if not secret_key or not isinstance(secret_key, str):
+            raise ValueError("JWT secret_key must be a non-empty string")
+        if len(secret_key) < JWT_MIN_SECRET_LENGTH:
+            raise ValueError(
+                f"JWT secret must be >= {JWT_MIN_SECRET_LENGTH} chars "
+                f"(got {len(secret_key)}). Use a strong random secret."
+            )
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.default_expiry = 3600  # 1小时
@@ -175,15 +201,29 @@ class JWTManager:
         payload = {
             'user_id': user_id,
             'permissions': [p.value for p in permissions],
+            'iss': JWT_ISSUER,                          # RFC 7519 §4.1.1
+            'aud': JWT_AUDIENCE,                        # RFC 7519 §4.1.3
+            'jti': uuid.uuid4().hex,                    # RFC 7519 §4.1.7
             'exp': datetime.utcnow() + timedelta(seconds=expiry),
             'iat': datetime.utcnow()
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """验证令牌"""
+        """验证令牌
+
+        P11-B: 强制校验 ``iss`` (RFC 7519 §4.1.1) + ``aud`` (RFC 7519 §4.1.3)
+        标准声明 — iss 必须是 ``JWT_ISSUER`` ("nanobot-factory"), aud 必须是
+        ``JWT_AUDIENCE`` ("nanobot-factory-api")。任何不匹配的 token 一律拒绝
+        并返回 ``None`` (而不是 raise) 以保持调用方兼容。
+        """
         try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            payload = jwt.decode(
+                token, self.secret_key, algorithms=[self.algorithm],
+                audience=JWT_AUDIENCE,
+                issuer=JWT_ISSUER,
+                options={"verify_aud": True, "verify_iss": True},
+            )
             return payload
         except jwt.ExpiredSignatureError:
             logger.warning("Token已过期")

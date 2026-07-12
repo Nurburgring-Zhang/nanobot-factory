@@ -1,0 +1,2 @@
+﻿Created all needed tables for migration test
+DB path: data/nanobot_test.db

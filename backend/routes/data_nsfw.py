@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,7 +14,8 @@ logger = logging.getLogger(__name__)
 async def data_nsfw_classify(request: Request):
     """NSFW分类 — 对齐LAION/DataComp标准"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
 
     if not image_path or not os.path.exists(image_path):
         raise HTTPException(status_code=400, detail="Image path not found")
@@ -34,7 +38,8 @@ async def data_nsfw_classify(request: Request):
 async def data_nsfw_filter(request: Request):
     """DataComp标准NSFW过滤"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard.
+    image_path = validated_path(body.get("image_path", ""))
 
     if not image_path or not os.path.exists(image_path):
         raise HTTPException(status_code=400, detail="Image path not found")

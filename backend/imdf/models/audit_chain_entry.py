@@ -37,6 +37,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db import Base
+from db.postgres import get_jsonb_column
 
 
 def _now() -> datetime:
@@ -83,7 +84,16 @@ class AuditChainEntry(Base):
     signature: Mapped[str] = mapped_column(String(80), nullable=False)
 
     # 元数据 (请求 IP / 客户端 / trace_id)
-    extra: Mapped[Optional[Dict[str, Any]]] = mapped_column(Text, default="")
+    # P21 P2 P1: was `Text` (inconsistent with p13_c1_p99_db GIN jsonb_path_ops index).
+    # Now uses `get_jsonb_column()` — PG → JSONB, SQLite → JSON — so the GIN index
+    # in p13_c1_p99_db.py:97-100 (``ix_audit_chain_extra_gin``) becomes a real,
+    # queryable index instead of a dead-code one. The default is a dict literal
+    # (``{}``) to match the new JSON shape; legacy rows that were stored as
+    # ``''`` (empty text) still read back as an empty string under SQLAlchemy's
+    # ``JSON`` type, but new code should always write a dict.
+    extra: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        get_jsonb_column(), nullable=True, default=dict
+    )
 
     __table_args__ = (
         Index("ix_audit_chain_method_path", "method", "path"),

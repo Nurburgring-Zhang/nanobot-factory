@@ -3,6 +3,9 @@ from fastapi import APIRouter, Request, HTTPException
 import os
 import logging
 
+# P21 P2 P2 — wire Injection.validate_path (R2-NEW-04 fix)
+from backend.common.path_dep import validated_path
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -11,10 +14,11 @@ logger = logging.getLogger(__name__)
 async def data_controlnet_generate(request: Request):
     """ControlNet条件图生成 — 边缘/深度/姿态/分割"""
     body = await request.json()
-    image_path = body.get("image_path", "")
+    # P21 P2 P2 — path-traversal guard on image_path and output_dir.
+    image_path = validated_path(body.get("image_path", ""))
     conditions = body.get("conditions", ["canny", "depth", "pose", "segmentation"])
     caption = body.get("caption", "")
-    output_dir = body.get("output_dir", "./data/controlnet")
+    output_dir = validated_path(body.get("output_dir", "./data/controlnet"))
 
     if not image_path or not os.path.exists(image_path):
         raise HTTPException(status_code=400, detail="Image not found")
@@ -43,9 +47,10 @@ async def data_controlnet_generate(request: Request):
 async def data_controlnet_batch(request: Request):
     """批量ControlNet条件图生成"""
     body = await request.json()
-    image_dir = body.get("image_dir", "")
+    # P21 P2 P2 — path-traversal guard on image_dir and output_dir.
+    image_dir = validated_path(body.get("image_dir", ""))
     conditions = body.get("conditions", ["canny", "depth", "pose", "segmentation"])
-    output_dir = body.get("output_dir", "./data/controlnet/batch")
+    output_dir = validated_path(body.get("output_dir", "./data/controlnet/batch"))
 
     if not image_dir or not os.path.exists(image_dir):
         raise HTTPException(status_code=400, detail="Image directory not found")

@@ -1,0 +1,10 @@
+﻿  agent_tasks
+  assets
+  audit_chain_entries
+  datasets
+  embeddings
+  projects
+  tasks
+  usage_logs
+  users
+  workflows

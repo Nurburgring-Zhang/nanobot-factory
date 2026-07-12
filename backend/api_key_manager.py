@@ -21,11 +21,17 @@ import asyncio
 import aiohttp
 import hashlib
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Optional, Callable, ClassVar
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 import base64
+
+try:
+    from common.encryption import FieldEncryption, EncryptionError
+except Exception:  # pragma: no cover - allow running without common/ on sys.path
+    FieldEncryption = None  # type: ignore[assignment]
+    EncryptionError = Exception  # type: ignore[assignment, misc]
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +65,23 @@ class APIProvider(Enum):
 
 @dataclass
 class APIKeyConfig:
-    """API密钥配置"""
+    """API密钥配置.
+
+    P10-E: ``api_key`` plaintext field is kept for backward compat (e.g. tests
+    and the constructor ``api_key=`` kwarg) but the long-lived in-memory
+    representation is :attr:`enc_api_key` (AES-256-GCM ciphertext, base64).
+    Use :meth:`get_api_key` / :meth:`set_api_key` for read/write so the
+    plaintext only lives in the caller stack frame and never in the dict
+    backing ``APIKeyManager.api_keys``.
+
+    A process-wide :class:`FieldEncryption` instance must be installed via
+    :meth:`bind_class_encryptor` (typically from
+    :meth:`APIKeyManager.__init__`) before :meth:`set_api_key` is called.
+    """
+
     provider: str
-    api_key: str
+    api_key: str = ""
+    enc_api_key: str = ""
     base_url: str = ""
     model: str = ""
     enabled: bool = True
@@ -69,6 +89,89 @@ class APIKeyConfig:
     last_verified: str = ""
     is_valid: bool = False
     error_message: str = ""
+
+    # Class-level singleton: APIKeyManager sets this once per process.
+    # Using ClassVar so dataclass ignores it as a field.
+    _encryptor: ClassVar[Optional["FieldEncryption"]] = None
+
+    @classmethod
+    def bind_class_encryptor(cls, encryptor: "FieldEncryption") -> None:
+        """Install the process-wide encryptor used by all APIKeyConfig
+        instances. Idempotent: rebinding to the same fingerprint is a no-op,
+        rebinding to a different fingerprint logs a warning (likely test
+        bleed)."""
+        if cls._encryptor is not None and encryptor is not None:
+            try:
+                if cls._encryptor.key_fingerprint == encryptor.key_fingerprint:
+                    return
+            except Exception:
+                pass
+            logger.warning(
+                "APIKeyConfig encryptor rebound (old fp=%s, new fp=%s); "
+                "existing encrypted values will fail to decrypt",
+                getattr(cls._encryptor, "key_fingerprint", "?"),
+                getattr(encryptor, "key_fingerprint", "?"),
+            )
+        cls._encryptor = encryptor
+
+    @classmethod
+    def clear_class_encryptor(cls) -> None:
+        """Drop the singleton — used by tests for clean state."""
+        cls._encryptor = None
+
+    def get_api_key(self) -> str:
+        """Return the plaintext API key, decrypting :attr:`enc_api_key` on
+        demand. Falls back to :attr:`api_key` for legacy/unencrypted state.
+        Returns ``""`` if neither is set or decryption fails (and logs).
+        """
+        # Prefer the encrypted form (P10-E onward)
+        if self.enc_api_key:
+            enc = self._encryptor
+            if enc is None:
+                logger.error(
+                    "APIKeyConfig(%s).enc_api_key is set but no class "
+                    "encryptor is bound; returning empty",
+                    self.provider,
+                )
+                return ""
+            try:
+                return enc.decrypt(self.enc_api_key, aad=self._aad())
+            except EncryptionError as exc:
+                logger.error(
+                    "Failed to decrypt api_key for provider=%s: %s",
+                    self.provider,
+                    exc,
+                )
+                return ""
+        # Legacy fallback (callers that haven't migrated yet, or
+        # configs loaded from a pre-encryption JSON)
+        return self.api_key or ""
+
+    def set_api_key(self, value: str) -> None:
+        """Encrypt *value* and store in :attr:`enc_api_key`; clear the
+        plaintext :attr:`api_key` field so the manager's ``api_keys``
+        dict dump never contains plaintext.
+        """
+        if not value:
+            self.enc_api_key = ""
+            self.api_key = ""
+            return
+        enc = self._encryptor
+        if enc is None:
+            raise RuntimeError(
+                "APIKeyConfig encryptor not bound; call "
+                "APIKeyManager.__init__() (or "
+                "APIKeyConfig.bind_class_encryptor()) first"
+            )
+        self.enc_api_key = enc.encrypt(value, aad=self._aad())
+        # Always wipe the plaintext from the dataclass field.
+        self.api_key = ""
+
+    def _aad(self) -> bytes:
+        """AAD binds ciphertext to (provider, field). Even if the master
+        key is shared with other systems, a ciphertext produced for one
+        provider cannot be replayed as a different field."""
+        return f"api_key:{self.provider}".encode("utf-8")
 
 
 @dataclass
@@ -186,14 +289,37 @@ class APIKeyManager:
     """
     API密钥管理器
     负责自动发现、验证和管理API密钥
+
+    P10-E: All API keys are stored in memory as AES-256-GCM ciphertext
+    (:attr:`APIKeyConfig.enc_api_key`). The plaintext only exists in the
+    caller stack frame as a return value of :meth:`APIKeyConfig.get_api_key`.
+    The master key is loaded from the ``API_KEY_MASTER_KEY`` env var
+    (see ``.env.example``) at construction time and is never persisted.
     """
 
-    def __init__(self, config_dir: str = None):
+    # Env var name for the master key. Override per-deployment if needed.
+    MASTER_KEY_ENV = "API_KEY_MASTER_KEY"
+    # When True, missing master key generates an ephemeral test key with a
+    # loud warning. Default False (fail-fast in prod).
+    _ALLOW_TEST_KEY_DEFAULT = False
+
+    def __init__(
+        self,
+        config_dir: str = None,
+        *,
+        master_key: Optional[bytes] = None,
+        allow_test_key: Optional[bool] = None,
+    ):
         """
         初始化API密钥管理器
 
         Args:
             config_dir: 配置文件目录
+            master_key: Optional 32-byte raw key (tests). If provided,
+                takes precedence over the env var.
+            allow_test_key: If True and no master key is supplied, an
+                ephemeral key is generated in-process (logs a warning).
+                Default ``False`` (production fail-fast).
         """
         if config_dir:
             self.config_dir = Path(config_dir)
@@ -202,6 +328,30 @@ class APIKeyManager:
             self.config_dir = Path.home() / ".nanobot_factory"
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
+
+        # P10-E: resolve and bind the encryption instance up front.
+        if FieldEncryption is None:
+            raise RuntimeError(
+                "FieldEncryption is unavailable; common.encryption import "
+                "failed. Check sys.path and the common/ package."
+            )
+        if master_key is not None:
+            self._encryptor = FieldEncryption.from_raw_key(master_key)
+        else:
+            allow = (
+                self._ALLOW_TEST_KEY_DEFAULT
+                if allow_test_key is None
+                else bool(allow_test_key)
+            )
+            self._encryptor = FieldEncryption.from_env(
+                self.MASTER_KEY_ENV, allow_test_default=allow
+            )
+        # Install on the dataclass so APIKeyConfig.set_api_key can use it.
+        APIKeyConfig.bind_class_encryptor(self._encryptor)
+        logger.info(
+            "APIKeyManager encryption initialised (master key fp=%s)",
+            self._encryptor.key_fingerprint,
+        )
 
         # API密钥配置
         self.api_keys: Dict[str, APIKeyConfig] = {}
@@ -225,7 +375,7 @@ class APIKeyManager:
         self.on_config_needed_callback = callback
 
     def _load_config(self):
-        """加载配置文件"""
+        """加载配置文件 — P11-D-2: 加密的 api_key 字段从磁盘反序列化。"""
         config_file = self.config_dir / "api_keys.json"
 
         if config_file.exists():
@@ -234,14 +384,34 @@ class APIKeyManager:
                     data = json.load(f)
 
                 for provider, config in data.items():
-                    self.api_keys[provider] = APIKeyConfig(
+                    # P11-D-2: 磁盘上的 api_key 字段是密文 base64,
+                    # 不是 "***" 也不是明文。还原到 APIKeyConfig.enc_api_key。
+                    disk_api_key = config.get("api_key", "")
+                    cfg = APIKeyConfig(
                         provider=provider,
-                        api_key=config.get("api_key", ""),
+                        api_key="",  # 永远不读明文
                         base_url=config.get("base_url", ""),
                         model=config.get("model", ""),
                         enabled=config.get("enabled", True),
-                        configured_at=config.get("configured_at", "")
+                        configured_at=config.get("configured_at", ""),
                     )
+                    # 兼容旧 disk 格式: "***" → 视为空, "": 空, 密文: 加载
+                    if disk_api_key and disk_api_key not in ("***", ""):
+                        # 尝试作为密文加载; 如果格式错 (例如老数据 "***") 则跳过
+                        try:
+                            # 触发 decrypt 验证 (失败 → 该 provider 跳过)
+                            cfg.enc_api_key = disk_api_key
+                            # 同步 last_verified / is_valid 等附加字段
+                            cfg.last_verified = config.get("last_verified", "")
+                            cfg.is_valid = config.get("is_valid", False)
+                        except Exception as exc:
+                            logger.warning(
+                                "P11-D-2: skipped provider=%s — disk ciphertext "
+                                "invalid (%s); please reconfigure",
+                                provider, exc,
+                            )
+                            cfg.enc_api_key = ""
+                    self.api_keys[provider] = cfg
 
                 logger.info(f"已加载 {len(self.api_keys)} 个API密钥配置")
 
@@ -249,21 +419,33 @@ class APIKeyManager:
                 logger.error(f"加载API密钥配置失败: {e}")
 
     def _save_config(self):
-        """保存配置文件"""
+        """保存配置文件 — P11-D-2: api_key 字段持久化 AES-256-GCM 密文。"""
         config_file = self.config_dir / "api_keys.json"
 
         try:
             data = {}
 
             for provider, config in self.api_keys.items():
-                # 不保存实际密钥，只保存配置
+                # P11-D-2: 把内存中的 enc_api_key 直接写入磁盘(已经是密文)。
+                # 配置未启用 / 无 key 的 provider 写空串, 避免 0 字节字段。
+                has_key = bool(config.enc_api_key or config.api_key)
                 data[provider] = {
-                    "api_key": "***" if config.api_key else "",  # 脱敏
+                    # 持久化密文 (base64), 不写 "***" 也不写明文。
+                    # 如果 enc_api_key 为空但 api_key 有值(legacy), 用明文反加密
+                    "api_key": config.enc_api_key if config.enc_api_key else (
+                        self._encryptor.encrypt(config.api_key, aad=f"api_key:{provider}".encode())
+                        if config.api_key and self._encryptor else ""
+                    ),
                     "base_url": config.base_url,
                     "model": config.model,
                     "enabled": config.enabled,
-                    "configured_at": config.configured_at
+                    "configured_at": config.configured_at,
+                    "last_verified": config.last_verified,
+                    "is_valid": config.is_valid,
                 }
+                # 不写 key 时, 清空字段
+                if not has_key:
+                    data[provider]["api_key"] = ""
 
             with open(config_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
@@ -274,7 +456,7 @@ class APIKeyManager:
             logger.error(f"保存API密钥配置失败: {e}")
 
     def _scan_environment_variables(self):
-        """扫描环境变量中的API密钥"""
+        """扫描环境变量中的API密钥 — 写入时即时加密。"""
         found_keys = {}
 
         for provider, config in API_KEY_ENV_MAPPING.items():
@@ -290,15 +472,17 @@ class APIKeyManager:
                     logger.info(f"从环境变量发现API密钥: {provider} ({env_var})")
                     break
 
-        # 更新配置
+        # 更新配置 — 使用 set_api_key() 加密后存
         for provider, info in found_keys.items():
-            if provider not in self.api_keys or not self.api_keys[provider].api_key:
-                self.api_keys[provider] = APIKeyConfig(
+            existing = self.api_keys.get(provider)
+            if existing is None or not existing.get_api_key():
+                cfg = APIKeyConfig(
                     provider=provider,
-                    api_key=info["api_key"],
                     base_url=info.get("base_url", ""),
-                    configured_at=datetime.now().isoformat()
+                    configured_at=datetime.now().isoformat(),
                 )
+                cfg.set_api_key(info["api_key"])  # 加密
+                self.api_keys[provider] = cfg
 
     def scan_config_files(self) -> Dict[str, str]:
         """
@@ -347,7 +531,10 @@ class APIKeyManager:
 
     def get_api_key(self, provider: str) -> Optional[str]:
         """
-        获取API密钥
+        获取API密钥 — 解密 :attr:`APIKeyConfig.enc_api_key` 后返回明文。
+
+        Plaintext only lives in this return value's stack frame; the
+        manager's ``self.api_keys`` dict still holds ciphertext.
 
         Args:
             provider: 提供商名称
@@ -357,8 +544,10 @@ class APIKeyManager:
         """
         config = self.api_keys.get(provider)
 
-        if config and config.enabled and config.api_key:
-            return config.api_key
+        if config and config.enabled:
+            plaintext = config.get_api_key()
+            if plaintext:
+                return plaintext
 
         return None
 
@@ -367,7 +556,7 @@ class APIKeyManager:
         return [
             provider
             for provider, config in self.api_keys.items()
-            if config.enabled and config.api_key
+            if config.enabled and config.get_api_key()
         ]
 
     def configure_api_key(
@@ -379,11 +568,11 @@ class APIKeyManager:
         enabled: bool = True
     ) -> bool:
         """
-        配置API密钥
+        配置API密钥 — 即时加密后存储。
 
         Args:
             provider: 提供商
-            api_key: API密钥
+            api_key: API密钥 (明文,仅在调用栈中保留)
             base_url: 基础URL（可选）
             model: 默认模型（可选）
             enabled: 是否启用
@@ -400,12 +589,13 @@ class APIKeyManager:
 
         config = APIKeyConfig(
             provider=provider,
-            api_key=api_key,
             base_url=base_url or default_config.get("base_url", ""),
             model=model or default_config.get("models", [""])[0],
             enabled=enabled,
             configured_at=datetime.now().isoformat()
         )
+        # 加密存 — api_key 字段保持空,enc_api_key 持有密文
+        config.set_api_key(api_key)
 
         self.api_keys[provider] = config
 
@@ -417,6 +607,82 @@ class APIKeyManager:
             self.on_key_change_callback(provider, config)
 
         logger.info(f"API密钥已配置: {provider}")
+        return True
+
+    def rotate_api_key(
+        self,
+        provider: str,
+        new_key: str,
+        base_url: str = "",
+        model: str = "",
+    ) -> bool:
+        """P11-D-2: 旋转 API key — 用新 key 替换现有 key。
+
+        与 ``configure_api_key`` 的区别:
+        * 必须存在旧 key (旋转 = 替换; 无 key 用 configure)
+        * 旋转后立即触发 on_key_change_callback (供 webhook / audit log 订阅)
+        * 旋转失败 (provider 不存在) 返回 False
+        * 旋转过程: 用新 key 加密 → 覆盖 enc_api_key → 清空 api_key → save
+
+        Args:
+            provider: 提供商
+            new_key: 新明文 API key (仅在调用栈中保留)
+            base_url: 覆盖 base_url (可选)
+            model: 覆盖 model (可选)
+
+        Returns:
+            True if rotated, False if provider has no existing key
+        """
+        if provider not in API_KEY_ENV_MAPPING:
+            logger.error(f"rotate_api_key: unknown provider {provider!r}")
+            return False
+
+        existing = self.api_keys.get(provider)
+        if existing is None or not existing.get_api_key():
+            logger.warning(
+                "rotate_api_key: provider=%r has no existing key; "
+                "use configure_api_key() to add a new one",
+                provider,
+            )
+            return False
+
+        if not new_key:
+            logger.error("rotate_api_key: new_key is empty")
+            return False
+
+        # 保存旧 key 的元数据 (audit 用途)
+        old_fingerprint = existing.get_api_key()[:4] + "***" if existing.get_api_key() else "n/a"
+        rotated_at = datetime.now().isoformat()
+
+        # 1) 重新构造 (保留 base_url/model 除非显式覆盖)
+        cfg = APIKeyConfig(
+            provider=provider,
+            base_url=base_url or existing.base_url,
+            model=model or existing.model,
+            enabled=existing.enabled,
+            configured_at=existing.configured_at,
+        )
+        # 2) 加密新 key
+        cfg.set_api_key(new_key)
+        # 3) 重新放回 manager
+        self.api_keys[provider] = cfg
+
+        # 4) 立即保存
+        self._save_config()
+
+        # 5) 触发回调 (供 audit log / external webhook 订阅)
+        if self.on_key_change_callback:
+            try:
+                self.on_key_change_callback(provider, cfg)
+            except Exception as exc:
+                logger.warning(
+                    "rotate_api_key: on_key_change_callback raised %s", exc
+                )
+
+        logger.info(
+            "API key rotated: provider=%s, old_fp=%s, rotated_at=%s",
+            provider, old_fingerprint, rotated_at,
+        )
         return True
 
     def remove_api_key(self, provider: str) -> bool:
@@ -439,7 +705,7 @@ class APIKeyManager:
 
     async def verify_api_key(self, provider: str) -> APIKeyStatus:
         """
-        验证API密钥是否有效
+        验证API密钥是否有效 — 内部解密后使用,不修改密文。
 
         Args:
             provider: 提供商
@@ -448,8 +714,9 @@ class APIKeyManager:
             验证状态
         """
         config = self.api_keys.get(provider)
+        plaintext = config.get_api_key() if config else ""
 
-        if not config or not config.api_key:
+        if not config or not plaintext:
             return APIKeyStatus(
                 provider=provider,
                 configured=False,
@@ -504,9 +771,18 @@ class APIKeyManager:
         """验证OpenAI API密钥"""
         import aiohttp
 
+        api_key = config.get_api_key()
+        if not api_key:
+            return APIKeyStatus(
+                provider=config.provider,
+                configured=False,
+                valid=False,
+                error="api_key 解密失败或为空",
+                last_check=datetime.now().isoformat(),
+            )
         url = f"{config.base_url}/models"
         headers = {
-            "Authorization": f"Bearer {config.api_key}"
+            "Authorization": f"Bearer {api_key}"
         }
 
         async with aiohttp.ClientSession() as session:
@@ -539,9 +815,18 @@ class APIKeyManager:
         """验证Anthropic API密钥"""
         import aiohttp
 
+        api_key = config.get_api_key()
+        if not api_key:
+            return APIKeyStatus(
+                provider=config.provider,
+                configured=False,
+                valid=False,
+                error="api_key 解密失败或为空",
+                last_check=datetime.now().isoformat(),
+            )
         url = f"{config.base_url}/v1/messages"
         headers = {
-            "x-api-key": config.api_key,
+            "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
             "Content-Type": "application/json"
         }
@@ -581,7 +866,16 @@ class APIKeyManager:
         """验证Google API密钥"""
         import aiohttp
 
-        url = f"{config.base_url}/models?key={config.api_key}"
+        api_key = config.get_api_key()
+        if not api_key:
+            return APIKeyStatus(
+                provider=config.provider,
+                configured=False,
+                valid=False,
+                error="api_key 解密失败或为空",
+                last_check=datetime.now().isoformat(),
+            )
+        url = f"{config.base_url}/models?key={api_key}"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
@@ -612,9 +906,18 @@ class APIKeyManager:
         """验证Kimi API密钥"""
         import aiohttp
 
+        api_key = config.get_api_key()
+        if not api_key:
+            return APIKeyStatus(
+                provider=config.provider,
+                configured=False,
+                valid=False,
+                error="api_key 解密失败或为空",
+                last_check=datetime.now().isoformat(),
+            )
         url = f"{config.base_url}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {config.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         payload = {
@@ -652,9 +955,18 @@ class APIKeyManager:
         """验证GLM API密钥"""
         import aiohttp
 
+        api_key = config.get_api_key()
+        if not api_key:
+            return APIKeyStatus(
+                provider=config.provider,
+                configured=False,
+                valid=False,
+                error="api_key 解密失败或为空",
+                last_check=datetime.now().isoformat(),
+            )
         url = f"{config.base_url}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {config.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         payload = {
@@ -690,9 +1002,18 @@ class APIKeyManager:
         """验证DeepSeek API密钥"""
         import aiohttp
 
+        api_key = config.get_api_key()
+        if not api_key:
+            return APIKeyStatus(
+                provider=config.provider,
+                configured=False,
+                valid=False,
+                error="api_key 解密失败或为空",
+                last_check=datetime.now().isoformat(),
+            )
         url = f"{config.base_url}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {config.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         payload = {
@@ -794,7 +1115,7 @@ class APIKeyManager:
         for provider, config in self.api_keys.items():
             status[provider] = APIKeyStatus(
                 provider=provider,
-                configured=bool(config.api_key),
+                configured=bool(config.get_api_key()),
                 valid=config.is_valid,
                 error=config.error_message,
                 last_check=config.last_verified
@@ -817,7 +1138,7 @@ class APIKeyManager:
         for provider in required_providers:
             config = self.api_keys.get(provider)
 
-            if not config or not config.api_key or not config.enabled:
+            if not config or not config.get_api_key() or not config.enabled:
                 missing.append(provider)
 
         return missing

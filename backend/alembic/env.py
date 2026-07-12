@@ -1,7 +1,44 @@
 """
 Alembic migrations environment configuration for Nanobot Factory.
 
-Supports both SQLite (default) and PostgreSQL via DATABASE_URL env variable.
+⚠️  DEPRECATED — DO NOT USE (P21 P2 P5, 2026-07-11) ⚠️
+
+This ``backend/alembic/`` chain is the **legacy "media library" chain** that
+predates the imdf stack.  It has multiple P0 problems that make it unfit
+for production (see ``reports/p21_r2_audit_db.md`` §N1):
+
+  1. ``target_metadata`` is an empty ``MetaData()`` (line 56) with
+     hand-coded ``Table(...)`` definitions for ``assets``/``folders``/
+     ``tags``/``datasets`` that have **no** ORM model.  The real imdf
+     ORM is at ``backend/imdf/models/``.
+  2. Its migrations (``p4_4_w1_metadata``, ``p13_c1_p99_db``,
+     ``p5_r1_t1_project_center``) reference tables its own env.py
+     never creates — e.g. ``p13_c1_p99_db.py:97-100`` creates a GIN
+     index on ``audit_chain_entries.extra`` but the legacy MetaData
+     has no ``audit_chain_entries`` table.
+  3. ``alembic upgrade head`` from ``backend/`` would fail with
+     ``relation does not exist`` on a real deployment.
+
+**Use the canonical chain instead:**
+
+    cd backend/imdf && alembic upgrade head
+
+The canonical chain's env.py (``backend/imdf/alembic/env.py:37``) points
+to ``Base.metadata`` and is the one shipped with the imdf stack.  It
+has 7 migrations: 0001_initial → 0007_unify_audit_extra_type.
+
+This file is kept around only because some test DBs
+(``backend/create_test_db2.py:18``,
+``backend/create_test_db3.py:88``) explicitly stamp
+``p4_4_w1_metadata`` into ``alembic_version``.  Deleting the migration
+files would break those tests; instead, the legacy chain is left in
+place but explicitly marked DEPRECATED.  See
+``reports/p21_p2_p5_alembic.md`` for the full rationale and the
+forward-looking plan to remove it.
+
+The env.py code below is preserved verbatim (modulo this header) so
+existing callers (CI scripts, ad-hoc ``alembic`` invocations from
+``backend/``) continue to work — they just shouldn't be relied on.
 """
 
 import logging

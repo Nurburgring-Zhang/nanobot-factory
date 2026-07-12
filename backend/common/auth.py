@@ -22,6 +22,15 @@ Why a standalone module?
 
 The ``get_current_user`` signature matches the legacy one (``dict`` return)
 so callers can be migrated mechanically.
+
+P11-B RFC 7519 enforce:
+  * ``_secret()`` 在 secret < 16 字符时直接 raise ``ValueError``
+    (fail-fast, 不再 silent warning)。
+  * ``_decode_token()`` 强制校验 iss + aud
+    (RFC 7519 §4.1.1 / §4.1.3): iss 必须等于 ``JWT_ISSUER``
+    ("nanobot-factory"), aud 必须等于 ``JWT_AUDIENCE`` ("nanobot-factory-api")。
+  * ``issue_access_token()`` 强制写入 iss / aud / jti 三标准声明
+    (RFC 7519 §4.1.1 / §4.1.3 / §4.1.7), jti 用 uuid4().hex 全局唯一。
 """
 from __future__ import annotations
 
@@ -30,12 +39,18 @@ import logging
 import os
 import sqlite3
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import Header, HTTPException, status
 
 logger = logging.getLogger(__name__)
+
+# P10-C: RFC 7519 标准声明常量 + secret 长度阈值
+JWT_ISSUER = "nanobot-factory"
+JWT_AUDIENCE = "nanobot-factory-api"
+JWT_MIN_SECRET_LENGTH = 16  # 与 imdf.engines.audit_chain.AuditChain 一致
 
 
 # ── Token decode helpers ────────────────────────────────────────────────────
@@ -53,6 +68,14 @@ def _secret() -> str:
             pass
         if os.environ.get("IMDF_TEST_MODE", "").lower() in ("1", "true", "yes"):
             return "test-secret-common-lib"
+    # P11-B: 启动时校验 secret 强度 (与 AuditChain / unified_auth 一致)
+    # 短路 raise ValueError — 不再静默 warning, fail-fast 防止弱密钥被部署。
+    if len(sec) < JWT_MIN_SECRET_LENGTH:
+        raise ValueError(
+            f"JWT_SECRET is too short ({len(sec)} chars, min "
+            f"{JWT_MIN_SECRET_LENGTH}). Set JWT_SECRET to a strong random "
+            f"value >= {JWT_MIN_SECRET_LENGTH} chars. (RFC 7519 §3 / OWASP A02)"
+        )
     return sec
 
 
@@ -61,12 +84,41 @@ def _algo() -> str:
 
 
 def _decode_token(token: str) -> Dict[str, Any]:
-    """Decode a JWT; raise HTTPException(401) on any failure."""
+    """Decode a JWT; raise HTTPException(401) on any failure.
+
+    P11-B: 强制校验 ``iss`` (RFC 7519 §4.1.1) + ``aud`` (RFC 7519 §4.1.3)
+    标准声明 — ``iss`` 必须等于 ``JWT_ISSUER`` ("nanobot-factory"),
+    ``aud`` 必须等于 ``JWT_AUDIENCE`` ("nanobot-factory-api")。不匹配的
+    token 一律返回 401, 阻止伪造 token (例如其他系统签发的 token 被复用)。
+    本项目所有 token 均由 ``issue_access_token`` / ``unified_auth`` 签发,
+    已自动写入正确的 iss/aud, 所以现有流程不受影响。
+
+    注: python-jose ``verify_aud`` 在 token 缺少 aud claim 时静默通过
+    (这是 jose lib 的已知行为), 所以这里额外手动检查 aud 必须存在。
+    """
     try:
         from jose import JWTError, jwt
 
-        payload = jwt.decode(token, _secret(), algorithms=[_algo()])
+        payload = jwt.decode(
+            token, _secret(), algorithms=[_algo()],
+            audience=JWT_AUDIENCE,
+            issuer=JWT_ISSUER,
+            options={"verify_aud": True, "verify_iss": True},
+        )
+        # P11-B 兜底: jose 在 aud 缺失时静默通过, 显式检查 claim 存在
+        if "aud" not in payload:
+            logger.warning("jwt decode failed: missing aud claim")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token"
+            )
+        if "iss" not in payload:
+            logger.warning("jwt decode failed: missing iss claim")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token"
+            )
         return payload
+    except HTTPException:
+        raise  # 已经是 HTTPException, 直接 re-raise
     except Exception as exc:
         logger.warning("jwt decode failed: %s", exc)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
@@ -234,6 +286,10 @@ def issue_access_token(username: str, role: str = "viewer", ttl_minutes: Optiona
         "sub": username,
         "role": role,
         "type": "access",
+        # P10-C: RFC 7519 §4.1.1 / §4.1.3 / §4.1.7 标准声明
+        "iss": JWT_ISSUER,
+        "aud": JWT_AUDIENCE,
+        "jti": uuid.uuid4().hex,
         "iat": int(time.time()),
         "exp": int(time.time()) + ttl * 60,
     }

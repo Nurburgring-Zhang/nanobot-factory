@@ -1242,6 +1242,15 @@ try:
 except Exception as e:
     logger.warning(f"/readyz 路由加载失败: {e}")
 
+# P5-R2 fix: 暴露 auth_routes 端点 (项目中心/需求中心/数据包/工作台等新端点需要 JWT)
+# 这是 P5 端到端 E2E 的关键阻塞,加这一行解阻塞
+try:
+    from api.auth_routes import router as auth_router
+    app.include_router(auth_router)
+    logger.info("Auth 路由已加载 (/api/v1/auth/* - 登录/JWT)")
+except Exception as e:
+    logger.warning(f"Auth 路由加载失败: {e}")
+
 
 # ============================================================================
 # P2-1-W2: Celery / async queue health endpoint
@@ -2435,6 +2444,24 @@ if HAS_CLOUD:
     app.include_router(router_cloud)
     logger.info("云存储API已加载")
 
+# ============================================================================
+# V4 — 智影 Intelligence (全 agent 驱动 + 多渠道数据采集)
+# ============================================================================
+try:
+    from api.intelligence_v4_routes import router as intelligence_v4_router
+    app.include_router(intelligence_v4_router)
+    logger.info("V4 Intelligence 路由已加载 (/api/v1/intelligence/*)")
+except Exception as e:
+    logger.warning(f"V4 Intelligence 路由加载失败: {e}")
+
+# V5 公众号迁移能力 (Hermes/Loop Engineering/Obsidian/MoA/Video Harness/Brand/...)
+try:
+    from api.intelligence_v5_routes import router as intelligence_v5_router
+    app.include_router(intelligence_v5_router)
+    logger.info("V5 Intelligence 路由已加载 (/api/v5/*)")
+except Exception as e:
+    logger.warning(f"V5 Intelligence 路由加载失败: {e}")
+
 # ─── 复刻模块注册 ───────────────────────────────────────────────────────────
 if HAS_MEDIA:
     app.include_router(router_media)
@@ -2476,6 +2503,21 @@ if HAS_DELIVERY:
     app.include_router(router_delivery)
     logger.info("交付路由已加载")
 
+# ─── P5-R1-T6: Internal QC + Requester Acceptance ──────────────────────────
+try:
+    from api.qc_routes import router as router_qc_internal
+    app.include_router(router_qc_internal)
+    logger.info("内部质检路由已加载 (/api/v1/qc)")
+except Exception as e:
+    logger.warning(f"内部质检路由加载失败: {e}")
+
+try:
+    from api.requester_routes import router as router_requester
+    app.include_router(router_requester)
+    logger.info("需求方验收路由已加载 (/api/v1/requester)")
+except Exception as e:
+    logger.warning(f"需求方验收路由加载失败: {e}")
+
 # ─── R10.5-Worker-2: 商业化 (账单/数据导出/审计/多租户) ─────────────────────
 try:
     from api.r10_5_business_routes import router as r10_5_business_router
@@ -2508,6 +2550,16 @@ try:
 except Exception as e:
     logger.warning(f"多模型网关路由加载失败: {e}")
 
+# ─── P10-B: 多模态网关 (build_router() 接入) ────────────────────────────────
+# P9-1 之前 multimodal.routes.build_router() 已存在但没被 include, 造成
+# /api/v1/multimodal/* 端点 404。P10-B 修复: 在 canvas_web 启动时挂上。
+try:
+    from multimodal.routes import build_router as build_multimodal_router
+    app.include_router(build_multimodal_router())
+    logger.info("多模态路由已加载 (/api/v1/multimodal/* — understand/rag/agent/services)")
+except Exception as e:
+    logger.warning(f"多模态路由加载失败: {e}")
+
 # P3-2-W1: auth_routes 已迁移至 user-service (port 8001)
 
 # F1.13: 分类规则引擎
@@ -2533,6 +2585,117 @@ try:
     logger.info("数据寻源路由已加载")
 except Exception as e:
     logger.warning(f"数据寻源路由加载失败: {e}")
+
+
+# R1: 平台能力模块注册表 + 数据流转追踪器
+try:
+    from capabilities_v2.routes import router as router_capabilities_v2, flow_router
+    app.include_router(router_capabilities_v2)
+    app.include_router(flow_router)
+    logger.info("能力模块 + 数据流转路由已加载 (/api/v1/capabilities_v2/* + /api/v1/dataflow/*)")
+except Exception as e:
+    logger.warning(f"能力模块/数据流转路由加载失败: {e}")
+
+
+# R2: 工作流搭建器 (能力图 DAG, 6 个 starter 模板)
+try:
+    from workflow_builder.routes import router as router_workflow_builder
+    app.include_router(router_workflow_builder)
+    logger.info("工作流搭建器路由已加载 (/api/v1/workflow_builder/*)")
+except Exception as e:
+    logger.warning(f"工作流搭建器路由加载失败: {e}")
+
+
+# R3: 跨模块编排总线 (整个平台事件 + 血缘)
+try:
+    from orchestration.routes import router as router_orchestration
+    app.include_router(router_orchestration)
+    logger.info("跨模块编排总线路由已加载 (/api/v1/orchestration/*)")
+    # 模块装载完后,接通其他模块的事件流到总线
+    from orchestration import bootstrap as _orch_bootstrap
+    _orch_bootstrap()
+    logger.info("跨模块编排总线已接通 capabilities_v2 + workflow_builder")
+except Exception as e:
+    logger.warning(f"跨模块编排总线路由加载失败: {e}")
+
+
+# R4: 多模态协调器 (8 模态 + 9 导出格式)
+try:
+    from multimodal_v2.routes import router as router_multimodal_v2
+    app.include_router(router_multimodal_v2)
+    logger.info("多模态协调器路由已加载 (/api/v1/multimodal_v2/* — 8 模态 + 9 导出)")
+except Exception as e:
+    logger.warning(f"多模态协调器路由加载失败: {e}")
+
+
+# R5: 插件生态 (注册 + 调用 + 信任等级)
+try:
+    from plugins.routes import router as router_plugins
+    app.include_router(router_plugins)
+    logger.info("插件生态路由已加载 (/api/v1/plugins/*)")
+except Exception as e:
+    logger.warning(f"插件生态路由加载失败: {e}")
+
+
+# R6: AI Provider 注册 + 路由 + 计费
+try:
+    from providers.routes import router as router_providers
+    app.include_router(router_providers)
+    logger.info("AI Provider 注册路由已加载 (/api/v1/providers/* — 7 厂商 + 路由)")
+except Exception as e:
+    logger.warning(f"AI Provider 注册路由加载失败: {e}")
+
+
+# R7: 部署 readiness catalog
+try:
+    from deploy_r7.readiness import readiness_report, audit_against_app
+    from deploy_r7.routes import router as router_deploy_r7
+    app.include_router(router_deploy_r7)
+    logger.info("R7 部署就绪 HTTP 路由已挂载 (/api/v1/deploy_r7/* — readiness + audit + helm_summary)")
+    # no router — informational only; surfaced via /api/v1/security/health
+    # include in stats
+    import json as _json
+    logger.info(f"R7 部署就绪 catalog = {readiness_report()['total_endpoints']} 端点")
+except Exception as e:
+    logger.warning(f"R7 readiness catalog 加载失败: {e}")
+
+
+# Depth-7: RequirementEngine rehydrate (从 DB 拉回内存 dict, 跨重启持久)
+try:
+    from engines.requirement_engine import get_requirement_engine
+    n = get_requirement_engine().rehydrate()
+    logger.info(f"Depth-7 RequirementEngine rehydrate: {n} rows (跨重启持久)")
+except Exception as e:
+    logger.warning(f"Depth-7 rehydrate 失败 (非阻塞): {e}")
+
+
+# Depth-7: RAG VectorStore rehydrate (从 Embedding 表拉回, 避免重启后 RAG 检索空)
+try:
+    from multimodal.rag import VectorStore
+    vs = VectorStore()
+    n_emb = vs.rehydrate_from_db()
+    if n_emb:
+        logger.info(f"Depth-7 RAG VectorStore rehydrate: {n_emb} embeddings (跨重启持久)")
+except Exception as e:
+    logger.warning(f"Depth-7 RAG rehydrate 失败 (非阻塞): {e}")
+
+
+# R8: 安全 / OWASP / RBAC 加固
+try:
+    from security_r8.routes import router as router_security_r8
+    app.include_router(router_security_r8)
+    logger.info("R8 安全加固路由已加载 (/api/v1/security/* — PII / 限流 / 审计链 / vault)")
+except Exception as e:
+    logger.warning(f"R8 路由加载失败: {e}")
+
+
+# R9: 性能原语 (cache / pool / batch / queue)
+try:
+    from perf_r9.routes import router as router_perf_r9
+    app.include_router(router_perf_r9)
+    logger.info("R9 性能原语路由已加载 (/api/v1/perf/* — cache/pool/batch/queue)")
+except Exception as e:
+    logger.warning(f"R9 性能路由加载失败: {e}")
 
 
 # P3-2-W1: admin_routes 已迁移至 user-service (port 8001)
@@ -2582,6 +2745,21 @@ try:
     logger.info("批量操作路由已加载")
 except Exception as e:
     logger.warning(f"批量操作路由加载失败: {e}")
+
+# P5-R1-T3: Pack + Collection 路由
+try:
+    from api.pack_routes import router as pack_router
+    app.include_router(pack_router)
+    logger.info("Pack 路由已加载 (8 端点)")
+except Exception as e:
+    logger.warning(f"Pack 路由加载失败: {e}")
+
+try:
+    from api.collection_routes import router as collection_router
+    app.include_router(collection_router)
+    logger.info("Collection 路由已加载 (12+ 端点)")
+except Exception as e:
+    logger.warning(f"Collection 路由加载失败: {e}")
 
 try:
     from api.export_routes import router as export_router
@@ -2726,6 +2904,14 @@ try:
     logger.info("R4 mock fallback 路由已加载 (datasets/team/delivery/pipeline)")
 except Exception as e:
     logger.warning(f"R4 mock fallback 路由加载失败: {e}")
+
+# ─── P5-R1-T4: AnnotationWorkbench 路由 (真画布工作台) ─────────────────────
+try:
+    from api.workbench_routes import router as workbench_router
+    app.include_router(workbench_router)
+    logger.info("AnnotationWorkbench 路由已加载 (P5-R1-T4: /api/v1/workbench)")
+except Exception as e:
+    logger.warning(f"AnnotationWorkbench 路由加载失败: {e}")
 
 # ─── F2.5: 增强数据生产管线路由 ──────────────────────────────────────────────
 try:
@@ -3723,16 +3909,82 @@ async def workflow_nodes(
     }
 
 
-@app.post("/api/chat")
+@app.post("/api/v1/chat/smart")
 async def chat_api(req: PlanRequest):
-    """调用真实AI进行对话"""
-    from api.nanobot_adapter import NanobotAdapter
-    adapter = NanobotAdapter()
+    """P10-B: 调用真实AI进行对话 — 改用 ``call_provider_smart`` (P5-W1 统一入口)。
+
+    P11-A: 路径从 ``/api/chat`` 迁移到 ``/api/v1/chat/smart``, 避免与 ``model_routes.unified_chat``
+    (mount 在 ``/api/chat``) 路由冲突。前端若需要旧路径, 统一走 ``unified_chat``, 该路径
+    内部已切到 ``call_provider_smart``。
+
+    之前用 ``NanobotAdapter.chat()`` 直连 DeepSeek, 现在改走 provider_registry 的
+    ``call_provider_smart``: 自动限流 / 熔断 / mock 降级 / 用量记账 / 审计链。
+
+    行为兼容: 保留 ``{"success", "message"/"error"}`` 返回结构。
+    """
     try:
-        result = await adapter.chat(req.user_input)
-        return result
+        # P10-B: 走 call_provider_smart (P5-W1 统一入口)
+        from engines.provider_registry import (
+            call_provider_smart,
+            _get_default_providers,
+        )
+        # 选第一个 enabled + chat model 可用的 provider; 没有则取第一个有 chatModels 的
+        provider = None
+        for p in _get_default_providers() or []:
+            if p.get("enabled") and p.get("chatModels"):
+                provider = p
+                break
+        if not provider:
+            for p in _get_default_providers() or []:
+                if p.get("chatModels"):
+                    provider = p
+                    break
+        if not provider:
+            # 全部未配置 → fallback NanobotAdapter (老链路, 保持向后兼容)
+            from api.nanobot_adapter import NanobotAdapter
+            adapter = NanobotAdapter()
+            return await adapter.chat(req.user_input)
+        payload = {
+            "model": provider.get("defaults", {}).get("chatModel", "") or (provider.get("chatModels") or ["gpt-4o"])[0],
+            "messages": [{"role": "user", "content": req.user_input or ""}],
+            "temperature": 0.7,
+            "max_tokens": 4096,
+        }
+        result = await call_provider_smart(
+            provider, payload, kind="chat",
+            user_id="anonymous",
+            org_id="",
+        )
+        if result.get("ok") and isinstance(result.get("data"), dict):
+            content = (
+                (result["data"].get("choices") or [{}])[0]
+                .get("message", {}).get("content", "")
+                or (result["data"].get("content", ""))
+            )
+            return {
+                "success": True,
+                "message": content,
+                "model": result["data"].get("model", payload["model"]),
+                "provider_id": result.get("provider_id", provider.get("id")),
+                "cost_usd": result.get("cost_usd", 0.0),
+                "usage": result.get("usage_tokens", 0),
+                "mock": result.get("mock", False),
+            }
+        # 失败 — 兼容老返回结构
+        return {
+            "success": False,
+            "error": result.get("error") or f"call_provider_smart failed: {result.get('code', 'unknown')}",
+            "code": result.get("code", "unknown"),
+            "provider_id": result.get("provider_id", provider.get("id")),
+        }
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        # 终极 fallback — NanobotAdapter 老链路
+        try:
+            from api.nanobot_adapter import NanobotAdapter
+            adapter = NanobotAdapter()
+            return await adapter.chat(req.user_input)
+        except Exception as e2:
+            return {"success": False, "error": f"{e} | fallback: {e2}"}
 
 
 # ============================================================================
@@ -4902,6 +5154,14 @@ try:
 except Exception as e:
     logger.warning(f"质量v2路由加载失败: {e}")
 
+# P5-R1-T5: labels ontology (任务标签 ontology)
+try:
+    from api.labels_ontology_routes import router as labels_ontology_router
+    app.include_router(labels_ontology_router)
+    logger.info("P5-R1-T5 labels ontology 路由已加载 (/api/v1/labels/ontology)")
+except Exception as e:
+    logger.warning(f"P5-R1-T5 labels ontology 路由加载失败: {e}")
+
 # P1-C-W1: 5 核心页 API 集成 (dashboard/canvas/assets/projects/users)
 try:
     from api.p1_c_w1_routes import router as p1_c_w1_router
@@ -4909,6 +5169,14 @@ try:
     logger.info("P1-C-W1 5核心页 API 集成路由已加载 (22 端点)")
 except Exception as e:
     logger.warning(f"P1-C-W1 路由加载失败: {e}")
+
+# P5-R1-T1: ProjectCenter — /api/v1/projects (10 端点: list/create/get/put/del/members/post/members/del/status/stats/timeline)
+try:
+    from api.project_routes import router as project_center_router
+    app.include_router(project_center_router)
+    logger.info("P5-R1-T1 ProjectCenter 路由已加载 (10 端点 /api/v1/projects/*)")
+except Exception as e:
+    logger.warning(f"P5-R1-T1 ProjectCenter 路由加载失败: {e}")
 
 # P3-2-W1: oss_routes 已迁移至 asset-service (port 8002)
 

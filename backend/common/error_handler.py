@@ -28,9 +28,19 @@ raise a domain error without touching HTTPException directly::
 
     if item is None:
         raise BusinessError("item_not_found", "Item 42 not in catalog", status_code=404)
+
+P21 P2 P1 (R2-NEW-02) — XSS hardening:
+  ``code`` and ``message`` are now run through :func:`html.escape` before
+  being placed into the response body. This blocks reflected/stored XSS
+  payloads that include ``<script>`` / ``<img onerror=...>`` from being
+  served verbatim to a browser-side JSON renderer that does not escape.
+  The original (pre-escape) ``code`` / ``message`` is also preserved on
+  ``error.code_raw`` / ``error.message_raw`` for server-side log
+  correlation and machine clients that don't render HTML.
 """
 from __future__ import annotations
 
+import html
 import logging
 from typing import Any, Dict, Optional
 
@@ -81,11 +91,21 @@ def _build_error_body(
     details: Any = None,
     status_code: Optional[int] = None,
 ) -> Dict[str, Any]:
+    # P21 P2 P1 (R2-NEW-02): escape user-controlled ``code`` / ``message``
+    # before placing them in the response body. Without this, an attacker
+    # that can influence either field (e.g. by passing a crafted path
+    # parameter that lands in the 404 detail, or by triggering a
+    # ``BusinessError`` with their payload) achieves reflected XSS against
+    # any client that renders the JSON as HTML.
+    code_str = str(code) if code is not None else ""
+    message_str = str(message) if message is not None else ""
     body: Dict[str, Any] = {
         "success": False,
         "error": {
-            "code": code,
-            "message": message,
+            "code": html.escape(code_str, quote=True),
+            "message": html.escape(message_str, quote=True),
+            "code_raw": code_str,
+            "message_raw": message_str,
             "request_id": _request_id(request),
         },
     }
