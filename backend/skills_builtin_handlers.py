@@ -19,9 +19,13 @@ the spec category:
   downstream engine is unavailable
 - **drama**: content structure generation (script / character / scene / shot /
   assemble) with deterministic templates
-- **comfy**: HTTP shim that emits a real ComfyUI prompt payload and posts
-  to the local ComfyUI endpoint when available, otherwise returns a
-  structured 'request would have been sent' payload so the call is observable
+- **comfy**: real HTTP POST to ``$COMFYUI_URL/prompt`` (default
+  ``http://127.0.0.1:8188``). When the endpoint is reachable we return
+  the prompt_id + ComfyUI response; when it is not we return a
+  structured ``{status: queued_offline, would_post_to, payload_size}``
+  payload so the call is still observable to the caller (no silent
+  drop). Per workflow templates + model registry are persisted under
+  ``backend/.var/comfy_{workflows,models}/``.
 - **agency**: capability / department / expert registry CRUD with file-based
   persistence under ``backend/.var/agency/``
 

@@ -237,6 +237,31 @@ async def test_comfy_workflow_persistence(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_comfy_run_offline_fallback(tmp_path, monkeypatch):
+    """skill_comfy_run: when COMFYUI_URL is unreachable, return
+    queued_offline payload with would_post_to metadata. Validates the
+    P22-P2-real real-HTTP integration path is wired (not silent drop)."""
+    monkeypatch.chdir(tmp_path)
+    # Point at a guaranteed-unreachable URL with short timeout via env
+    monkeypatch.setenv("COMFYUI_URL", "http://127.0.0.1:1")  # port 1 always closed
+    sm = SkillManager()
+    out = await sm.execute_skill(
+        "skill_comfy_run",
+        SkillInput(params={"workflow": {"3": {"inputs": {"seed": 42}, "class_type": "KSampler"}}}),
+    )
+    assert out.success, f"comfy_run should always return success=True, got: {out.error}"
+    # Either real success (if some local ComfyUI happens to run) or offline queue
+    if out.result.get("status") == "queued_offline":
+        assert "would_post_to" in out.result
+        assert "payload_size" in out.result
+        assert out.metadata.get("engine") == "comfy"
+    else:
+        # Real success path
+        assert "prompt_id" in out.result
+        assert out.metadata.get("engine") == "comfy"
+
+
+@pytest.mark.asyncio
 async def test_agency_crud(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     sm = SkillManager()
