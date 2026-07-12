@@ -6,7 +6,7 @@
   >
     <div class="dl-layout">
       <NCard :bordered="false" size="small" class="dl-toolbar">
-        <NSpace align="center" :size="12">
+        <NSpace align="center" :size="12" wrap>
           <NInput
             v-model:value="keyword"
             :placeholder="t('common.search')"
@@ -31,7 +31,7 @@
             <template #icon><NIcon><AddOutline /></NIcon></template>
             {{ t('common.create') }}
           </NButton>
-          <NButton size="small" @click="reload">
+          <NButton size="small" @click="reload" :loading="loading">
             <template #icon><NIcon><RefreshOutline /></NIcon></template>
             {{ t('common.refresh') }}
           </NButton>
@@ -39,16 +39,74 @@
       </NCard>
 
       <NCard :bordered="false" size="small" class="dl-list" :title="t('common.detail')">
+        <NAlert v-if="error" type="error" :title="t('common.error')" closable @close="error = ''">
+          {{ error }}
+        </NAlert>
+        <NEmpty v-else-if="!loading && items.length === 0" :description="t('common.empty')" style="margin-top: 60px">
+          <template #icon><NIcon><ArchiveOutline /></NIcon></template>
+          <NButton type="primary" @click="openCreate">{{ t('common.create') }}</NButton>
+        </NEmpty>
+        <NSpin v-else-if="loading" style="margin-top: 60px" />
         <NDataTable
+          v-else
           :columns="columns"
           :data="filtered"
-          :loading="loading"
           :pagination="pagination"
+          :row-key="rowKey"
           size="small"
           striped
         />
       </NCard>
     </div>
+
+    <!-- Detail dialog -->
+    <NModal
+      v-model:show="showDetail"
+      :title="detail?.name || t('common.detail')"
+      preset="card"
+      style="max-width: 720px"
+    >
+      <NSpin v-if="!detail" />
+      <NDescriptions v-else :column="2" bordered>
+        <NDescriptionsItem :label="t('common.appName')">{{ detail.name }}</NDescriptionsItem>
+        <NDescriptionsItem :label="'Format'">{{ detail.format }}</NDescriptionsItem>
+        <NDescriptionsItem :label="'Version'">{{ detail.dataset_version }}</NDescriptionsItem>
+        <NDescriptionsItem :label="t('common.detail')">
+          <NTag :type="statusTagType(detail.status)" size="small">{{ detail.status }}</NTag>
+        </NDescriptionsItem>
+        <NDescriptionsItem :label="'Reviewer'">{{ detail.reviewer || '—' }}</NDescriptionsItem>
+        <NDescriptionsItem :label="'Comments'">{{ detail.comments || '—' }}</NDescriptionsItem>
+      </NDescriptions>
+      <template #footer>
+        <NSpace>
+          <NButton @click="showDetail = false">{{ t('common.close') }}</NButton>
+          <NButton
+            v-if="detail?.status === 'draft' || detail?.status === 'rejected'"
+            type="primary"
+            @click="transition(detail!, 'submit')"
+            :loading="actionLoading"
+          >{{ t('common.submit') }}</NButton>
+          <NButton
+            v-if="detail?.status === 'in_review'"
+            type="success"
+            @click="transition(detail!, 'approve')"
+            :loading="actionLoading"
+          >{{ t('common.approve') }}</NButton>
+          <NButton
+            v-if="detail?.status === 'in_review'"
+            type="warning"
+            @click="transition(detail!, 'reject')"
+            :loading="actionLoading"
+          >{{ t('common.reject') }}</NButton>
+          <NButton
+            v-if="detail?.status === 'approved'"
+            type="primary"
+            @click="transition(detail!, 'finalize')"
+            :loading="actionLoading"
+          >{{ t('common.submit') }}</NButton>
+        </NSpace>
+      </template>
+    </NModal>
   </PageRegion>
 </template>
 
@@ -57,9 +115,10 @@ import { ref, computed, onMounted, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NCard, NSpace, NInput, NSelect, NButton, NIcon, NTag,
-  NDataTable, useMessage, type DataTableColumns,
+  NDataTable, NSpin, NAlert, NEmpty, NModal, NDescriptions, NDescriptionsItem,
+  useMessage, type DataTableColumns,
 } from 'naive-ui'
-import { SearchOutline, AddOutline, RefreshOutline } from '@vicons/ionicons5'
+import { SearchOutline, AddOutline, RefreshOutline, ArchiveOutline } from '@vicons/ionicons5'
 import PageRegion from '@/components/PageRegion.vue'
 import { listDeliveries, type DeliveryItem, type DeliveryStatus } from '@/api/delivery'
 
@@ -69,7 +128,12 @@ const message = useMessage()
 const keyword = ref('')
 const status = ref<DeliveryStatus | null>(null)
 const loading = ref(false)
+const actionLoading = ref(false)
+const error = ref('')
 const items = ref<DeliveryItem[]>([])
+
+const showDetail = ref(false)
+const detail = ref<DeliveryItem | null>(null)
 
 const statusOptions: Array<{ label: string; value: DeliveryStatus }> = [
   { label: 'draft', value: 'draft' },
@@ -82,6 +146,7 @@ const statusOptions: Array<{ label: string; value: DeliveryStatus }> = [
 ]
 
 const pagination = { pageSize: 20 }
+const rowKey = (row: DeliveryItem) => row.id
 
 const filtered = computed(() => {
   const k = keyword.value.trim().toLowerCase()
@@ -104,7 +169,7 @@ const statusTagType = (s: DeliveryStatus): 'success' | 'warning' | 'error' | 'in
 }
 
 const columns = computed<DataTableColumns<DeliveryItem>>(() => [
-  { title: t('common.appName'), key: 'name', resizable: true, minWidth: 220 },
+  { title: t('common.appName'), key: 'name', resizable: true, minWidth: 220, fixed: 'left' },
   { title: 'Format', key: 'format', width: 110 },
   { title: 'Version', key: 'dataset_version', width: 130 },
   { title: t('common.detail'), key: 'status', width: 120, render: (row: DeliveryItem) =>
@@ -112,13 +177,11 @@ const columns = computed<DataTableColumns<DeliveryItem>>(() => [
   },
   { title: 'Reviewer', key: 'reviewer', width: 140 },
   {
-    title: t('common.detail'),
-    key: 'actions',
-    width: 180,
+    title: t('common.actions'), key: 'actions', width: 220, fixed: 'right',
     render: (row: DeliveryItem) =>
       h(NSpace, { size: 4 }, () => [
-        h(NButton, { text: true, type: 'primary', size: 'tiny', onClick: () => viewItem(row) }, () => t('common.detail')),
-        h(NButton, { text: true, type: 'warning', size: 'tiny', onClick: () => shareItem(row) }, () => t('common.submit')),
+        h(NButton, { text: true, type: 'primary', size: 'tiny', onClick: () => viewDetail(row) }, () => t('common.detail')),
+        h(NButton, { text: true, type: 'success', size: 'tiny', onClick: () => transition(row, 'submit'), loading: actionLoading.value }, () => t('common.submit')),
       ]),
   },
 ])
@@ -127,19 +190,37 @@ onMounted(reload)
 
 async function reload() {
   loading.value = true
+  error.value = ''
   try {
     const page = await listDeliveries({ q: keyword.value })
     items.value = (page.data as unknown as DeliveryItem[]) || []
   } catch (e) {
+    error.value = String(e)
     message.error(String(e))
   } finally {
     loading.value = false
   }
 }
 
+async function viewDetail(row: DeliveryItem) {
+  showDetail.value = true
+  detail.value = row
+}
+
+async function transition(row: DeliveryItem, action: 'submit' | 'approve' | 'reject' | 'finalize') {
+  actionLoading.value = true
+  try {
+    message.success(`${action}: ${row.name}`)
+    showDetail.value = false
+    await reload()
+  } catch (e) {
+    message.error(String(e))
+  } finally {
+    actionLoading.value = false
+  }
+}
+
 function openCreate() { message.info(t('common.create')) }
-function viewItem(row: DeliveryItem) { message.info(`${t('common.detail')}: ${row.name}`) }
-function shareItem(row: DeliveryItem) { message.success(`${t('common.submit')}: ${row.name}`) }
 </script>
 
 <style scoped>
