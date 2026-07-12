@@ -1,0 +1,66 @@
+{
+    "report_meta": {
+        "scan_target": "files",
+        "scanned": [
+            "requirements_full.txt"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "api_key": false,
+        "local_database_path": null,
+        "safety_version": "2.3.5",
+        "timestamp": "2026-06-26 07:22:58",
+        "packages_found": 3,
+        "vulnerabilities_found": 0,
+        "vulnerabilities_ignored": 0,
+        "remediations_recommended": 0,
+        "telemetry": {
+            "os_type": "Windows",
+            "os_release": "10",
+            "os_description": "Windows-10-10.0.26200-SP0",
+            "python_version": "3.11.6",
+            "safety_command": "check",
+            "safety_options": {
+                "files": {
+                    "-r": 1
+                },
+                "save_json": {
+                    "--save-json": 1
+                },
+                "json": {
+                    "--json": 1
+                }
+            },
+            "safety_version": "2.3.5",
+            "safety_source": "cli"
+        },
+        "git": {
+            "branch": "main",
+            "tag": "",
+            "commit": "3320199594ded43da08fc33b55066a736fbb2d5e",
+            "dirty": true,
+            "origin": "https://github.com/Nurburgring-Zhang/nanobot-factory.git"
+        },
+        "project": null,
+        "json_version": 1
+    },
+    "scanned_packages": {
+        "celery": {
+            "name": "celery",
+            "version": "5.3.6"
+        },
+        "redis": {
+            "name": "redis",
+            "version": "5.0.1"
+        },
+        "safety": {
+            "name": "safety",
+            "version": "2.3.5"
+        }
+    },
+    "affected_packages": {},
+    "announcements": [],
+    "vulnerabilities": [],
+    "ignored_vulnerabilities": [],
+    "remediations": {}
+}

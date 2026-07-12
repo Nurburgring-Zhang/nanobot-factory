@@ -1,0 +1,64 @@
+﻿
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_060_si
+gn_real_then_verify_ok PASSED [ 25%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_061_ve
+rify_after_mutation PASSED [ 50%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_070_sign_pki_via_api
+ PASSED [ 75%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_071_verify_pki_via_a
+pi FAILED [100%]
+FAILED ..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_071_verify_pk
+i_via_api
+================== 1 failed, 3 passed, 26 warnings in 0.47s ===================
+
+
+
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_060_si
+gn_real_then_verify_ok PASSED [ 25%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_061_ve
+rify_after_mutation PASSED [ 50%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_070_sign_pki_via_api
+ PASSED [ 75%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_071_verify_pki_via_a
+pi PASSED [100%]
+======================= 4 passed, 26 warnings in 0.37s ========================
+
+
+
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_060_si
+gn_real_then_verify_ok PASSED [ 25%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_061_ve
+rify_after_mutation PASSED [ 50%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_070_sign_pki_via_api
+ PASSED [ 75%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_071_verify_pki_via_a
+pi FAILED [100%]
+FAILED ..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_071_verify_pk
+i_via_api
+================== 1 failed, 3 passed, 26 warnings in 0.47s ===================
+
+
+
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_060_si
+gn_real_then_verify_ok PASSED [ 25%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_061_ve
+rify_after_mutation PASSED [ 50%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_070_sign_pki_via_api
+ PASSED [ 75%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_071_verify_pki_via_a
+pi PASSED [100%]
+======================= 4 passed, 26 warnings in 0.37s ========================
+
+
+
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_060_si
+gn_real_then_verify_ok PASSED [ 25%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestContractsIntegration::test_061_ve
+rify_after_mutation PASSED [ 50%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_070_sign_pki_via_api
+ PASSED [ 75%]
+..\..\Hermes\鐢熶骇骞冲彴\nanobot-factory\backend\contracts\tests\test_real_signing.py::TestRoutes::test_071_verify_pki_via_a
+pi PASSED [100%]
+======================= 4 passed, 26 warnings in 0.37s ========================
+
+

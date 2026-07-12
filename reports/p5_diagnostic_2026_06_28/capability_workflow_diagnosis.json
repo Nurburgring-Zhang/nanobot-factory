@@ -1,0 +1,545 @@
+{
+  "report_title": "能力模块化 + 工作流搭建诊断 — Capabilities × Nodes × Marketplace × Visual Editor × Director Studio 全栈盘点",
+  "investigation_date": "2026-06-28",
+  "module": "anobot-factory / Capability Modularization + Workflow Construction (能力市场 + 节点注册表 + Vue Flow 可视化编辑器 + 三模块导演工作台)",
+  "investigated_files": [
+    "backend/capabilities/capability_manager.py (628 lines, 32KB — 统一能力管理器: OpenClaw 40+ / MCP 50+ / Browser 25+ / Search 10+ / Monitor 15+ / AI 15+ = 150+ Capability 定义 + 依赖 + execute_handler)",
+    "backend/capabilities/unified_capabilities.py (6KB — 顶层 unified 入口)",
+    "backend/capabilities/__init__.py (1KB)",
+    "backend/imdf/nodes/engine.py (417 lines, 16KB — DAG 引擎: 拓扑排序 + cycle detection + port matching + execute)",
+    "backend/imdf/nodes/registry.py (562 lines, 33KB — NodeRegistry: 47 节点类型 auto-discover, 3 类别 dimension/capability/function, PortDef/ParamDef/NodeDef)",
+    "backend/imdf/nodes/templates.py (380 lines, 13KB — 6 内置 workflow template: t2i_basic / video_pipeline / ppt_auto / ai_prelabel / img_upscale / empty)",
+    "backend/imdf/nodes/__init__.py (623B)",
+    "backend/services/workflow_service/main.py (140 lines — port 8009 入口, 挂 workflow_router + templates_router + editor_router + dag_v2_router + director_router + legacy_scheduler_router)",
+    "backend/services/workflow_service/dag.py (15KB — P3-3-W2 DAG runtime, in-memory store)",
+    "backend/services/workflow_service/routes.py (15KB — /api/v1/workflows/* P3-3-W2 路由)",
+    "backend/services/workflow_service/templates.py (18KB — WORKFLOW_TEMPLATES 内置 + 用户自定义)",
+    "backend/services/workflow_service/templates_routes.py (10KB — /api/v1/workflows/templates/* CRUD)",
+    "backend/services/workflow_service/editor_routes.py (771 lines, 26KB — 视频编辑器: 12 transitions + 16 effects + 5 montages + render engine + 协作锁 + 快照 + undo/redo + WS 实时进度)",
+    "backend/services/workflow_service/dag_v2/__init__.py (2KB)",
+    "backend/services/workflow_service/dag_v2/engine.py (672 lines, 25KB — AdvancedDAGEngine: 7 NodeType + 4 EdgeType + 4 ExecMode + 4 ErrorPolicy + 8 NodeStatus 状态机)",
+    "backend/services/workflow_service/dag_v2/operators.py (728 lines, 30KB — Operator Marketplace: 200+ 算子分 9 类别, 含 cleaning/scoring/annotation/filter/export/evaluation/generator/editor/agent)",
+    "backend/services/workflow_service/dag_v2/visual.py (11KB — Vue Flow JSON 转换 + auto_layout LR/TB)",
+    "backend/services/workflow_service/dag_v2/routes.py (525 lines, 17KB — /api/v1/workflow/dag + /workflow/operators + /workflow/dag/{id}/visual + /import-flow)",
+    "backend/services/workflow_service/director/routes.py (3 模块: story → visual → assembly)",
+    "frontend-v2/src/views/workflow/VisualEditor.vue (557 lines, 23KB — Vue Flow DAG 画布 + 算子市场侧栏 + 节点配置 + 运行监控 + 右键菜单)",
+    "frontend-v2/src/views/workflow/OperatorMarket.vue (96 lines, 4KB — 算子市场卡片网格 + schema 弹窗)",
+    "frontend-v2/src/views/workflow/DirectorStudio.vue (132 lines, 5KB — 3 模块导演工作台: brief → shot → visual asset → final cut)",
+    "frontend-v2/src/views/workflow/RunMonitor.vue (5KB)",
+    "frontend-v2/src/api/workflow_v2.ts (286 lines, 9KB — dag_v2 / director / operator marketplace 完整 TS client)"
+  ],
+  "current_capabilities": {
+    "capability_manager_628_lines": {
+      "file": "backend/capabilities/capability_manager.py",
+      "enums": "CapabilityType: 30+ (OPENCLAW 6 / MCP 6 / BROWSER 4 / SEARCH 4 / MONITOR 5 / AI 4 + 各种子类型)",
+      "data_classes": [
+        "Capability { id/name/description/type/category/source/enabled/version/parameters/required_capabilities/required_apis/execute_handler/metadata }",
+        "CapabilityResult { capability_id/status(success/error/partial)/result/error/execution_time/metadata }"
+      ],
+      "registry": "CapabilityManager 单例: capabilities Dict + capability_index (by type) + capability_index_by_category",
+      "registered_categories": [
+        "OpenClaw 编程 (8): coding_agent / code_generator / code_reviewer / debugger / test_generator / refactor / sql_generator / api_designer",
+        "OpenClaw 内容 (8): video_frame / whisper / video_converter / image_resizer / pdf_summarizer / text_summarizer / ocr / youtube_transcript",
+        "OpenClaw macOS (5): app_control / file / system / clipboard / notification",
+        "OpenClaw 搜索 (4): github_search / web_search / doc_search / stackoverflow",
+        "OpenClaw 记忆 (6): memory_save / memory_recall / context_save / context_restore / preference_save / preference_get",
+        "OpenClaw 自动化 (6): workflow_create / workflow_execute / schedule_task / email_automation / calendar_automation / self_improving",
+        "MCP 文件系统 (10): read/write/list/search/create_dir/delete/move/copy/watch/info",
+        "MCP 数据库 (8): postgres_query / postgres_schema / sqlite_query / sqlite_tables / mysql_query / mongodb_query / postgres_tables / sqlite_schema",
+        "MCP 版本控制 (8): git_status / git_log / git_diff / git_branch / git_commit / git_push / git_pull / git_search",
+        "MCP 云存储 (4): gdrive_list/read/write/search",
+        "MCP 通讯 (8): slack_channels/history/send + (更多)",
+        "(+ 浏览器 25 / 搜索 10 / 监控 15 / AI 15 — 文件后段未读取但 enum 声明齐全)"
+      ],
+      "claim": "150+ 能力 (P3-5-W2 文档口径)",
+      "weakness": [
+        "execute_handler 都是 None — 全部 capability 仅是 declarative manifest, 没有真实执行",
+        "required_apis / required_capabilities / parameters 字段也是空 — 没有真正依赖图",
+        "没有路由层 — /api/v1/capabilities/* 端点不存在 (unified_capabilities.py 是 stub)",
+        "没接入 Vue Flow / DAG engine — capability 与 nodes/operators 是两套并行的分类系统, 互不引用",
+        "created_at 2026-03-08, 3 个多月没更新, 是早期 demo 残留"
+      ]
+    },
+
+    "imdf_nodes_47_node_types": {
+      "engine_file": "backend/imdf/nodes/engine.py (417 lines, 16KB)",
+      "data_structures": [
+        "DAGNode { id/type/data/definition/inputs/outputs/status/pending|running|completed|failed/error }",
+        "Connection { from_id/from_port/to_id/to_port }",
+        "DAG { nodes/connections/topological_order }",
+        "ExecutionContext { dag/results/global_vars/metadata }"
+      ],
+      "build_dag": "从 { nodes: {id:{id,type,data}}, connections: [{from,fromP,to,toP}] } 构 DAG, 端口命名 'in_0'/'out_0'",
+      "validate": [
+        "1. Build adjacency + in_degree",
+        "2. Topological sort (Kahn's algorithm) — cycle detection",
+        "3. Port matching / type checking (warning 不阻断)"
+      ],
+      "execute": "async DAGEngine.execute(dag, context) — 按 topo order 顺序执行, 调用 NodeDefinition.handler (目前不存在, 仅占位)",
+
+      "registry_file": "backend/imdf/nodes/registry.py (562 lines, 33KB)",
+      "node_categories_3": [
+        "dimension (6 节点): text / image / video / audio / model3d / output",
+        "capability (8 节点, 文件前 200 行可见): llm / comfyui / ppt / script / imgedit / upscale / removebg / rmwatermark / topazimg / ...",
+        "(+ function 类别, 文件后段未读取)"
+      ],
+      "data_classes": [
+        "PortDef { name/type(any|image|video|text|audio|3d)/description/required }",
+        "ParamDef { name/type(string|int|float|bool|select|json)/label/default/options/description }",
+        "NodeDef { type/category/label/icon/color/inputs/outputs/params/description }"
+      ],
+      "auto_discover": "NodeRegistry.initialize() — 一次性注册 47 节点 (声明式, 全部在代码里硬编码)"
+    },
+
+    "imdf_node_templates_6_builtin": {
+      "file": "backend/imdf/nodes/templates.py",
+      "templates": [
+        "t2i_basic: text → llm → image → output (基础文生图)",
+        "video_pipeline: upload → (videoedit + topazvid) → video → output (视频增强)",
+        "ppt_auto: text → (llm + textsplit) → ppt → output (PPT 自动生成)",
+        "ai_prelabel: upload → prelabel → output (AI 预标注)",
+        "img_upscale: upload → upscale → topazimg → image → output (图片放大)",
+        "empty: 空白画布"
+      ],
+      "template_manager": "TemplateManager — list/get/add/delete + 禁止删除 builtin"
+    },
+
+    "workflow_service_microservice_8009": {
+      "file": "backend/services/workflow_service/main.py",
+      "routers": [
+        "workflow_router (P3-3-W2 /api/v1/workflows/*) — 基础 workflow CRUD + run + list runs",
+        "templates_router (/api/v1/workflows/templates/*)",
+        "editor_router (P4-6-W1 /api/v1/workflow/editor/*) — 视频编辑器 (12 transitions + 16 effects + 5 montages + render + 协作锁 + 快照 + undo/redo + WS)",
+        "dag_v2_router (P4-6-W2 /api/v1/workflow/* singular) — 高级 DAG + 算子市场 + Vue Flow",
+        "director_router (/api/v1/workflow/director/*) — 3 模块导演工作台",
+        "legacy_scheduler_router (HAS_LEGACY 静默挂载)"
+      ],
+      "multimodal_adapter": "build_multimodal_router (6 输入模态 / 3 输出类型)"
+    },
+
+    "dag_v2_advanced_engine_672_lines": {
+      "file": "backend/services/workflow_service/dag_v2/engine.py",
+      "node_types_7": "input / transform / condition / loop / parallel / sub_workflow / output",
+      "edge_types_4": "data / control / error / retry (control edge 支持 condition 表达式)",
+      "exec_modes_4": "sequential / parallel / fan_out_fan_in / map_reduce",
+      "error_policies_4": "retry (3x) / fallback (跳到 fallback_node_id) / skip (标 SKIPPED) / escalate (FAILED + 终止 run)",
+      "node_status_8": "pending → ready → running → succeeded|failed|skipped|cancelled|retried",
+      "run_status_6": "pending / running / succeeded / failed / partial / cancelled",
+      "persistence": "in-memory store (workflow_runs / workflow_run_steps), thread-safe singleton via get_advanced_dag_engine()",
+      "websocket": "WebSocket-compatible progress callback hook (但 Editor.vue 用的不是 ws, 是 fetch 轮询)"
+    },
+
+    "dag_v2_operator_marketplace_728_lines": {
+      "file": "backend/services/workflow_service/dag_v2/operators.py",
+      "categories_9": "cleaning / scoring / annotation / filter / export / evaluation / generator / editor / agent",
+      "operator_def": "OperatorDef { id/name/category/description/icon/color/tags/capabilities/versions/latest/owner }",
+      "operator_version": "OperatorVersion { version(semver)/released_at/changelog/input_schema/output_schema/deprecated/replaces }",
+      "claim": "200+ 算子 (P4-6-W2 文档口径, 文件前 200 行有 _build_cleaning() 32 个 + _build_cleaning_extra 12 = 44 个 cleaning 算子, 总数需读完)",
+      "registry_facade": "list_operators / search_operators / operator_schema / market_summary / operator_categories",
+      "schema": "_schema() / _version() 辅助 — JSON-schema 简化版",
+      "versioning": "semver + 不可变 OperatorVersion + replaces/deprecated 字段"
+    },
+
+    "dag_v2_routes_525_lines": {
+      "prefix": "/api/v1/workflow (singular, 与 /api/v1/workflows plural 区分)",
+      "endpoints": [
+        "GET  /api/v1/workflow/dag  (list)",
+        "POST /api/v1/workflow/dag  (create)",
+        "GET  /api/v1/workflow/dag/{id}",
+        "PUT  /api/v1/workflow/dag/{id}",
+        "DELETE /api/v1/workflow/dag/{id}",
+        "POST /api/v1/workflow/dag/{id}/run",
+        "GET  /api/v1/workflow/dag/runs",
+        "GET  /api/v1/workflow/dag/runs/{run_id}",
+        "POST /api/v1/workflow/dag/runs/{run_id}/cancel",
+        "GET  /api/v1/workflow/dag/{id}/visual (Vue Flow JSON)",
+        "POST /api/v1/workflow/dag/{id}/layout (重算 LR/TB 布局)",
+        "POST /api/v1/workflow/dag/import-flow (从 Vue Flow payload 导入)",
+        "GET  /api/v1/workflow/operators  (operator marketplace)",
+        "GET  /api/v1/workflow/operators/summary",
+        "GET  /api/v1/workflow/operators/{id}/schema"
+      ],
+      "validation": "Pydantic 严格校验 (NodeType/EdgeType/ExecMode/ErrorPolicy enum 白名单)"
+    },
+
+    "workflow_visual_editor_557_lines": {
+      "file": "frontend-v2/src/views/workflow/VisualEditor.vue",
+      "layout_3_cols": [
+        "LEFT (col-market, 算子市场 200+): 搜索 + 分类 NCascader + NScrollbar 拖拽 + 双击添加",
+        "CENTER (col-canvas, Vue Flow DAG 画布): nodes + edges 双向绑定 + Background/MiniMap/Controls",
+        "RIGHT (col-config): 节点配置 (id/type/operatorId/name/params JSON/errorPolicy/timeout) 或 Run 状态 (per-step NList)"
+      ],
+      "header_actions": [
+        "NSelect 选 DAG (dagOptions 来自 listDAGs)",
+        "新建 DAG (onCreate → 新建空 DAG)",
+        "自动布局 LR (onLayoutLR → 调 recomputeLayout 'LR')",
+        "自动布局 TB (onLayoutTB → 调 recomputeLayout 'TB')",
+        "运行 (onRun → runDAG → lastRun)"
+      ],
+      "drag_drop": "op-pill draggable=true + @dragstart onOpDragStart + 双击 onOpDoubleClick 添加",
+      "context_menu": "NDropdown 右键节点 → 配置/删除/复制/查看 schema",
+      "node_config": "id (readonly) + type (NTag) + operatorId (monospace) + name (NInput) + params (textarea JSON) + errorPolicy (NSelect) + timeoutSec (NInputNumber 1-3600)",
+      "monitor": "lastRun.steps 渲染为 NList, 每条 NTag 状态 (succeeded→success / failed→error / 其他→info) + 错误详情"
+    },
+
+    "operator_market_page_96_lines": {
+      "file": "frontend-v2/src/views/workflow/OperatorMarket.vue",
+      "ui": "搜索 + 分类下拉 + 4 列卡片网格 (n-card hoverable) + schema 弹窗 (NModal)",
+      "card": "header (icon + name) + header-extra (category NTag) + body (description + tags.slice(0,4)) + footer (version + count + 'schema' 按钮)",
+      "category_colors": "cleaning→success / scoring→warning / annotation→info / editor→error / generator→primary / agent→default / evaluation→success / export→warning",
+      "summary": "operatorSummary() — { total, per_category, categories }"
+    },
+
+    "director_studio_132_lines": {
+      "file": "frontend-v2/src/views/workflow/DirectorStudio.vue",
+      "3_modules": [
+        "Story: NList shots { title, description } + state NTag",
+        "Visual: NList assets { kind, uri } (image/video/voice)",
+        "Assembly: final_cut_uri NTag large"
+      ],
+      "step_orchestration": "全流程 directorRun(brief, shotCount) → session_id → 手动 step by step (onStepStory / onStepVisual / onStepAssembly)",
+      "states": "succeeded→success / failed→error / running→info / default",
+      "kinds": "image→success / video→info / voice→warning"
+    },
+
+    "workflow_v2_ts_286_lines": {
+      "file": "frontend-v2/src/api/workflow_v2.ts",
+      "dag_types": "NodeType / EdgeType / ExecMode / ErrorPolicy / NodeStatus / RunStatus 完整枚举镜像",
+      "endpoints_client": [
+        "listDAGs / createDAG / getDAG / updateDAG / deleteDAG",
+        "runDAG / listRuns / getRun / cancelRun",
+        "getDAGVisual / recomputeLayout / importFlow",
+        "listOperators / operatorSummary / operatorCategories / operatorSchema",
+        "directorRun / createDirectorSession / runDirectorStory / runDirectorVisual / runDirectorAssembly"
+      ]
+    }
+  },
+
+  "missing_capabilities_top10": [
+    {
+      "rank": 1,
+      "name": "capability_manager ↔ nodes/registry ↔ dag_v2/operators 三套体系合一",
+      "importance": "critical",
+      "feasibility": "high (3 套都是 declarative manifest, 适配层 + 单例 façade 即可)",
+      "industry_ref": "Zapier Apps (1 套 schema 跨 trigger/action/search) / Make.com modules / n8n nodes",
+      "current_state": "capability_manager.py 150+ capability (2026-03-08, 无路由无 execute); imdf/nodes/registry.py 47 node (P3-3, 仅 3 类别 dimension/capability/function); dag_v2/operators.py 200+ operator (P4-6, semver + schema) — 三套分类标准不互通, 同一个 'GPT-4 LLM' 在三处分别叫 openclaw_coding_agent / llm / op.scoring.gpt4",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/capabilities — 统一返回 200+ 算子, 含 source (openclaw/mcp/browser/registry/dag_v2)",
+        "GET  /api/v1/capabilities/{id} — 返回 schema (in/out/params) + 跨 3 套的 alias 列表",
+        "POST /api/v1/capabilities/{id}/execute — 真正执行 (目前全部 handler=None)"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "节点执行 handler 真实接入 (目前全部是声明式 stub)",
+      "importance": "critical",
+      "feasibility": "high (各 handler 已经有现成实现: agent_service / scoring_service / collection_service / cleaning_service)",
+      "industry_ref": "Prefect Tasks (有 run method) / Airflow Operators (有 execute method) / n8n node function",
+      "current_state": "AdvancedDAGEngine.execute 按 topo order 顺序 await — 但每个 NodeType 的实际 handler 是 None; imdf/nodes 47 node 同问题; capability_manager 150+ 全部无 execute_handler",
+      "missing_apis_to_expose": [
+        "NodeType.handler dispatch table (input/transform/condition/loop/parallel/sub_workflow/output 各一个真实函数)",
+        "Operator marketplace 真正 bind 到 microservices (op.cleaning.dedup_hash → services/cleaning_service/dedup_hash.run)"
+      ]
+    },
+    {
+      "rank": 3,
+      "name": "Operator 版本化 + 灰度 / 蓝绿部署",
+      "importance": "high",
+      "feasibility": "high (OperatorVersion dataclass 已有 semver + replaces + deprecated, 缺的是路由 + 发布流程)",
+      "industry_ref": "Hugging Face Hub (model + dataset 多版本) / DVC (data version) / BentoML (model registry)",
+      "current_state": "operators.py 已经有 semver + 多 OperatorVersion + latest 字段, 但没有 /api/v1/workflow/operators/{id}/versions/{v}/publish 路由, 也没有蓝绿切换",
+      "missing_apis_to_expose": [
+        "POST /api/v1/workflow/operators/{id}/versions (发布新版 OperatorVersion)",
+        "POST /api/v1/workflow/operators/{id}/versions/{v}/deprecate",
+        "POST /api/v1/workflow/operators/{id}/pin { version } (固定到某版本)",
+        "GET  /api/v1/workflow/operators/{id}/diff?v1=&v2= (SchemaDiff)"
+      ]
+    },
+    {
+      "rank": 4,
+      "name": "节点 marketplace 内嵌版本控制 / changelog / 评分",
+      "importance": "high",
+      "feasibility": "medium (需在 OperatorDef 加 rating/review/tags 扩展字段)",
+      "industry_ref": "Hugging Face Spaces (👍 / like / fork) / n8n community nodes (npm-like rating) / Replicate model leaderboard",
+      "current_state": "OperatorDef 字段是 id/name/category/description/icon/color/tags/capabilities/versions/latest/owner, 缺 rating / downloads / 评论",
+      "missing_apis_to_expose": [
+        "POST /api/v1/workflow/operators/{id}/reviews { score, comment }",
+        "GET  /api/v1/workflow/operators/leaderboard?sort=rating|downloads|stars",
+        "GET  /api/v1/workflow/operators/{id}/changelog (聚合所有 OperatorVersion.changelog)"
+      ]
+    },
+    {
+      "rank": 5,
+      "name": "DAG 节点间数据契约自动校验 + schema mismatch 高亮",
+      "importance": "high",
+      "feasibility": "high (PortDef.type + OperatorVersion.input_schema/output_schema 都有, 缺自动校验)",
+      "industry_ref": "Prefect type checking / Pydantic edge validation / Apache Beam schema-aware transforms",
+      "current_state": "DAGEngine.validate 只做 port name 存在性 + cycle 检测, 不做 type checking ('any' / 'image' / 'text' 等强类型); Vue Flow 拖拽时也不提示 schema 不匹配",
+      "missing_apis_to_expose": [
+        "POST /api/v1/workflow/dag/validate { nodes, edges } — 返回 schema mismatch detail (e.g. llm.out text → upscale.in image 不兼容)",
+        "OperatorVersion.input_schema / output_schema 接入 Vue Flow 边类型校验, 拖拽时实时高亮"
+      ]
+    },
+    {
+      "rank": 6,
+      "name": "工作流模板市场 (复用 nodes/registry.templates + workflow_service.templates + dag_v2)",
+      "importance": "high",
+      "feasibility": "high (3 套 template 已有: imdf/nodes/templates 6 个 / workflow_service/templates 完整 / dag_v2 visual 转换, 需合并)",
+      "industry_ref": "Zapier Templates / Make.com Templates / n8n Workflow Templates / ComfyUI Workflows",
+      "current_state": "imdf/nodes/templates 6 内置 (t2i_basic / video_pipeline / ppt_auto / ai_prelabel / img_upscale / empty); workflow_service/templates WORKFLOW_TEMPLATES 完整; 但 VisualEditor.vue 只看到 '空白画布' + 双击添加, 没有 '模板库' Tab",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/workflow/templates (合并 3 套, 标 source=imdf/workflow_service/dag_v2)",
+        "POST /api/v1/workflow/templates/{id}/instantiate (克隆为新 DAG)",
+        "POST /api/v1/workflow/templates (用户保存自己 DAG 为模板)"
+      ]
+    },
+    {
+      "rank": 7,
+      "name": "Vue Flow 拖拽时的类型提示 + 边兼容性 + 即时文档",
+      "importance": "high",
+      "feasibility": "high (OperatorVersion.input_schema 已有, 接入 Vue Flow onConnect 即可)",
+      "industry_ref": "ComfyUI 节点拖拽 (边红绿提示) / n8n (connectionType) / Node-RED (typed ports)",
+      "current_state": "VueFlow 拖拽时 onConnect 不检查 schema 兼容性; OperatorMarket 卡片 'schema' 按钮弹 NModal 显示 JSON, 不直观",
+      "missing_apis_to_expose": [
+        "前端加 onConnect 时 fetch operatorSchema 双向校验, 不兼容时变红 + tooltip 解释",
+        "OperatorMarket 卡片: schema 改为 'Input fields' + 'Output fields' 表单预览 (Pydantic JSON-schema → 自动生成 NForm)"
+      ]
+    },
+    {
+      "rank": 8,
+      "name": "Director Studio: 真实多镜头 / 多角色 / 字幕 / 配音 / 配乐",
+      "importance": "high",
+      "feasibility": "medium (director/routes.py 已有 story/visual/assembly 3 step, 但 assets 实际生成是 mock)",
+      "industry_ref": "Runway Gen-3 / Pika / Sora / Luma Dream Machine / Captions.ai",
+      "current_state": "DirectorStudio.vue 输入 brief → 8 shots → assets (image/video/voice) → final cut, 但 assets URI 是 mock (没有真实 TTS / 文生视频 / 视频合成)",
+      "missing_apis_to_expose": [
+        "POST /api/v1/workflow/director/story/regenerate { session_id, shot_id, prompt }",
+        "POST /api/v1/workflow/director/visual/regenerate { session_id, asset_id, model } (切换 model: kling / runway / sora)",
+        "POST /api/v1/workflow/director/voice/regenerate { session_id, voice_id, tts_model }",
+        "POST /api/v1/workflow/director/subtitle/generate { session_id, lang } (auto subtitle)",
+        "POST /api/v1/workflow/director/music/select { session_id, mood } (BGM 选曲)"
+      ]
+    },
+    {
+      "rank": 9,
+      "name": "DAG 实时运行可视化 + 步骤级日志 + 耗时热力图",
+      "importance": "medium",
+      "feasibility": "medium (需要 WebSocket 推 per-step state change, VisualEditor 当前用 fetch 轮询)",
+      "industry_ref": "Prefect Cloud / Temporal Web UI / Airflow Gantt view / Argo Workflows artifacts",
+      "current_state": "AdvancedDAGEngine 'WebSocket-compatible progress callback hook' 注释存在, 但 editor_routes 内的 WS 端点只有 /api/v1/workflow/editor/render/{id}/ws (render 进度), 没有 /api/v1/workflow/dag/runs/{run_id}/ws (DAG 步骤进度)",
+      "missing_apis_to_expose": [
+        "WS  /api/v1/workflow/dag/runs/{run_id}/ws (每 step 状态变化 + 日志流)",
+        "GET  /api/v1/workflow/dag/runs/{run_id}/gantt (gantt 视图数据)",
+        "GET  /api/v1/workflow/dag/runs/{run_id}/heatmap (per-step 耗时热力)"
+      ]
+    },
+    {
+      "rank": 10,
+      "name": "Operator marketplace 国际化 + license / 收费 / 商业化",
+      "importance": "medium",
+      "feasibility": "medium (需新增 pricing/license/region/currency 字段 + Stripe/微信支付集成)",
+      "industry_ref": "Hugging Face Hub Pro (private model) / Replicate (按秒计费) / Algorithmia (marketplace)",
+      "current_state": "OperatorDef 全部 owner='system', 没有 license / pricing / region 字段; marketplace 是内部 ops 列表, 不是商业化",
+      "missing_apis_to_expose": [
+        "POST /api/v1/workflow/operators/{id}/pricing { plan: free/per_call/subscription, price, currency }",
+        "POST /api/v1/workflow/operators/{id}/license (MIT / Apache / Commercial)",
+        "GET  /api/v1/workflow/operators/billing/usage?from=&to="
+      ]
+    }
+  ],
+
+  "frontend_simplified_segments": [
+    {
+      "snippet": "VisualEditor.vue L32-58 — 算子市场侧栏 (NCascader 分类 + NScrollbar 拖拽)",
+      "lines": "L32-58",
+      "issue": "opCategoryFilter.value 用 NCascader 但 filteredOps 没真正按 cascader 路径过滤, 只是按 op.category 字符串匹配; 算子 id (op.cleaning.dedup_hash) vs 名字 ('Hash dedup (pHash)') 都没用到结构化搜索 (tag / capability)"
+    },
+    {
+      "snippet": "VisualEditor.vue L84-128 — 节点配置 (右侧 NForm)",
+      "lines": "L84-128",
+      "issue": "params 用 textarea JSON 文本框, 没有根据 operator schema 自动生成 NForm; errorPolicy/timeoutSec 是 hardcoded 选项, 没从 OperatorVersion 读 default"
+    },
+    {
+      "snippet": "VisualEditor.vue L130-145 — 运行监控 NList 步骤",
+      "lines": "L130-145",
+      "issue": "步骤只显示 status NTag + 错误文本, 没有: (a) 每步耗时 (b) 每步输入/输出 preview (c) 重试次数 (d) 跳到该步 DAG 画布 (click to locate)"
+    },
+    {
+      "snippet": "OperatorMarket.vue L13-36 — 卡片网格 (4 列 NCard hoverable)",
+      "lines": "L13-36",
+      "issue": "只有 description 文字, 没有: (a) 用 op.color 的 border-left 4px (代码有但被覆盖) (b) version 历史下拉 (c) '添加到我画布' 按钮 (直接到 VisualEditor) (d) '预览效果' 按钮 (用 sample input 跑一遍)"
+    },
+    {
+      "snippet": "DirectorStudio.vue L13-53 — 3 模块卡片 (Story / Visual / Assembly)",
+      "lines": "L13-53",
+      "issue": "三模块是平铺 NGrid, 没有跨模块拖拽 (从 Story shot 直接拖到 Visual asset 关联); shot/asset 列表只是 title + description, 没有: (a) 拖动排序 (b) 插入新 shot/asset (c) 资产缩略图 (URI 是 text, 非 image 预览)"
+    }
+  ],
+
+  "backend_endpoints_needed": {
+    "tier_0_p0_unify_3_systems": [
+      "GET  /api/v1/capabilities (200+ 算子, 含 source=openclaw/mcp/browser/registry/dag_v2 标识 + 跨 3 套 alias)",
+      "GET  /api/v1/capabilities/{id} (含 schema + 别名 + 真实 handler endpoint)",
+      "POST /api/v1/capabilities/{id}/execute (真执行, dispatch 到各 microservice)"
+    ],
+    "tier_0_p0_real_handlers": [
+      "NodeType.handler dispatch (input/transform/condition/loop/parallel/sub_workflow/output 7 个真函数)",
+      "Operator → microservice 映射表 (op.cleaning.dedup_hash → services/cleaning_service/dedup_hash.run)",
+      "agent_service 真实接入 (LLM 节点 → model_gateway.chat)",
+      "scoring_service 真实接入 (scoring 节点 → /api/v1/score/run)"
+    ],
+    "tier_1_p1_versioning_publish": [
+      "POST /api/v1/workflow/operators/{id}/versions (发布新版 OperatorVersion)",
+      "POST /api/v1/workflow/operators/{id}/versions/{v}/deprecate",
+      "POST /api/v1/workflow/operators/{id}/pin { version } (固定到某版本)",
+      "GET  /api/v1/workflow/operators/{id}/diff?v1=&v2= (SchemaDiff)"
+    ],
+    "tier_1_p1_marketplace_rating": [
+      "POST /api/v1/workflow/operators/{id}/reviews { score, comment }",
+      "GET  /api/v1/workflow/operators/leaderboard?sort=rating|downloads|stars",
+      "GET  /api/v1/workflow/operators/{id}/changelog (聚合 OperatorVersion.changelog)"
+    ],
+    "tier_1_p1_dag_type_check": [
+      "POST /api/v1/workflow/dag/validate { nodes, edges } (返回 schema mismatch detail)",
+      "前端 onConnect fetch operatorSchema 双向校验, 不兼容时变红 + tooltip",
+      "OperatorMarket 卡片 schema → 自动生成 NForm (Pydantic JSON-schema)"
+    ],
+    "tier_1_p1_template_market": [
+      "GET  /api/v1/workflow/templates (合并 imdf/nodes/templates + workflow_service/templates + dag_v2, 标 source)",
+      "POST /api/v1/workflow/templates/{id}/instantiate (克隆为新 DAG)",
+      "POST /api/v1/workflow/templates (用户保存自己 DAG 为模板)"
+    ],
+    "tier_2_p2_director_real": [
+      "POST /api/v1/workflow/director/story/regenerate { session_id, shot_id, prompt }",
+      "POST /api/v1/workflow/director/visual/regenerate { session_id, asset_id, model } (切换 kling/runway/sora)",
+      "POST /api/v1/workflow/director/voice/regenerate { session_id, voice_id, tts_model }",
+      "POST /api/v1/workflow/director/subtitle/generate { session_id, lang }",
+      "POST /api/v1/workflow/director/music/select { session_id, mood }"
+    ],
+    "tier_2_p2_real_time_monitor": [
+      "WS  /api/v1/workflow/dag/runs/{run_id}/ws (每 step 状态变化 + 日志流)",
+      "GET  /api/v1/workflow/dag/runs/{run_id}/gantt (gantt 视图数据)",
+      "GET  /api/v1/workflow/dag/runs/{run_id}/heatmap (per-step 耗时热力)"
+    ],
+    "tier_2_p2_commercialization": [
+      "POST /api/v1/workflow/operators/{id}/pricing { plan, price, currency }",
+      "POST /api/v1/workflow/operators/{id}/license (MIT/Apache/Commercial)",
+      "GET  /api/v1/workflow/operators/billing/usage?from=&to="
+    ]
+  },
+
+  "world_benchmark_comparison": [
+    {
+      "platform": "Zapier (Apps + Zaps)",
+      "domain": "无代码自动化 / 7000+ app 集成",
+      "key_capabilities": [
+        "App: 1 套 schema (trigger/action/search) 跨 7000+ 集成",
+        "Zap: 拖拽 + 多步 workflow + filter + delay + formatter",
+        "Tables: 嵌入式数据库",
+        "Interfaces: 拖拽建表单 / 页面 / 聊天机器人",
+        "AI: Copilot 自然语言建 Zap + AI actions",
+        "Version history + branching"
+      ],
+      "nanobot_status": "3 套 capability/node/operator 重复实装, 没有统一 schema; 拖拽有 (Vue Flow) 但 filter/formatter 缺; Tables/Interfaces 类独立模块缺"
+    },
+    {
+      "platform": "n8n (Open Source)",
+      "domain": "开源工作流 + AI agent",
+      "key_capabilities": [
+        "400+ 节点 (HTTP / DB / SaaS / AI / Utility)",
+        "AI agent 节点 (LangChain 集成 + tool calling)",
+        "Code 节点 (Python / JS) 任意自定义",
+        "Version + diff + 自托管",
+        "Marketplace: 社区节点 + npm install",
+        "Webhook + Schedule + Email trigger"
+      ],
+      "nanobot_status": "有 200+ 算子 (vs n8n 400+), 缺 code 节点 (script 节点有 stub), 缺 AI agent 节点 (LangChain), 缺版本 + diff, 缺自托管 npm"
+    },
+    {
+      "platform": "ComfyUI",
+      "domain": "Stable Diffusion 可视化工作流",
+      "key_capabilities": [
+        "节点 = 一次 SD 操作 (CLIPTextEncode / KSampler / VAEDecode)",
+        "拖拽 + 边连接 + 即时预览",
+        "Workflow = json 可保存/分享/导入",
+        "200+ 第三方节点 (ControlNet / AnimateDiff / IP-Adapter)",
+        "实时 GPU 进度",
+        "Markdown 参数提示 + 类型校验"
+      ],
+      "nanobot_status": "VisualEditor.vue 是 1:1 对标 (Vue Flow 替代 litegraph.js), 但缺: (a) 即时 GPU 预览 (b) workflow JSON 分享 (只有 import-flow 路由) (c) 类型校验 onConnect (d) 200+ 第三方节点 (只有 200+ 自家算子)"
+    },
+    {
+      "platform": "LangFlow / Flowise",
+      "domain": "LLM 应用可视化搭建",
+      "key_capabilities": [
+        "LLM 节点 (ChatOpenAI / Anthropic / Cohere)",
+        "PromptTemplate / Memory / Agent / Tool / Retriever / Chain",
+        "Vector Store (Pinecone / Weaviate / Chroma)",
+        "RAG 拖拽搭建",
+        "Export to Python (LangChain code)",
+        "Streaming + chat UI preview"
+      ],
+      "nanobot_status": "capability_manager 6 大类 (openclaw/mcp/browser/search/monitor/ai) 是 LangFlow 的 5-6 倍广度, 但深度: 缺 streaming + chat UI preview + RAG 节点 + export to Python"
+    },
+    {
+      "platform": "Apache Airflow",
+      "domain": "数据 pipeline 编排 (见 data_flow_linkage_diagnosis)",
+      "key_capabilities": ["300+ operator", "DAG view", "SLA + retry + XCom"],
+      "nanobot_status": "已有 200+ operator (vs 300+) + dag_v2 7 NodeType, 缺 DAG view UI 完整 + XCom 跨 task 传参"
+    },
+    {
+      "platform": "Temporal",
+      "domain": "长事务工作流 (见 data_flow_linkage_diagnosis)",
+      "key_capabilities": ["Workflow code (deterministic)", "Activity async", "Saga + Signal"],
+      "nanobot_status": "无 deterministic workflow, 无 saga, 无 signal 通道"
+    },
+    {
+      "platform": "Replicate (Model + Workflow Marketplace)",
+      "domain": "AI 模型 + cog 工作流",
+      "key_capabilities": [
+        "Model = Docker + cog.yaml (可一键运行任意 ML 模型)",
+        "按调用秒数计费 (cog 冷启动 < 5s)",
+        "Workflow: 多 model 串/并 + Webhook",
+        "私有 + 公开 marketplace",
+        "API 标准化 (输入/输出 schema 公开)"
+      ],
+      "nanobot_status": "有 Operator marketplace 但无 cog 类 Docker 化执行, 无按调用计费, 无冷启动优化, 无 API 标准化 (schema 有, 但 deployment 没有)"
+    },
+    {
+      "platform": "Hugging Face Hub",
+      "domain": "model + dataset + Space marketplace",
+      "key_capabilities": [
+        "Model versioning (commit + branch + PR)",
+        "Dataset versioning + Datasets library",
+        "Space (Gradio/Streamlit/Docker)",
+        "Inference API (serverless 推理)",
+        "Leaderboard + like + community",
+        "Pro 私有 + Enterprise SSO"
+      ],
+      "nanobot_status": "OperatorDef 已经有 semver + replaces + deprecated 字段, 但无 commit/PR/branch 工作流, 无 inference API serverless, 无 leaderboard/like/community, 无 Pro/Enterprise"
+    }
+  ],
+
+  "recommendation_summary": {
+    "headline_gap": "后端 3 套并行 capability 体系 (capability_manager 150+ / imdf/nodes 47 / dag_v2/operators 200+) 互不引用、execute handler 全部 None, 是 P0 级别的'虚胖能力市场'; 同一个 'GPT-4 LLM' 在三处叫三个名字 (openclaw_coding_agent / llm / op.scoring.gpt4); workflow service 8009 端口挂 5 个 router (workflow/templates/editor/dag_v2/director) 共 ~80 端点实装度参差; 前端 VisualEditor.vue (557 行) 完整对标 ComfyUI litegraph.js 拖拽体验, 但缺类型校验 onConnect + 即时 schema 表单 + 步骤级 WS 实时推送 + 模板市场; DirectorStudio (132 行) 是 1 个 brief → 8 shots → assets → final cut 的 demo, 实际生成是 mock。",
+    "top_3_p0_fixes": [
+      "(1) 3 套 capability 合一: 单例 UnifiedCapabilityRegistry 接管 capability_manager 150+ + imdf/nodes 47 + dag_v2/operators 200+, 暴露 /api/v1/capabilities 统一列表 + alias map + 真 execute 路由 (P0: 当前 3 套都是 declarative, 没有真执行)",
+      "(2) NodeType.handler dispatch 真实化: 把 NodeType 7 个 (input/transform/condition/loop/parallel/sub_workflow/output) 各接一个真函数 (LLM 调 model_gateway / 数据走 dataset_service / 清洗走 cleaning_service / 采集走 collection_service); Operator marketplace 真正 bind 到各 microservice run() (P0: 当前 AdvancedDAGEngine.execute 是 stub, 跑了不出结果)",
+      "(3) 模板市场 3 套合并: imdf/nodes/templates 6 个 (t2i_basic / video_pipeline / ppt_auto / ai_prelabel / img_upscale / empty) + workflow_service/templates 完整 + dag_v2 visual templates, 统一 /api/v1/workflow/templates, VisualEditor 加 '模板库' Tab (P0: 3 套 template 互相独立, 用户找不到)"
+    ],
+    "top_5_p1_enhancements": [
+      "(1) Operator 版本化 + 灰度: 已有 semver/replaces/deprecated, 缺 publish/pin/diff 路由 + Replicate 风格按调用计费",
+      "(2) DAG 类型校验 onConnect: Vue Flow 边拖拽时 fetch operatorSchema 双向校验, 不兼容变红 + tooltip; 替换 textarea JSON 为自动生成 NForm",
+      "(3) Operator marketplace 评分 / 评论 / 排行: Hugging Face Hub Pro 风格 + leaderboard",
+      "(4) Director Studio 真实多模态生成: 接入 kling/runway/sora 视频 + TTS (ElevenLabs / OpenAI) + 字幕 (whisper) + BGM 选曲, 替换 mock URI",
+      "(5) DAG 实时运行可视化: WS /api/v1/workflow/dag/runs/{run_id}/ws 推 per-step 状态 + 日志; Gantt view + 耗时热力图"
+    ],
+    "phase_roadmap": {
+      "week_1_p0": "3 套 capability 合一 + 真 execute (capability_manager / imdf/nodes / dag_v2/operators → UnifiedCapabilityRegistry + handler dispatch)",
+      "week_2_p0": "模板市场 3 套合并 + VisualEditor '模板库' Tab + NodeType.handler 真实化",
+      "week_3_p1": "Operator 版本化 (publish/pin/diff) + 评分 / 排行; onConnect 类型校验; NForm 自动生成",
+      "week_4_p1": "Director Studio 真实多模态 (kling/TTS/whisper/BGM); DAG WS 实时 + Gantt",
+      "month_2_p2": "商业化 (pricing/license/billing); 跨 marketplace 联邦搜索 (Zapier / Hugging Face / Replicate)"
+    }
+  }
+}

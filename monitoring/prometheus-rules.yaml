@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # P5-W2: Prometheus Alerting Rules — 24 rules
 # =============================================================================
 # 分 4 类: 12 service-level (high-error-rate / high-latency / low-throughput)
@@ -301,3 +301,176 @@ groups:
           summary: '审计链断链 {{ $value }} 块未提交'
           description: '审计链落后预期 ≥ 5 块, 持续 5 分钟, OWASP A08 数据完整性告警。'
           runbook_url: https://wiki.imdf.example.com/runbook/audit-chain
+
+# =============================================================================
+# P19 v5.2-A: 7 new monitoring layers -- alert rules (layers 6..12)
+# =============================================================================
+  - name: p19_v52_sentry
+    rules:
+      - alert: SentryErrorSpike
+        expr: increase(imdf_sentry_events_total[5m]) > 50
+        for: 2m
+        labels:
+          severity: warning
+          layer: sentry
+        annotations:
+          summary: 'Sentry error spike detected'
+          description: '{{ $value }} errors in last 5m on service {{ $labels.service }}'
+
+  - name: p19_v52_health
+    rules:
+      - alert: DeepHealthUnhealthy
+        expr: imdf_health_deep_unhealthy > 0
+        for: 1m
+        labels:
+          severity: critical
+          layer: health
+        annotations:
+          summary: 'Deep health check has unhealthy services'
+
+  - name: p19_v52_agent
+    rules:
+      - alert: AgentErrorRateHigh
+        expr: '(sum(rate(imdf_agent_errors_total[5m])) / sum(rate(imdf_agent_invocations_total[5m]))) > 0.1'
+        for: 5m
+        labels:
+          severity: warning
+          layer: agent
+        annotations:
+          summary: 'Agent error rate above 10%'
+
+  - name: p19_v52_cost
+    rules:
+      - alert: HourlySpendSpike
+        expr: increase(imdf_cost_usd_total[1h]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          layer: cost
+        annotations:
+          summary: 'Hourly spend exceeds 100 USD'
+
+  - name: p19_v52_quality
+    rules:
+      - alert: AnnotationQualityDrift
+        expr: imdf_quality_drift_detected == 1
+        for: 10m
+        labels:
+          severity: warning
+          layer: quality
+        annotations:
+          summary: 'Annotation quality drift detected'
+
+  - name: p19_v52_compliance
+    rules:
+      - alert: GDPRReportFailure
+        expr: increase(imdf_gdpr_errors_total[1h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          layer: compliance
+        annotations:
+          summary: 'GDPR report generation failure'
+
+  - name: p19_v52_funnel
+    rules:
+      - alert: FunnelConversionDrop
+        expr: imdf_funnel_conversion_rate < 0.05
+        for: 30m
+        labels:
+          severity: info
+          layer: funnel
+        annotations:
+          summary: 'Funnel first-stage conversion dropped below 5%'
+
+  # =============================================================================
+  # P19-E3 HB-2: Health probe + GDPR compliance alert rules
+  # =============================================================================
+  # These rules close the "alert 语义" loop: dashboards render real probe data
+  # (HB-1) and these alerts actually fire when the underlying metrics indicate
+  # a problem.
+  #
+  # Conventions:
+  #   * HealthProbeDown fires only on ``status=0`` (DOWN). The new
+  #     ``health_probe_status`` gauge encodes ``0=down, 1=up, 2=unknown``
+  #     so UNKNOWN services do NOT page anyone — they show up on the
+  #     dashboard as gray, which keeps noise low without hiding the signal.
+  #   * GDPRComplianceViolation fires on any erasure failure. The "for: 1m"
+  #     gives a single probe cycle of grace to allow transient errors to
+  #     clear before paging anyone.
+  # =============================================================================
+  - name: p19_e3_health_probe
+    interval: 30s
+    rules:
+      - alert: HealthProbeDown
+        expr: health_probe_status == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: health
+          layer: health-probe
+        annotations:
+          summary: '{{ $labels.service }} health probe failing for 5m+'
+          description: |
+            Service {{ $labels.service }} has been DOWN (status=0) for at
+            least 5 minutes. The deep health check probes every 30s via
+            HealthRegistry.aggregate(); the gauge health_probe_status is
+            published from monitoring/health.py:aggregate().
+            Threshold: status=0 for 5 minutes.
+            Action: check service logs + upstream deps + most recent probe error.
+          runbook_url: https://wiki.imdf.example.com/runbook/health-probe-down
+
+      - alert: HealthProbeHighLatency
+        expr: health_probe_latency_ms > 1500
+        for: 10m
+        labels:
+          severity: warning
+          category: health
+          layer: health-probe
+        annotations:
+          summary: '{{ $labels.service }} probe latency {{ $value }}ms'
+          description: |
+            Service {{ $labels.service }} probe latency exceeded 1500 ms for
+            the last 10 minutes — typically a sign of network/database
+            saturation that has not yet caused the probe to fail outright.
+
+  - name: p19_e3_gdpr_compliance
+    interval: 60s
+    rules:
+      - alert: GDPRComplianceViolation
+        expr: increase(gdpr_erasure_total{outcome="failure"}[15m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: compliance
+          layer: gdpr-erasure
+        annotations:
+          summary: 'GDPR right-to-erasure failure detected'
+          description: |
+            One or more GDPR Art. 17 right-to-erasure calls failed in the
+            last 15 minutes. Failing an erasure request is a direct
+            regulatory non-compliance (GDPR Art. 17 / Art. 12(3) — controller
+            must action erasure without undue delay).
+            Threshold: outcome=failure count > 0, sustained for 1 minute.
+            Action: check monitoring/compliance_reports.execute_gdpr_erasure()
+            logs + audit_chain availability + tracker buffers holding user_id.
+          runbook_url: https://wiki.imdf.example.com/runbook/gdpr-erasure-failure
+
+      - alert: GDPRComplianceViolationAnomaly
+        expr: |
+          (
+            increase(gdpr_erasure_total{outcome="failure"}[1h])
+            / clamp_min(increase(gdpr_erasure_total[1h]), 1)
+          ) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+          category: compliance
+          layer: gdpr-erasure
+        annotations:
+          summary: 'GDPR erasure failure rate > 5% (1h)'
+          description: |
+            Failure rate for GDPR erasure exceeds 5% over the last hour.
+            Even when individual failures self-recover, a sustained failure
+            rate is a strong indicator of upstream instability
+            (audit_chain broken, tracker buffers mis-shaped, etc.).

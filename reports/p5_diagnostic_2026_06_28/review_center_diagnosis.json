@@ -1,0 +1,577 @@
+{
+  "report_title": "Review Center 诊断 — 审核/QA 全链路能力差距与重设计建议",
+  "investigation_date": "2026-06-28",
+  "module": "anobot-factory / Review Center (审核中心 + 多级审核队列 + QA)",
+  "investigated_files": [
+    "frontend-v2/src/views/Review.vue (308 lines, 11KB — 多级审核队列 + 单条决策表单)",
+    "frontend-v2/src/api/review.ts (81 lines — 4 真实端点 + 1 legacy fallback)",
+    "backend/imdf/engines/algorithm_review.py (277 lines, 9KB — 算法审批流: submit→pre_review→technical_review→final_approval→deploy)",
+    "backend/imdf/engines/eval_engine.py (455 lines — 评测闭环: EvalRunner + BadCaseAnalyzer + FeedbackLoop)",
+    "backend/imdf/engines/eval_quality.py (628 lines, 25KB — 评测质量: EvalConsistencyEngine / ABTestEngine / LLMEvalJudge / BenchmarkRunner / EvalQualityReporter)",
+    "backend/imdf/engines/annotation_quality.py (790 lines, 30KB — AnnotationPipeline IAA / GoldStandard / LLMJudge)",
+    "backend/imdf/engines/classification_engine.py (503 lines — 分类规则引擎 + ClassificationQualityEngine: precision/recall/F1/confusion matrix)",
+    "backend/imdf/api/quality_v2_routes.py (729 lines, 28KB — /api/quality/v2/* 5 环节审核路由)",
+    "backend/imdf/api/quality_routes.py (~700 lines — /api/quality/* 老路由)",
+    "backend/services/annotation_service/routes.py (port 8003 — /api/v1/annotations 持久化)"
+  ],
+  "current_capabilities": {
+    "frontend_visible": {
+      "page": "Review.vue (/review 路由)",
+      "header": [
+        "标题 '审核 / QA' + 副标题 '多级审核队列 · 通过 / 驳回 / 退回'",
+        "2 个 NTag 徽章: 待审 stats.pending / 处理中 stats.in_review (offline fallback 给 42/18)",
+        "ActionButton 刷新按钮 (loading 状态)"
+      ],
+      "kpi_tiles": [
+        "待审 (stats.pending, hint='积压量')",
+        "处理中 (stats.in_review, hint='审核员处理')",
+        "今日完成 (stats.completed_today, hint='已闭环')",
+        "平均一致性 (efficiency.avg_agreement * 100 + '%,  hint='Kappa 系数')"
+      ],
+      "queue_table": {
+        "columns": [
+          "Item ID (160px)",
+          "阶段 (NTag 彩色: initial=info / secondary=warning / final=success)",
+          "优先级 (80px)",
+          "资产 (120px)",
+          "提交人 (120px)",
+          "提交时间 (180px)",
+          "操作: '选择' 蓝链接"
+        ],
+        "filter": [
+          "SearchBar 关键字 (item_id / label / annotator 字符串包含)",
+          "NSelect 阶段下拉: 初审/复审/终审 (前端 .filter 内存过滤)"
+        ],
+        "data_source": "listReviewAnnotations({ limit: 50 }) → 实际是 /api/v1/annotations"
+      },
+      "decision_form": {
+        "layout": "NForm label-placement=top, 右侧栏",
+        "fields": [
+          "审核员 ID (NInput, 必填 — message.warning 校验)",
+          "决定 (NRadioGroup: approve / reject / return)",
+          "备注 (NInput type=textarea, 3-6 行自适应)",
+          "提交/清空 按钮 (processing state)"
+        ],
+        "result_panel": "result-block: NText + pre.result-pre JSON 美化显示 (max-height 200, overflow auto)",
+        "empty_state": "NEmpty '选择左侧队列项进行审核' + 移除选择时重置 form"
+      },
+      "actions_wired": [
+        "load() → Promise.allSettled([loadStats, loadEfficiency, loadQueue])",
+        "loadStats() → getReviewQueueStats() | offline: { pending: 42, in_review: 18, completed_today: 156, returned: 7, by_stage: {...} }",
+        "loadEfficiency() → getReviewEfficiency() | offline: { avg_agreement: 0.82, total_completed: 156 }",
+        "loadQueue() → listReviewAnnotations({ limit: 50 })",
+        "selectRow(row) → selected.value = row + 清空 lastResult",
+        "onProcess() → processReview({ item_id, reviewer_id, decision, comments })",
+        "onResetSelection() → selected=null, reviewer_id='', comments='', lastResult=null"
+      ],
+      "fallback_resilience": "所有 API 失败都有离线模拟数据 — 这是双刃剑: 让 UI 永远有内容, 但掩盖了后端不可用的事实"
+    },
+    "frontend_unused_or_unwired": [
+      "review.ts 接口定义了 submitForReview() — 整个前端没有 '提交审核' 按钮 (审批流上游入口未暴露)",
+      "没有 reviewer_id 自动填充 (要求用户手动输入 ID, 应该从 auth 上下文获取)",
+      "没有批量子审核 (multi-select) — 一次只能审一条, 大队列场景效率极低",
+      "没有 diff 视图 (审核员无法对比相邻两个版本的标注差异)",
+      "没有 reviewer dashboard 视图 (efficiency 只显示 'avg_agreement' 一个数字, 没有 per-reviewer 表格)",
+      "没有拒绝理由模板 / 退回原因分类 (reject / return 都是 free-form comments)",
+      "没有 SLA 倒计时 / 逾期高亮 (deadline 字段在 ReviewQueueItem 中定义但未使用)",
+      "没有 IAA heatmap (Cohen/Fleiss 矩阵)",
+      "没有 bad case 跳转到 EvalRunner 入口 (eval_engine 完整闭环未串联)",
+      "没有 A/B 测试入口 (eval_quality ABTestEngine 已就绪)",
+      "没有 LLM 自动 flag 可疑标注入口 (annotation_quality.llm_flag_suspicious 已实装)"
+    ],
+
+    "backend_implemented": {
+      "algorithm_review_py_approval_flow": {
+        "file": "backend/imdf/engines/algorithm_review.py (277 lines)",
+        "data_classes": [
+          "ReviewStep (Enum): SUBMIT / PRE_REVIEW / TECHNICAL_REVIEW / FINAL_APPROVAL / DEPLOY",
+          "AlgorithmSubmission: id/name/version/model_path/metrics/status/errors/created_at/updated_at/deployed_version",
+          "ReviewWorkflow: submission_id/current_step/steps/approved_by/rejected/rejected_reason"
+        ],
+        "lifecycle": [
+          "submit_algorithm(algo_id, name, version, model_path, metrics) → 创建 submission + workflow.steps['submit']=completed",
+          "run_pre_review(algo_id, model_file_exists, metrics_valid) → 校验模型文件/metrics/版本号, 通过则自动 advance submit→pre_review→technical_review",
+          "schedule_technical_review(algo_id, reviewer) → 步骤进入 in_progress",
+          "approve_technical_review / reject_technical_review(algo_id, reviewer, comments) → approved_by map + advance",
+          "final_approval(algo_id, approver) → advance 到 DEPLOY",
+          "deploy(algo_id, deployed_by) → 写入 _deployments, sub.deployed_version=version, status=deployed",
+          "rollback(algo_id, deployed_by, target_version) → 写入 rollback action, sub.deployed_version=target"
+        ],
+        "state_query": [
+          "get_workflow_status(algo_id) → 完整 JSON (current_step / steps / approved_by / rejected_reason)"
+        ],
+        "weakness": [
+          "全部状态 in-memory (self.submissions / self.workflows Dict), 进程崩溃就丢",
+          "没有持久化到 SQLite/JSON, 也没有路由层包装 (algorithm_review 是个孤儿引擎, 没有任何 /api/v1/algorithm/review/* 端点)",
+          "run_pre_review 的 '通过则自动 advance 2 步' 是写死的, 实际工作流通常是异步 human-in-the-loop"
+        ]
+      },
+
+      "eval_engine_py_closed_loop": {
+        "file": "backend/imdf/engines/eval_engine.py (455 lines)",
+        "data_classes": [
+          "EvalStatus (Enum): PENDING / RUNNING / SUCCESS / FAILED / TIMEOUT",
+          "TaskPriority (Enum): LOW / MEDIUM / HIGH / CRITICAL",
+          "EvalTask: id/model_name/dataset_version/status/metrics/created_at/completed_at/error",
+          "EvalSample: input_text/expected/predicted/score/error_type/details"
+        ],
+        "components": [
+          "EvalRunner.run_eval(task, test_samples) → 模拟推理 + 计算 accuracy/avg_score/min/max/total_error/total_samples",
+          "_load_model(model_name) → registry.get 或 dummy_model ('<input> [模拟推理结果]')",
+          "_compute_sample_score → 词袋交集率 (IoU-style 退化实现, 没有真实 BLEU/ROUGE/语义向量)",
+          "_classify_error → 'empty' / 'accuracy' / 'coverage' / 'relevance' 4 类",
+          "BadCaseAnalyzer.cluster_errors → 按 error_type 聚合 + 3-cluster 模拟子聚类",
+          "BadCaseAnalyzer.root_cause_analysis → 模板化根因推断 (覆盖/对齐/偏离/空输出)",
+          "BadCaseAnalyzer.identify_data_issues → 推荐 '标注数据质量不足' / '训练数据不足' / '数据分布偏差'",
+          "FeedbackLoop.analyze_and_feedback → 综合 accuracy/根因/数据问题, 生成 4 类 task (data_collection / data_annotation / data_augmentation / data_cleaning)",
+          "FeedbackLoop.generate_feedback_task → 生成 fb_<id>_<ts> 任务卡 + estimated_volume + priority",
+          "FeedbackLoop._trigger_iteration → 仅 logger.info, 实际不调 pipeline/scheduler"
+        ],
+        "weakness": [
+          "整个闭环是 sync mock — run_eval 同步串行处理所有样本 (无并发), _load_model 始终返回 dummy",
+          "FeedbackLoop.analyze_and_feedback 接到 self.task_queue.append — 实际没有任何 consumer 拉这个 queue",
+          "没有路由层包装 — /api/v1/eval/* 端点不存在 (前端 Scoring.vue 直接走 /api/v1/score/* 而不是 /api/v1/eval/*)",
+          "没有 web UI 触达入口 (Scoring.vue 是评分算子面板, 不是评测闭环面板)"
+        ]
+      },
+
+      "eval_quality_py_5_systems": {
+        "file": "backend/imdf/engines/eval_quality.py (628 lines, 25KB)",
+        "registry": [
+          "BENCHMARK_CONFIGS: mmlu/gsm8k/humaneval/hellaswag/arc/truthfulqa (6 主流 benchmark + industry_baseline for gpt4/claude3/gemini_ultra)",
+          "INDUSTRY_EVAL: code_generation / math_reasoning / general_knowledge / multimodal (4 行业套件)"
+        ],
+        "5_engines": [
+          "EvalConsistencyEngine: cohen_kappa_multi (sklearn + manual fallback) + fleiss_kappa_multi (np 实现) + consistency_report (outstanding→poor 6 档评级)",
+          "ABTestEngine.run_ab_test(results_a, results_b, ABTestConfig) → Two-proportion z-test / t-test / 任意 metric 通用 + winner 判定 + 显著性标记",
+          "LLMEvalJudge.judge_single (7 维度 prompt: accuracy/relevance/coherence/conciseness/helpfulness/safety/hallucination) + judge_batch + 维度聚合",
+          "BenchmarkRunner.evaluate_results (阈值 passing_threshold + industry_comparison + percentile_vs_industry) + human_eval_pass_at_k (math.comb 公式)",
+          "EvalQualityReporter.generate_report → 整合 4 子报告 + quality_tier (S/A/B/C/D) + overall_quality_score (百分制)"
+        ],
+        "factories": "get_eval_consistency / get_ab_test_engine / get_llm_judge / get_benchmark_runner / get_eval_reporter (5 单例)",
+        "weakness": [
+          "judge_single 调 get_gateway() — 走的是 model_gateway, 真实可用但慢 (LLM 调用), 没有 LLM 响应缓存",
+          "ab_test 的显著性判定只用 Two-proportion z (二元指标) 或 t 近似 (latency) — 真正的卡方/Mann-Whitney 未实现",
+          "BenchmarkRunner 实际跑不动真实 MMLU/GSM8K (没数据集下载 / 没 SGLang/vLLM 后端), 只是对用户传入的 results 做评估"
+        ]
+      },
+
+      "annotation_quality_py_pipeline": {
+        "file": "backend/imdf/engines/annotation_quality.py (790 lines, 30KB — 最大单文件)",
+        "IAAEngine": [
+          "cohen_kappa(rater1, rater2) → sklearn.cohen_kappa_score 包装",
+          "fleiss_kappa(ratings, n_categories) → np 实现",
+          "krippendorff_alpha(data, level='nominal'|'interval') → O(n²m²) 全配对, 大数据慢",
+          "iou_matrix(annotators) → 标注者两两 IoU 矩阵 (只支持 1D 配对数组)",
+          "agreement_report(annotations) → 聚合 Cohen/Fleiss + quality 评级"
+        ],
+        "GoldStandardValidator": [
+          "add_gold_item / validate_annotator → annotator_accuracy / passed (>=0.85)",
+          "_compute_accuracy → 优先 BBox IoU, 退化到 label 字符串相等"
+        ],
+        "LLMJudgeEngine": [
+          "judge_single_pe(pe_text) → 6 维度 prompt (clarity/completeness/specificity/examples_quality/format_compliance/robustness) + 调 model_gateway",
+          "ab_test_pe(pe_a, pe_b, test_cases) — 当前实现有 BUG: 两次都评 pe_a"
+        ],
+        "AnnotationPipeline_5_stages": [
+          "pre_annotate / review / adjudicate / audit / feedback_loop — 全部为占位 stub, 返回硬编码值",
+          "submit_for_review → 多级流转 initial/secondary/final, 优先级 1/2/3",
+          "process_review(reviewer_id, decision ∈ approve/reject/return)",
+          "get_review_queue_stats — by_stage / by_priority / backlog_pressure",
+          "reviewer_agreement — Cohen 两两 (含 _simple_agreement fallback)",
+          "efficiency_report — reviews_per_hour / approval_rate / industry_benchmark",
+          "llm_flag_suspicious — LLM 检查 bbox/label/格式/置信度, 5 维度 prompt"
+        ],
+        "INDUSTRY_SCHEMAS (硬编码 5 个)": [
+          "medical_imaging (DICOM-SR / SNOMED CT, findings + BIRADS)",
+          "autonomous_driving (nuScenes 风格, track_id + bbox_3d + velocity + occlusion)",
+          "remote_sensing (STAC/GeoJSON, bands + crs + area_sqm)",
+          "industrial_defect (PCB/纺织/金属 缺陷分级)",
+          "document_ocr (PAGE XML / hOCR, reading_order + text_lines)"
+        ],
+        "factories": "get_iaa() / get_gold() / get_pipeline()"
+      },
+
+      "classification_quality_engine": {
+        "file": "backend/imdf/engines/classification_engine.py (503 lines)",
+        "rule_engine": [
+          "ClassificationEngine (sqlite 持久化 rules + taxonomy) — 7 operator: contains/equals/regex/greater/less/in_range/match_ai",
+          "add_rule / delete_rule / list_rules / classify / classify_batch / nl_filter / add_taxonomy / get_taxonomy_tree"
+        ],
+        "quality_engine": [
+          "ClassificationQualityEngine.accuracy / precision_recall_f1 (per-label + macro avg + support)",
+          "confusion_matrix → 二维 + per-class TP/FP/FN",
+          "reliability_score(predictions) → 预测置信分布"
+        ]
+      },
+
+      "quality_v2_routes_py_5_phases": {
+        "file": "backend/imdf/api/quality_v2_routes.py (729 lines, 28KB — P4-7-W2 production_quality surface)",
+        "discovery_phase": [
+          "POST /discovery/score (批量) / score-single (单源) → 4 维: reliability/freshness/license_compliance/community_activity + tier A/B/C/D",
+          "POST /discovery/preview-quality (源数据预览 schema check)",
+          "POST /discovery/credibility (A/B/C/D 分级)",
+          "POST /discovery/cross-validation (多源 IAA) + /cross-validation/anomalies (异常检测)",
+          "POST /discovery/llm-evaluate (LLM 辅助)"
+        ],
+        "collection_phase": [
+          "POST /collection/integrity/verify (batch) / verify-single (MD5/SHA256)",
+          "POST /collection/resume/check (断点状态) / /plan (续传计划)",
+          "POST /collection/dedup/check (去重) / /stats / /clear",
+          "POST /collection/monitor/start (会话) / /record / /end / GET /monitor/current /history"
+        ],
+        "cleaning_phase": [
+          "POST /cleaning/quality-report (清洗率) / /golden-validate (Precision/Recall/F1) / /audit (前后对比)"
+        ],
+        "filter_phase": [
+          "POST /filter/golden/load / GET /filter/golden/list (金标) / /evaluate / /multi-dimension",
+          "POST /filter/ab-test/start / /record / /conclude (筛选 A/B)",
+          "POST /filter/llm-judge / /llm-compare-rules (LLM 评估)",
+          "GET  /filter/report (综合报告)"
+        ],
+        "review_phase": [
+          "POST /review/submit (多级: initial/secondary/final)",
+          "POST /review/process (approve/reject/return)",
+          "GET  /review/queue-stats (DateRangeParams + Granularity + dimension 白名单 R2-Worker-5)",
+          "POST /review/reviewer-agreement (Cohen Kappa)",
+          "GET  /review/efficiency (审核速度/通过率/积压)",
+          "POST /review/llm-flag (LLM 自动标可疑)"
+        ],
+        "summary": [
+          "GET /summary (5 环节 pipeline_stages 总览 — discovery/collection/cleaning/filtering/review 全部 endpoint_prefix + capabilities + metrics)"
+        ]
+      },
+
+      "data_persistence_reality": {
+        "annotation_service": "FastAPI 8003 端口, SQLite 落库 /api/v1/annotations + /history + /tasks + /operators (22 条 stub)",
+        "quality_v2_routes": "在主 canvas_web.py 挂载 (router prefix /api/quality/v2), 复用 imdf.db (分类规则) + annotation_history.db + 内存 dict",
+        "无 review 表": "submit_for_review 的多级流转只活在内存 (AnnotationPipeline._stages), 进程崩溃就丢 — 这是 P0 级别的可靠性问题"
+      }
+    }
+  },
+
+  "missing_capabilities_top10": [
+    {
+      "rank": 1,
+      "name": "审核工作流的持久化与可恢复性",
+      "importance": "critical",
+      "feasibility": "high (annotation_history.db + review_state 表即可)",
+      "industry_ref": "Labelbox HITL Review Queue / Encord Catalyst / Scale AI Multi-Stage Review 全部基于 PostgreSQL + 事件溯源 (event sourcing)",
+      "current_state": "AnnotationPipeline._stages + algorithm_review.workflows 全部 in-memory Dict, 进程重启即清零; 没有任何 /api/v1/algorithm/review/* 路由",
+      "missing_apis_to_expose": [
+        "POST /api/v1/algorithm/review/submit (algo_id, name, version, model_path, metrics)",
+        "GET  /api/v1/algorithm/review/{id}/status (含 steps / approved_by / rejected_reason)",
+        "POST /api/v1/algorithm/review/{id}/step/{step_name}/decide (reviewer, decision, comments)",
+        "GET  /api/v1/algorithm/review/list (with stage/status/owner filter + pagination)"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "批量子审核 (batch review) + reviewer 分配",
+      "importance": "critical",
+      "feasibility": "high (复用 listReviewAnnotations + 循环 processReview)",
+      "industry_ref": "Scale AI Batch HITL 一次 50 条分配给 reviewer; Labelbox Performance 队列",
+      "current_state": "Review.vue 一次只能选 1 条 (selectRow 覆盖前值), 没有 bulk approve/reject",
+      "missing_apis_to_expose": [
+        "POST /api/v1/review/batch { item_ids, decision, reviewer_id, comments }",
+        "POST /api/v1/review/assign { item_ids, reviewer_id } (分配队列)",
+        "GET  /api/v1/review/my-queue?reviewer_id=xxx (我的待审队列)"
+      ]
+    },
+    {
+      "rank": 3,
+      "name": "标注 diff 视图 / 版本对比",
+      "importance": "critical",
+      "feasibility": "high (DataDelivery.compare_versions 已实装, 复用即可)",
+      "industry_ref": "Encord Annotation Diff (Overlay + Side-by-Side) / V7 Darwin Versioning",
+      "current_state": "选中后只显示 NForm, 没有 diff 面板, 审核员无法看相邻版本差异",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/annotations/{id}/diff?other_id=yyy (字段级 + bbox IoU)",
+        "GET  /api/v1/deliveries/{id_a}/compare/{id_b} (DataDelivery 暴露)"
+      ]
+    },
+    {
+      "rank": 4,
+      "name": "Reviewer 绩效 dashboard + IAA heatmap",
+      "importance": "high",
+      "feasibility": "high (AnnotationPipeline.efficiency_report + reviewer_agreement 已实装)",
+      "industry_ref": "Labelbox Performance / Encord Reviewer Insights / Scale Rapid Team Performance",
+      "current_state": "KPI 瓦片只显示 avg_agreement 一个数字, 没有 per-reviewer 表格, 没有 Cohen 矩阵热图",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/review/reviewers (with throughput / approval_rate / agreement)",
+        "GET  /api/v1/review/iaa-heatmap?reviewers=R1,R2,R3 (Cohen NxN 矩阵)",
+        "GET  /api/v1/review/sla/{reviewer_id} (逾期统计)"
+      ]
+    },
+    {
+      "rank": 5,
+      "name": "SLA 倒计时 + 逾期高亮 + 通知",
+      "importance": "high",
+      "feasibility": "medium (deadline 字段在 ReviewQueueItem 已定义, 但前端未渲染)",
+      "industry_ref": "Scale AI SLA Engine / Labelbox Workflow Timeouts",
+      "current_state": "deadline 字段在 API 类型里, 但 Review.vue 表格不显示, 也没有 WebSocket/SSE 实时倒计时, 逾期后没有自动 escalate",
+      "missing_apis_to_expose": [
+        "WS  /api/v1/review/queue/ws (实时队列变化 + SLA 倒计时)",
+        "POST /api/v1/review/{id}/escalate (升级到 senior reviewer)",
+        "GET  /api/v1/notifications/sla-breach?since=2026-06-27"
+      ]
+    },
+    {
+      "rank": 6,
+      "name": "LLM 自动 flag 可疑标注 + 优先级预排序",
+      "importance": "high",
+      "feasibility": "high (annotation_quality.llm_flag_suspicious + LLMJudgeEngine.judge_single_pe 已实装)",
+      "industry_ref": "Encord Automate Action / Scale AI Trust & Safety / SuperAnnotate AI Assist",
+      "current_state": "/api/quality/v2/review/llm-flag 路由存在, 但前端 Review.vue 完全没有 'AI 标记可疑' 入口, 队列是 FIFO 不是按 risk score 排序",
+      "missing_apis_to_expose": [
+        "POST /api/v1/review/auto-flag-batch { item_ids, criteria } (LLM 批标)",
+        "GET  /api/v1/review/queue?sort=risk_score (按可疑度排序)"
+      ]
+    },
+    {
+      "rank": 7,
+      "name": "评测闭环可视化 (Eval → BadCase → Data gap → 补采任务)",
+      "importance": "high",
+      "feasibility": "high (eval_engine.run_eval + BadCaseAnalyzer + FeedbackLoop 三件套齐全)",
+      "industry_ref": "Scale AI Test & Eval / Hugging Face Evaluate / Comet ML",
+      "current_state": "eval_engine.py 是个孤儿 — 没有路由, 前端 Scoring.vue 走的是 /api/v1/score/* 而不是 /api/v1/eval/*, 三个组件 (Runner/Analyzer/FeedbackLoop) 没串联起来",
+      "missing_apis_to_expose": [
+        "POST /api/v1/eval/run { model_name, dataset_version, samples }",
+        "GET  /api/v1/eval/{id}/bad-cases (cluster + root_cause)",
+        "POST /api/v1/eval/{id}/feedback (生成 data_collection / data_annotation / data_augmentation / data_cleaning 任务)"
+      ]
+    },
+    {
+      "rank": 8,
+      "name": "A/B 评测 + 显著性检验 UI",
+      "importance": "high",
+      "feasibility": "high (ABTestEngine.run_ab_test 实装, 走 z-test/t-test)",
+      "industry_ref": "Scale AI A/B / Statsig / LaunchDarkly Experiments + Eppo Stats",
+      "current_state": "eval_quality.ABTestEngine 是单例类, 没有任何路由暴露, EvalQualityReporter 集成也只在 generate_report 时按需调",
+      "missing_apis_to_expose": [
+        "POST /api/v1/eval/ab-test { variant_a, variant_b, samples_a, samples_b, metrics }",
+        "GET  /api/v1/eval/ab-test/{id} (含 winner + p_value + delta_pct)"
+      ]
+    },
+    {
+      "rank": 9,
+      "name": "拒绝 / 退回理由结构化 + 模板化",
+      "importance": "medium",
+      "feasibility": "high (前端 NForm 可加 NSelect)",
+      "industry_ref": "Labelbox Issue Templates / Encord Quality Reports",
+      "current_state": "comments 字段是 free-form NInput textarea, 没有枚举 (e.g. bbox_alignment / label_consistency / occluded / truncated), 没有模板, 没有统计",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/review/reject-reasons (预设原因枚举)",
+        "POST /api/v1/review/{id}/reject { reason_code, comments, asset_id }"
+      ]
+    },
+    {
+      "rank": 10,
+      "name": "审核审计日志 + 不可篡改 trail",
+      "importance": "medium",
+      "feasibility": "medium (需要 append-only SQLite/Parquet + C2PA-like 链式 hash)",
+      "industry_ref": "DVC Audit / Encord Audit Trail / Labelbox Activity Log",
+      "current_state": "wf.steps 在内存 dict, 没有 audit log 表, 也没有 reviewer 修改历史; algorithm_review 整个 process 不可审计",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/review/{id}/audit-log (append-only)",
+        "GET  /api/v1/review/audit?actor=xxx&from=&to= (按审核员过滤)"
+      ]
+    }
+  ],
+
+  "frontend_simplified_segments": [
+    {
+      "snippet": "Review.vue L46-77 — 审核队列 + 过滤 (内存过滤, 不传后端 stage 参数)",
+      "lines": "L46-77",
+      "issue": "stageFilter.value 只在客户端 .filter 内存过滤, 没传给 listReviewAnnotations; keyword 也只过滤 item_id/label/annotator 三个字段, 后端 AnnotationPipeline.get_review_queue_stats(by_stage / by_priority) 完全没用"
+    },
+    {
+      "snippet": "Review.vue L88-93 — 决定按钮 (approve / reject / return)",
+      "lines": "L88-93",
+      "issue": "三态 NRadio 没有 '退回修改' vs '驳回' 的语义区分指引, reviewer 容易误操作; 也没让用户填 '具体修改建议' (return 必填 comments, reject 必填 reason_code)"
+    },
+    {
+      "snippet": "Review.vue L107-110 — result-block 只显示 JSON pre 文本",
+      "lines": "L107-110",
+      "issue": "后端 processReview 返回的是 { stage, next_reviewer, decision_data, audit_id }, 但 UI 只显示 JSON 字符串; 高级审核员需要的: (a) 下一阶段 (b) 分配的下一个 reviewer (c) 审核时间统计 (d) ack 按钮 一概没有"
+    },
+    {
+      "snippet": "Review.vue L31-41 — KPI 瓦片 (4 个)",
+      "lines": "L31-41",
+      "issue": "只有 1 个 '平均一致性' 数字 (avg_agreement * 100), 缺: (a) P95 审核耗时 (b) 今日积压 (c) 通过率/驳回率/退回率 (d) 各阶段分布柱状图"
+    },
+    {
+      "snippet": "Review.vue L65-76 — 队列 table 缺列",
+      "lines": "L65-76",
+      "issue": "缺: (a) 截止时间 (deadline 字段已定义, 表格不渲染) (b) AI 风险标签 (LLM 标的可疑) (c) 来源资产缩略图 (d) 操作历史入口 (谁审过 / 上一版结论)"
+    }
+  ],
+
+  "backend_endpoints_needed": {
+    "tier_0_immediate_p0": [
+      "POST /api/v1/algorithm/review/submit — 暴露 algorithm_review.submit_algorithm (持久化到 SQLite + alg_submissions/alg_workflows 表)",
+      "GET  /api/v1/algorithm/review/list?stage=&status= — 列所有审批中算法",
+      "POST /api/v1/algorithm/review/{id}/pre-review — 暴露 run_pre_review",
+      "POST /api/v1/algorithm/review/{id}/technical-review — 暴露 schedule/approve/reject_technical_review",
+      "POST /api/v1/algorithm/review/{id}/final-approval — 暴露 final_approval",
+      "POST /api/v1/algorithm/review/{id}/deploy — 暴露 deploy",
+      "POST /api/v1/algorithm/review/{id}/rollback — 暴露 rollback (含 target_version)",
+      "GET  /api/v1/algorithm/review/{id}/status — 暴露 get_workflow_status (返回完整 steps/approved_by)"
+    ],
+    "tier_1_batch_sla": [
+      "POST /api/v1/review/batch — 多 item 同时决策 (item_ids[], decision, reviewer_id, comments)",
+      "POST /api/v1/review/assign — 批量分配 reviewer",
+      "GET  /api/v1/review/my-queue?reviewer_id=xxx&limit=50",
+      "WS  /api/v1/review/queue/ws — 实时队列变化 + SLA 倒计时推送",
+      "POST /api/v1/review/{id}/escalate — 升级到 senior (改变 priority, 写 audit log)"
+    ],
+    "tier_2_diff_iaa": [
+      "GET  /api/v1/annotations/{id}/diff?other_id=yyy — 字段级 diff + bbox IoU",
+      "GET  /api/v1/review/reviewers?from=&to= — reviewer 绩效 (throughput / agreement / approval_rate)",
+      "GET  /api/v1/review/iaa-heatmap?reviewers=R1,R2,R3 — Cohen NxN 矩阵 (AnnotationPipeline.reviewer_agreement 暴露)",
+      "GET  /api/v1/review/sla/{reviewer_id} — 逾期/未读统计"
+    ],
+    "tier_3_ai_assist": [
+      "POST /api/v1/review/auto-flag-batch { item_ids, criteria } — 走 annotation_quality.llm_flag_suspicious",
+      "GET  /api/v1/review/queue?sort=risk_score — 按 LLM 评分排序",
+      "GET  /api/v1/review/reject-reasons — 预设拒绝原因枚举 (e.g. bbox_alignment / label_consistency / occluded / truncated / pii / nsfw)",
+      "POST /api/v1/review/{id}/reject { reason_code, comments, severity }"
+    ],
+    "tier_4_eval_loop": [
+      "POST /api/v1/eval/run — 暴露 eval_engine.EvalRunner.run_eval (支持真实 LLM 而非 dummy)",
+      "GET  /api/v1/eval/{id}/bad-cases — BadCaseAnalyzer.cluster_errors + root_cause_analysis 暴露",
+      "POST /api/v1/eval/{id}/feedback — FeedbackLoop.analyze_and_feedback 暴露, 真实写 task_queue",
+      "POST /api/v1/eval/ab-test { variant_a, variant_b, samples } — ABTestEngine.run_ab_test 暴露",
+      "GET  /api/v1/eval/report/{id} — EvalQualityReporter.generate_report 暴露"
+    ],
+    "tier_5_audit_compliance": [
+      "GET  /api/v1/review/{id}/audit-log — append-only 审计 (write-once SQLite + hash chain)",
+      "GET  /api/v1/review/audit?actor=&from=&to= — 跨 item 跨 reviewer 检索",
+      "POST /api/v1/review/{id}/lock (审核员工作区锁, 防并发同审)"
+    ]
+  },
+
+  "world_benchmark_comparison": [
+    {
+      "platform": "Labelbox (Model Foundry)",
+      "domain": "数据标注 / 审核 / 评测",
+      "key_capabilities": [
+        "Catalog / Ontology 版本化 + nested classification",
+        "Review Queue: multi-stage HITL with reviewer assignment & SLA",
+        "Model Foundry: model evaluation with golden set + benchmark suites (MMLU, GPQA)",
+        "Activity Log: immutable audit trail of every annotation/label change",
+        "Performance Dashboard: per-reviewer throughput, agreement heatmap, IAA metrics",
+        "Issue Templates: structured reject reasons with required fields"
+      ],
+      "nanobot_status": "缺 catalog 版本化、缺 issue templates、缺 immutable audit log; 有 review queue 但只有 approve/reject/return 三态, 没有 SLA / 分配 / 多级"
+    },
+    {
+      "platform": "Encord (Catalyst / Index)",
+      "domain": "多模态标注 + 审核 + 评测",
+      "key_capabilities": [
+        "Annotate: 2D/3D/视频/医学 (OHIF) + SAM/Segment-Anything smart assist",
+        "Catalyst: 自动化 pre-label + 质量审查 + autoQA",
+        "Index: 语义搜索 + embedding-based dedup + dataset curation",
+        "Reviewer Insights: 审核员 dashboard + agreement matrix + drift detection",
+        "Annotation Diff: overlay + side-by-side version comparison",
+        "Webhooks + SDK + Python SDK for batch ops"
+      ],
+      "nanobot_status": "缺 smart assist 真实接入 (annotation_quality 里有 stub), 缺 Annotation Diff UI, 缺 reviewer insights, 缺 Index 类语义搜索 + curation"
+    },
+    {
+      "platform": "Scale AI (Rapid / Donovan / Nucleus)",
+      "domain": "标注 + 审核 + 模型评测 + 数据管理",
+      "key_capabilities": [
+        "Rapid: 全栈标注 UI + batch task allocation + 3D point cloud + video tracking",
+        "Donovan: AI 决策平台 (multi-agent + RAG + tool use)",
+        "Nucleus: dataset search + similarity + model eval in one place",
+        "SLA Engine: 任务截止时间 + 自动 escalate + on-time % 监控",
+        "Trust & Safety: LLM 标的可疑内容 + 自动回滚"
+      ],
+      "nanobot_status": "缺 SLA 引擎, 缺 Nucleus 类一站式 search+eval+annotation, 缺 trust & safety AI 标记 (LLM 已实装, UI 未暴露)"
+    },
+    {
+      "platform": "SuperAnnotate",
+      "domain": "多模态标注 + 审核 + marketplace",
+      "key_capabilities": [
+        "Pixel-perfect 2D/3D 标注 (polygon, cuboid, point cloud)",
+        "Quality control: 多人审核 + consensus + expert arbitration",
+        "Ontology version control + class inheritance",
+        "Marketplace: 标注员 marketplace + 任务模板 + 价格引擎",
+        "Model integration: auto-label via SAM/Grounding-DINO + human-in-loop QA"
+      ],
+      "nanobot_status": "缺 3D 标注, 缺 consensus 算法, 缺 marketplace 定价, 缺 auto-label 真实接入"
+    },
+    {
+      "platform": "Roboflow (Annotate + Workflows + Monitor)",
+      "domain": "视觉数据 + 标注 + 工作流 + 部署",
+      "key_capabilities": [
+        "Annotate: 协作式 + 多人实时 + 自动 polygon (SAM)",
+        "Workflows: 节点式 + 触发器 (webhook, schedule) + 数据流转",
+        "Monitor: 部署后性能监控 + data drift + 自动 re-train 触发",
+        "Versioning: dataset + model 双版本 + 血缘",
+        "Edge / Cloud / On-prem 多端部署"
+      ],
+      "nanobot_status": "缺 Monitor (deploy 后监控), 缺实时协作, 缺 dataset/model 双版本 + 血缘, 工作流编辑有但实操不深"
+    },
+    {
+      "platform": "Databricks (Lakehouse + Unity Catalog + Model Serving)",
+      "domain": "数据湖 + catalog + 评测 + 部署",
+      "key_capabilities": [
+        "Unity Catalog: 统一 metadata + lineage + 访问控制 (一张大表)",
+        "Model Serving: A/B + canary + traffic shadow",
+        "MLflow: experiment tracking + model registry + deployment",
+        "Lakehouse Jobs: DAG + retry + SLA + 通知",
+        "Quality monitoring: drift detection + data quality assertions"
+      ],
+      "nanobot_status": "缺 traffic shadow / canary deploy, 缺 experiment tracking, 缺 lakehouse jobs, 缺统一 catalog (DAM + Lineage 各自独立)"
+    },
+    {
+      "platform": "Weights & Biases (Sweeps + Reports + Artifacts)",
+      "domain": "ML 实验 + 评测 + artifact 管理",
+      "key_capabilities": [
+        "Sweeps: hyperparameter search (Bayesian / Grid / Random)",
+        "Reports: collaborative report + charts + tables",
+        "Artifacts: dataset/model versioning (DVC-like)",
+        "Tables: W&B Tables for dataset exploration + cohort analysis",
+        "Launch: 训练任务编排 (queue + agent)"
+      ],
+      "nanobot_status": "缺 hyperparameter sweep, 缺 artifact versioning (dataset + model), 缺 launch 队列, 缺 interactive tables"
+    },
+    {
+      "platform": "Hugging Face (Evaluate + Argilla + AutoTrain)",
+      "domain": "开源评测 + 数据 + 训练",
+      "key_capabilities": [
+        "Evaluate: 30+ 评测指标 (BLEU/ROUGE/BERTScore/PER/Pass@k)",
+        "Argilla: 开源标注 + 审核 + feedback loop",
+        "AutoTrain: no-code fine-tuning",
+        "Hub: dataset/model versioning + lineage + license + community",
+        "Spaces: app hosting + Gradio/Streamlit"
+      ],
+      "nanobot_status": "eval_quality 已对标 Evaluate (有 MMLU/GSM8K/HumanEval 6 套 industry baseline), 但路由未暴露; 缺 Argilla 类 open-source 标注/审核平台, 缺 Hub 类 dataset/model 版本化"
+    }
+  ],
+
+  "recommendation_summary": {
+    "headline_gap": "后端已实现 AlgorithmReview 5 步审批 + AnnotationPipeline 5 阶段状态机 + EvalRunner/BadCase/FeedbackLoop 闭环 + eval_quality 5 套评测引擎 + quality_v2 5 环节路由 (共 ~30 个 P0 端点, 多数藏在 imdf.db 单文件), 但前端 Review.vue 308 行只用了 1 个 processReview + 1 个 listReviewAnnotations, 触发面 < 5%; 没有任何 /api/v1/algorithm/review/* 路由包装, 状态全部 in-memory, 进程崩溃即丢。",
+    "top_3_p0_fixes": [
+      "(1) 把 algorithm_review.py 包到 /api/v1/algorithm/review/* 路由 + 持久化到 SQLite alg_submissions / alg_workflows 两张表 (P0: 不持久化的状态机不能上生产)",
+      "(2) Review.vue 增加批量子审核 (NSelect multi-select 模式 + bulk approve/reject), 改 stageFilter.keyword 走 URL query, 后端按 by_stage/by_priority 真正分页 + 排序 (P0: 当前 50 条上限 + 内存过滤完全不能用)",
+      "(3) 把 eval_engine / eval_quality / annotation_quality 全部用 /api/v1/eval/* 包装起来, 前端加一个 '评测闭环' Tab, 跑 EvalRunner → 看 BadCase 聚类 → 一键生成补采/补标任务 → 写到 task_queue 真触发"
+    ],
+    "top_5_p1_enhancements": [
+      "(1) Reviewer 绩效 dashboard: per-reviewer throughput / approval_rate / agreement heatmap (复用 AnnotationPipeline.efficiency_report + reviewer_agreement)",
+      "(2) Annotation Diff 视图: 选两条 item, 字段级 + bbox IoU 差异高亮 (DataDelivery.compare_versions 已有骨架)",
+      "(3) SLA 倒计时 + WS 实时队列推送: 逾期红字高亮, 自动 escalate",
+      "(4) LLM 风险评分 + 按 risk_score 排序队列: 复用 annotation_quality.llm_flag_suspicious, 前端表格加 risk 列",
+      "(5) A/B 评测 + 显著性 UI: 暴露 eval_quality.ABTestEngine, 加一个 'A/B Config' 表单 + winner 卡片"
+    ],
+    "phase_roadmap": {
+      "week_1_p0": "algorithm_review 路由化 + 持久化; Review.vue 批量子审核 + URL 过滤 + SLA 倒计时",
+      "week_2_p0": "eval_engine 路由化 + 前端 评测闭环 Tab; annotation_diff 视图",
+      "week_3_p1": "reviewer 绩效 dashboard + IAA heatmap; LLM 风险评分接入",
+      "week_4_p1": "A/B 评测 + 显著性 UI; 拒绝原因结构化 + 模板",
+      "month_2_p2": "immutable audit log + reviewer 工作区锁; trust & safety AI 自动 flag"
+    }
+  }
+}

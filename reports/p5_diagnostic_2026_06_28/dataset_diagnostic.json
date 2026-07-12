@@ -1,0 +1,442 @@
+{
+  "meta": {
+    "scope": "anobot-factory / Dataset module",
+    "diagnosis_only": true,
+    "investigated_files": [
+      "frontend-v2/src/views/Dataset.vue (371 lines, 14KB)",
+      "frontend-v2/src/views/DatasetManagement.vue (135 lines, 6KB — old / fallback)",
+      "frontend-v2/src/api/dataset.ts (36 lines — 5 thin wrappers over generic http.ts CRUD)",
+      "frontend-v2/src/types/index.ts (61 lines — DatasetItem only defines id/name/version/size/status/created_at)",
+      "backend/imdf/engines/dataset_manager.py (196 lines — 8 funcs, 5 export formats)",
+      "backend/services/dataset_service/main.py (173 lines — port 8006 entry, mounts 4 routers)",
+      "backend/services/dataset_service/routes.py (318 lines — 12 endpoints, the 'thin' surface)",
+      "backend/services/dataset_service/store.py (194 lines — in-memory + JSONL sample store)",
+      "backend/services/dataset_service/exporters/__init__.py + 13 operator modules (12 + mixed extension: jsonl/csv/parquet/tfrecord/coco/voc/yolo/alpaca/sharegpt/conversation/video_frames/audio_wav/mixed)",
+      "backend/services/dataset_service/operators/ (10 filter operators: balance/diversity/domain/language/percentile/quality/random/rule_based/threshold/top_k)",
+      "backend/services/dataset_service/metadata/* (10 ORM tables: Database/Schema/Table/Column/Dataset/Tag/Glossary/GlossaryTerm/TagAssignment, plus discovery/glossary/search/tags modules → 28+ endpoints)",
+      "backend/services/dataset_service/lineage/* (3 tables, 19 endpoints: collect × 6 / graph × 6 / impact × 4 / visualize × 3)",
+      "backend/imdf/api/dam_routes.py (Digital Asset Management, 16 endpoints — file/preview/tag/lineage/smart-folder/stats/scan/search-suggest)",
+      "backend/imdf/api/data_browser_routes.py (paginated list + preview from imdf.db/datasets + annotation_history.db)",
+      "backend/imdf/api/dataset_routes.py (legacy, still included via main.py)"
+    ],
+    "headline_gap": "后端已经是 'OpenMetadata + DataHub + DAM + 12 exporters + 10 filters + lineage' 级实现,前端 Dataset.vue 却只调用 listDatasets / createDataset + 一个 fetch versions 的裸 URL,触发的功能面 < 5%。"
+  },
+
+  "current_capabilities": {
+    "frontend_visible": {
+      "page": "Dataset.vue (/dataset 路由,挂在 MODULES 第 2 项 'database' 图标)",
+      "header": [
+        "页面标题 '数据集管理' + 副标题 '管理图片 / 编辑 / 视频 / 短剧 / 绘本 数据资产'",
+        "总数据集计数 NTag (total.value)",
+        "按钮: 刷新(loading), 新建数据集(主按钮), 导出(disabled when rows=0)"
+      ],
+      "kpi_tiles": [
+        "数据集总数(全部状态合计)",
+        "已发布(过滤 r.status==='published')",
+        "草稿(过滤 r.status==='draft')",
+        "本页样本数(对当前页 r.size 求和)"
+      ],
+      "search_filter": [
+        "SearchBar: 搜索 '数据集名称 / 版本 / 标签' (实际只透传 keyword,后端忽略 status/type)",
+        "状态 NSelect: draft / published / archived (前端仅显示,未传给 list API)",
+        "类型 NSelect: image / video / audio / text / multimodal (前端未传给后端)",
+        "DataTable: v-model:page / v-model:page-size (20/页)"
+      ],
+      "table_columns": [
+        "ID (width 80)",
+        "名称 (minWidth 180)",
+        "类型 (modality || type)",
+        "状态 (NTag, versionBadge 渲染)",
+        "样本数 (size.toLocaleString())",
+        "标签 (tags.join)",
+        "创建时间",
+        "操作: '详情'(蓝链接) + '导出'(绿链接)"
+      ],
+      "bottom_panels": [
+        "数据集版本 NCard — NList,逐项显示 v<version> + 样本数 + 状态 tag (来源:/api/v1/datasets/{name}/versions,fail 时回退 v1.0.0 active)",
+        "元数据 NCard — NDescriptions 2 列: 名称/ID/类型/状态/样本数/标签/描述(span2)/创建时间(span2)"
+      ],
+      "modal": [
+        "ModalForm: '新建数据集' (注意:虽然 title 兼容 '编辑',creating 默认 true,无编辑入口),
+          字段: 名称(NInput) / 类型(NSelect) / 描述(NInput textarea) / 标签(NInput,tagsText 按逗号 split)",
+        "rules: name 必填, type 必填",
+        "提交 payload: { name, type, description, tags: string[] } → createDataset(body)"
+      ],
+      "actions_wired": [
+        "load() → listDatasets({ page, page_size, keyword })",
+        "selectDataset(row) → fetch /api/v1/datasets/{encodeURIComponent(name)}/versions",
+        "openCreate() → modalShow=true",
+        "onSubmit(payload) → createDataset(body)",
+        "onExport() → fetch /api/v1/dataset/export/list (只 ping,不执行)",
+        "onExportRow(row) → 只 message.info 提示,无真实请求"
+      ]
+    },
+    "frontend_unused_or_unwired": [
+      "search/status/type 过滤条件只改前端 ref,未加到 listDatasets 调用参数",
+      "编辑/删除:无入口 (DatasetManagement.vue 中存在但未在主路由暴露)",
+      "分页仅控制 page 1,DataTable 的 :total 来自 res.total (后端 routes.py 的 GET /api/v1/datasets 返回的是 {count, datasets[]} 不是 Page<DatasetItem>,与前端 http.ts getPage 期望的 {items,total,page,size} 形状不匹配 — 真实数据流在某些场景会回退到 rows.length)",
+      "未调用后端 metadata 路由 (tags/glossaries/search/recommend/discovery) 任何一个",
+      "未调用后端 lineage 路由 (collect/graph/impact/visualize) 任何一个",
+      "未调用后端 filter operators (10 个) 或 exporter operators (12 个) 任何一个的真正 run()",
+      "未调用 DAM 路由 (smart-folder/AI tag/lineage/preview)",
+      "未调用 data_browser_routes 的 preview 端点"
+    ],
+
+    "backend_implemented": {
+      "dataset_manager_engine": {
+        "file": "backend/imdf/engines/dataset_manager.py (P3-2-W2 baseline, 196 行)",
+        "dataclasses": ["DatasetFile (path/hash/size/data_type)", "DatasetVersion (version/created_at/files/metadata/parent_version/tags)"],
+        "methods": [
+          "create_version(name, files, parent, tags) → f'v{idx}_{ts}' (顺序自增,无语义化版本)",
+          "get_version(version) → Optional[DatasetVersion]",
+          "list_versions(tags=None) → 按 created_at desc 排序",
+          "rollback(version) → 复制 target.files 创建新版本 (不真回滚,只是基于快照建新链)",
+          "diff(v1, v2) → { added, removed, common, v1_count, v2_count }",
+          "export_coco(version, output) — 写 {images, annotations:[], categories:[]} (无 annotation 字段填充)",
+          "export_webdataset(version, output_dir) — tar sharding (1000/shard) + 旁挂 .json",
+          "export_jsonl(version, output) — 一行一记录",
+          "export_parquet(version, output) — pandas DataFrame,无依赖时降级 jsonl",
+          "export_llava(version, output) — LLaVA 指令微调空壳 (conversations 全空字符串)",
+          "export_internvl(version, output) — InternVL 多模态空壳 (role/content 全空)",
+          "_load_index / _save_index → data/datasets/index.json 持久化"
+        ],
+        "not_implemented_in_engine_but_in_service_layer": [
+          "engine 本身无 'dataset' 概念,DatasetStore (service 层) 才引入 '数据集 + 版本 + 样本' 三层模型",
+          "engine 暴露的 5 个 export 与 service 层 exporters/ 12 算子是并行两套实现,未统一"
+        ]
+      },
+      "dataset_service_microservice": {
+        "file": "backend/services/dataset_service/main.py + routes.py (port 8006)",
+        "endpoints": [
+          "GET  /healthz",
+          "POST /api/v1/datasets                              (CreateDatasetRequest: name/description/data_type/tags)",
+          "GET  /api/v1/datasets                               → {count, datasets[]} (不是 Page<T> 形态,前端 http.ts getPage 兼容差)",
+          "GET  /api/v1/datasets/{name}",
+          "DELETE /api/v1/datasets/{name}                       (级联清空 samples/<name>/)",
+          "POST /api/v1/datasets/{name}/versions                (version 缺省时自动 v{YYYYMMDD.HHMMSS})",
+          "GET  /api/v1/datasets/{name}/versions",
+          "GET  /api/v1/datasets/{name}/versions/{version}",
+          "POST /api/v1/datasets/{name}/versions/{version}/samples (samples: List[Dict],无 schema 校验)",
+          "GET  /api/v1/datasets/{name}/versions/{version}/samples (limit/offset,无 filter)",
+          "POST /api/v1/datasets/{name}/versions/{version}/export (format: jsonl|json|csv) — 但实现只回 preview 5 条,未真写文件"
+        ],
+        "export_operator_registry": {
+          "list": "GET /api/v1/dataset/export/list",
+          "detail": "GET /api/v1/dataset/export/{op_id}",
+          "run": "POST /api/v1/dataset/export/{op_id}/run — 真的写文件到 path/dir",
+          "registered": ["jsonl","csv","parquet","tfrecord","coco","voc","yolo","alpaca","sharegpt","conversation","video_frames","audio_wav","(mixed 扩展)"]
+        },
+        "filter_operator_registry": {
+          "list": "GET /api/v1/dataset/filter/list",
+          "detail": "GET /api/v1/dataset/filter/{op_id}",
+          "run": "POST /api/v1/dataset/filter/{op_id}/run",
+          "registered": ["balance_filter","diversity_filter","domain_filter","language_filter","percentile","quality_filter","random_sample","rule_based","threshold","top_k"]
+        },
+        "metadata_module (P4-4-W1)": {
+          "tables": 10,
+          "endpoints": "/api/v1/metadata/{health,databases,schemas,tables,columns,datasets,discovery/{run,schedule},tags/{,assign,unassign,auto/pii,propagate},glossaries/{,terms,terms/relations,terms/columns,seed},search,recommend,record-view}",
+          "count": 28
+        },
+        "lineage_module (P4-4-W2)": {
+          "tables": 3,
+          "endpoints": "/api/v1/lineage/{collect,collect/sql,collect/python,collect/operator,collect/manual,collect/pipeline-step,graph/{refresh,stats,full,{entity},{entity}/upstream,{entity}/downstream},impact/{entity,entity/upstream,entity/downstream,entity/notify},visualize/{full,dataset/{dataset},{entity}}}",
+          "count": 19,
+          "formats": ["react-flow","vis","d3","cytoscape"]
+        },
+        "multimodal_adapter": "P4-7-W1: 6 input modalities / 3 output kinds via common.multimodal_adapter"
+      },
+      "dam_engine_and_routes": {
+        "file": "backend/imdf/engines/dam_engine.py (56KB,主资产管理) + api/dam_routes.py",
+        "endpoints": [
+          "GET  /api/dam/files (page/size/search/category/sort)",
+          "GET  /api/dam/files/{id} /preview /tag",
+          "POST /api/dam/files/tag-all (AI 批量打标,concurrency=3)",
+          "GET  /api/dam/smart-folders / POST /api/dam/smart-folder / GET /smart-folder/{id}/contents / DELETE /smart-folder/{id}",
+          "GET  /api/dam/lineage/{id} (depth 1-10) / POST /api/dam/lineage",
+          "GET  /api/dam/stats (DateRangeParams + Granularity + dimension 白名单: category/format/folder/date/size)",
+          "POST /api/dam/scan (re-scan directories)",
+          "GET  /api/dam/formats (90+ 格式,7 categories: image/video/audio/3d/document/dataset/archive)",
+          "GET  /api/dam/search/suggest (R2.5 Pydantic Query 校验)"
+        ]
+      },
+      "data_browser_routes (legacy, 真数据库)": {
+        "file": "backend/imdf/api/data_browser_routes.py (从 imdf.db/datasets + annotation_history.db)",
+        "endpoints": [
+          "GET  /api/datasets?page&size&search&sort (sort: time|name|size|quality)",
+          "GET  /api/datasets/{dataset_id}/preview (关联 annotation_log,回 10 条样本 + preview.columns/rows)"
+        ]
+      },
+      "legacy_dataset_routes": "backend/imdf/api/dataset_routes.py,被 main.py 通过 HAS_LEGACY try-import 挂载"
+    }
+  },
+
+  "missing_capabilities_top10": [
+    {
+      "rank": 1,
+      "name": "样本浏览/预览面板 (sample browser)",
+      "importance": "critical",
+      "feasibility": "high (后端已有 limit/offset+samples 端点,DAM 也有 /preview)",
+      "industry_ref": "Roboflow / Encord / Labelbox 核心交互: 进入数据集后默认看图(滑窗/grid),可标注/打标/过滤",
+      "current_state": "Dataset.vue 只显示 versions 列表 + 元数据 NDescriptions,完全无样本级 UI",
+      "missing_apis_to_expose": [
+        "GET /api/v1/datasets/{name}/versions/{v}/samples?limit&offset&label=&split=&labeler=",
+        "GET /api/v1/datasets/{name}/versions/{v}/samples/{id}/preview (走 DAM preview 或自建 thumbnails)",
+        "POST /api/v1/datasets/{name}/versions/{v}/samples (bulk add 已有,前端未用)"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "标签系统 + 标签分布 (label taxonomy + distribution)",
+      "importance": "critical",
+      "feasibility": "high (后端 metadata.tags + glossary 10+ 端点已就位,filter 算子 quality/balance 也可用)",
+      "industry_ref": "Scale/Encord/SuperAnnotate 必备: hierarchical class taxonomy + class balance 柱状图 + per-class drilldown",
+      "current_state": "Dataset.vue 表格里 '标签' 列只 join 显示,无 CRUD、无分布、无层级",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/metadata/tags?target=dataset&target_id=...",
+        "POST /api/v1/metadata/tags/assign + /unassign",
+        "GET  /api/v1/dataset/filter/balance_filter/run → class distribution",
+        "GET  /api/v1/metadata/glossaries/{id}/terms → 标签字典/同义词"
+      ]
+    },
+    {
+      "rank": 3,
+      "name": "train/val/test 拆分 (split with provenance)",
+      "importance": "high",
+      "feasibility": "high (sample 字典可带 split 字段,store 直接 add_samples 即可;后端 store 已有 sample_count 字段)",
+      "industry_ref": "Pinecone/Coco/HuggingFace datasets: 拆分写入 dataset card,带 hash 追溯,保证可复现",
+      "current_state": "完全无;DatasetItem schema 也无 split 字段",
+      "missing_apis_to_expose": [
+        "POST /api/v1/datasets/{name}/versions/{v}/split (按 ratio / hash / label stratified)",
+        "GET  /api/v1/datasets/{name}/versions/{v}/split-stats",
+        "POST /api/v1/datasets/{name}/versions/{v}/samples/bulk-update (写 split/quality_score)"
+      ]
+    },
+    {
+      "rank": 4,
+      "name": "导出格式选择 (multi-format picker,后台真写文件)",
+      "importance": "high",
+      "feasibility": "highest (后端 12 个 export 算子全部 ready,run 端点写文件,Dataset.vue onExport 只 ping export/list,onExportRow 完全不调 API)",
+      "industry_ref": "Roboflow: YOLO/COCO/VOC/Pascal 一键;Encord: 多种 SFT 格式",
+      "current_state": "导出按钮是占位;DatasetManagement.vue 也没有导出",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/dataset/export/list (前端从未渲染下拉)",
+        "POST /api/v1/dataset/export/{op_id}/run (带 progress,前端应轮询 job 状态)",
+        "GET  /api/v1/dataset/export/jobs/{job_id} (返回状态 + 下载 URL)"
+      ]
+    },
+    {
+      "rank": 5,
+      "name": "增量同步 / 拉取 (incremental sync, pull/push)",
+      "importance": "high",
+      "feasibility": "medium (需要 etag/manifest,后端 dataset_manager.diff 是雏形,但服务层未包装为 sync API)",
+      "industry_ref": "DVC / Pachyderm / LakeFS: dataset-level pull,基于 manifest hash 只传 delta",
+      "current_state": "diff 函数存在但只对单 dataset 内部 2 个 version 有效;无跨设备/跨仓增量",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/datasets/{name}/manifest (返回所有 version + 每版 sample hash 列表)",
+        "POST /api/v1/datasets/{name}/versions/{v}/sync (delta pull,基于 hash 集合差)",
+        "GET  /api/v1/datasets/{name}/sync/status"
+      ]
+    },
+    {
+      "rank": 6,
+      "name": "质量分维度 (quality breakdown)",
+      "importance": "high",
+      "feasibility": "high (filter 算子 quality_filter/threshold/percentile 已实现,annotation_quality.py 也有 30KB 引擎)",
+      "industry_ref": "Encord Active / Scale: 给出 clarity/balance/diversity/completeness 4 维评分 + 历史趋势",
+      "current_state": "无;KPI 卡片没有 '平均质量分'",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/datasets/{name}/versions/{v}/quality/score (聚合 4 维)",
+        "GET  /api/v1/datasets/{name}/versions/{v}/quality/breakdown?dim=clarity",
+        "POST /api/v1/dataset/filter/quality_filter/run (参数化阈值)"
+      ]
+    },
+    {
+      "rank": 7,
+      "name": "元数据/数据卡 (dataset card, schema)",
+      "importance": "high",
+      "feasibility": "high (metadata.discovery + glossary + tags + columns 10 个表就是 OpenMetadata 风格数据卡)",
+      "industry_ref": "HuggingFace dataset card / OpenMetadata 必备: description/license/citation/schema/tags/splits/curation",
+      "current_state": "Dataset.vue 元数据 NDescriptions 只有 8 个基础字段,无 README/license/citation/sparkline",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/metadata/datasets/{id} (OpenMetadata 风格 dataset entity)",
+        "PUT  /api/v1/metadata/datasets/{id} (description/license/citation/card)",
+        "GET  /api/v1/metadata/glossaries/{id}/terms/{tid}/columns (链接到列/标签)"
+      ]
+    },
+    {
+      "rank": 8,
+      "name": "重复/近重复检测 (duplicate & near-dup detection)",
+      "importance": "high",
+      "feasibility": "medium (perceptual hash 需在样本管线实现,后端无现成;但 DAM 已有 file hash)",
+      "industry_ref": "Snorkel/Sieve/Scale: 训练前 dedup;近重复可省 5-15% 训练时间",
+      "current_state": "完全无",
+      "missing_apis_to_expose": [
+        "POST /api/v1/datasets/{name}/versions/{v}/dedup/exact (按 sha256)",
+        "POST /api/v1/datasets/{name}/versions/{v}/dedup/near (phash/dhash,异步 job)",
+        "GET  /api/v1/datasets/{name}/versions/{v}/dedup/jobs/{job_id}"
+      ]
+    },
+    {
+      "rank": 9,
+      "name": "嵌入式可视化 (embedding viewer / UMAP / t-SNE)",
+      "importance": "medium-high",
+      "feasibility": "medium (后端 vector_retrieval.py 35KB,已具备向量存储;但缺 embedding 计算 endpoint + UMAP 服务)",
+      "industry_ref": "Encord/SuperAnnotate/Scale 高级特性: 嵌入 2D 投影找 outlier / cluster",
+      "current_state": "完全无",
+      "missing_apis_to_expose": [
+        "POST /api/v1/datasets/{name}/versions/{v}/embeddings/build (clip/vit, 异步)",
+        "GET  /api/v1/datasets/{name}/versions/{v}/embeddings/projection?method=umap&n=2",
+        "GET  /api/v1/datasets/{name}/versions/{v}/embeddings/cluster"
+      ]
+    },
+    {
+      "rank": 10,
+      "name": "工作流/任务对接 (labeling task creation, packet ingest)",
+      "importance": "high",
+      "feasibility": "highest (workflow_service/、annotation_service/、tasks.py 都已存在,Dataset.vue 无任何跳转/创建入口)",
+      "industry_ref": "Labelbox: 'Send to labeling' 一键开 queue;Roboflow: 'Send to annotator'",
+      "current_state": "Dataset.vue 无 '创建标注任务' / '加入工作流' / '分派标注员' 按钮",
+      "missing_apis_to_expose": [
+        "POST /api/v1/datasets/{name}/versions/{v}/tasks (创建标注任务包,基于现有 tasks API)",
+        "POST /api/v1/datasets/{name}/versions/{v}/dispatch (分派到 crowd/内部 annotator)",
+        "POST /api/v1/datasets/ingest (接收外部数据包 → 自动建 dataset + version + samples)",
+        "POST /api/v1/datasets/{name}/versions/{v}/link-project (绑项目/需求,requirement_engine 已就绪)"
+      ]
+    },
+    "honorable_mentions_not_in_top10_but_present_in_industry": [
+      "评论/审核 (commenting/review) — sharing_routes + review.ts 后端有,前端无入口",
+      "协作分享 (share link) — sharing_routes 已有 resource_type='dataset',前端未集成",
+      "样本切片/视图 (saved slice/facet) — filter 算子+metadata search 后端可组合,前端无 UI",
+      "血缘 (lineage) — 后端 19 端点 + DAM lineage 完整,Dataset.vue 完全无 lineage 面板",
+      "增量 diff — dataset_manager.diff 在,前端无 UI",
+      "AI 打标 (auto-tag) — DAM POST /tag + /tag-all 后端 ready,Dataset.vue 无按钮",
+      "搜索建议 (search suggest) — DAM /search/suggest 已加,前端无 input 自动补全",
+      "统计/sparkline — DAM /stats 已有,Dataset.vue KPI 极简"
+    ]
+  },
+
+  "frontend_simplified_segments": [
+    {
+      "file": "Dataset.vue",
+      "lines": "139-170",
+      "segment_kind": "ModalForm 表单",
+      "issue": "字段重复 (类型/描述/标签 出现两次,L160-168 是 L151-159 的拷贝,显然为占位/调试残留)。rules 仍引用 path='type' 但 v-model:value 也绑 type,运行时 NForm 会收到重复 prop warning。最严重的是:creating 永远为 true(无编辑入口,无 setEditing 函数),openCreate 之外没有 openEdit,所以 '编辑' 路径死代码。",
+      "snippet": "L139-170 (ModalForm): creating default = true;creating ? '新建数据集' : '编辑数据集';rules 只校验 name/type"
+    },
+    {
+      "file": "Dataset.vue",
+      "lines": "215-231",
+      "segment_kind": "状态/类型下拉硬编码",
+      "issue": "statusOptions + typeOptions 全部写死,完全没走后端 metadata/tags 接口(后端 GET /api/v1/metadata/tags + /api/v1/metadata/glossaries/{id}/terms 都已实现)。意味着多语言/客户化标签体系不可能落地,改名要改前端。",
+      "snippet": "L215-226: statusOptions = [{draft, published, archived}] 写死;typeOptions = [{image, video, audio, text, multimodal}] 写死"
+    },
+    {
+      "file": "Dataset.vue",
+      "lines": "279-295",
+      "segment_kind": "load() 不带 status/type/owner/date 过滤",
+      "issue": "listDatasets 调用只传 page/page_size/keyword,过滤栏的 statusFilter / typeFilter 改了却没拼进 query。KPI 卡的 '已发布'/'草稿' 是当前页 rows 内 filter,完全不准。",
+      "snippet": "L282-286: const res = await listDatasets({ page, page_size, keyword }) — statusFilter / typeFilter 未传"
+    },
+    {
+      "file": "Dataset.vue",
+      "lines": "297-312",
+      "segment_kind": "selectDataset 裸 fetch 拼 URL",
+      "issue": "绕过 api/dataset.ts 的封装,直接用 fetch('/api/v1/datasets/{name}/versions'),没用 http.ts 的统一拦截/错误处理/类型;catch 分支硬塞 [{ version:'v1.0.0', status:'active', sample_count:row.size }] 假数据掩盖错误 — 用户看到的版本列表与后端真值可能完全不一致。",
+      "snippet": "L301: const res = await fetch(`/api/v1/datasets/${encodeURIComponent(String(row.name))}/versions`);L307 fallback 假数据"
+    },
+    {
+      "file": "Dataset.vue",
+      "lines": "341-354",
+      "segment_kind": "导出按钮假实现",
+      "issue": "onExport() 只 ping GET /api/v1/dataset/export/list(拿到算子列表),然后 message.success '已提交导出任务' — 实际上没运行任何 exporter。onExportRow(row) 更彻底,只 message.info 提示,完全没网络请求。后端 12 个真 export 算子(GET /api/v1/dataset/export/list + POST .../run)一个都没接。",
+      "snippet": "L344-348: fetch('/api/v1/dataset/export/list') 之后无任何 run 调用;L353: message.info(`导出 ${row.name} — 异步执行`) — 假进度"
+    }
+  ],
+
+  "backend_endpoints_needed": {
+    "already_exist_but_frontend_not_using": {
+      "category": "high_leverage_low_cost",
+      "items": [
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions",                       "why":"versions 列表已用,但未用其返回的 tags / created_at / sample_count 全字段"},
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions/{v}/samples",         "why":"样本分页/过滤,Dataset.vue 无样本面板"},
+        {"method":"GET",  "path":"/api/v1/dataset/export/list",                          "why":"12 个 export 算子目录,Dataset.vue onExport 只 ping 不渲染"},
+        {"method":"POST", "path":"/api/v1/dataset/export/{op_id}/run",                    "why":"真写文件到 path/dir — 12 算子,Dataset.vue 完全未触发"},
+        {"method":"GET",  "path":"/api/v1/dataset/filter/list",                           "why":"10 个 filter 算子,做 saved slice / class balance / 质量过滤"},
+        {"method":"POST", "path":"/api/v1/dataset/filter/{op_id}/run",                    "why":"运行算子,Dataset.vue 无任何过滤链"},
+        {"method":"GET",  "path":"/api/v1/metadata/datasets",                             "why":"OpenMetadata 风格数据集 entity,带 description/license/card"},
+        {"method":"GET",  "path":"/api/v1/metadata/tags",                                 "why":"替代写死的 statusOptions/typeOptions"},
+        {"method":"POST", "path":"/api/v1/metadata/tags/assign",                          "why":"在 UI 增删标签"},
+        {"method":"GET",  "path":"/api/v1/metadata/glossaries",                           "why":"标签字典/同义词/class hierarchy"},
+        {"method":"GET",  "path":"/api/v1/metadata/search?q=",                            "why":"全文/标签组合搜索,比纯 keyword 更强"},
+        {"method":"GET",  "path":"/api/v1/lineage/visualize/dataset/{dataset}",          "why":"血缘可视化 4 种格式 (react-flow/vis/d3/cytoscape)"},
+        {"method":"GET",  "path":"/api/v1/lineage/impact/{entity}",                       "why":"影响分析,删除/修改前风险评估"},
+        {"method":"GET",  "path":"/api/dam/files?category=dataset",                      "why":"DAM 内数据集文件,提供缩略图/preview"},
+        {"method":"GET",  "path":"/api/dam/files/{id}/preview",                           "why":"生成样本预览图"},
+        {"method":"POST", "path":"/api/dam/files/{id}/tag",                               "why":"AI 自动打标"},
+        {"method":"GET",  "path":"/api/dam/smart-folders",                                "why":"saved slice,Dataset.vue 无此 UI"},
+        {"method":"GET",  "path":"/api/dam/stats",                                        "why":"DAM 维度统计,Dataset.vue KPI 卡片可丰富"},
+        {"method":"GET",  "path":"/api/dam/search/suggest",                               "why":"搜索框自动补全"},
+        {"method":"GET",  "path":"/api/datasets?search=&sort=",                           "why":"data_browser 真实 SQLite,Dataset.vue 没接"}
+      ]
+    },
+    "need_to_be_added": {
+      "category": "新功能但与现有后端能力紧耦合,实现成本中等",
+      "items": [
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions/{v}/samples/preview",       "purpose":"返回前 N 个样本的 thumbnail URL + label 摘要(供 grid 视图),可用 DAM preview 包装"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/versions/{v}/split",                  "purpose":"train/val/test 拆分(支持 ratio / hash / label stratified),写回 sample.split 字段"},
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions/{v}/split-stats",            "purpose":"返回各 split 的样本数 + 标签分布"},
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions/{v}/label-distribution",     "purpose":"class balance 柱状图数据,包装 balance_filter.run"},
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions/{v}/quality/score",          "purpose":"返回 4 维 quality (clarity/balance/diversity/completeness) + 总分"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/versions/{v}/dedup/exact",            "purpose":"按 sha256/hash 去重"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/versions/{v}/dedup/near",             "purpose":"phash/dhash 近重复检测,异步 job"},
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions/{v}/dedup/jobs/{job_id}",    "purpose":"去重 job 状态 + 重复组"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/versions/{v}/embeddings/build",       "purpose":"CLIP/ViT 嵌入计算(异步,存向量库)"},
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/versions/{v}/embeddings/projection", "purpose":"UMAP/t-SNE 2D 投影,前端散点图"},
+        {"method":"POST", "path":"/api/v1/datasets/ingest",                                       "purpose":"接收外部数据包(目录/zip/URL)→ 自动建 dataset+version+samples"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/versions/{v}/tasks",                   "purpose":"从数据集样本生成标注任务包,桥接 tasks API"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/versions/{v}/dispatch",                "purpose":"分派到 crowd / 内部 annotator,桥接 crowd_platform / annotation_service"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/versions/{v}/link-project",            "purpose":"绑项目/需求,桥接 requirement_engine"},
+        {"method":"GET",  "path":"/api/v1/datasets/{name}/sync/status",                          "purpose":"增量同步状态(last_pulled_at / pending / failed)"},
+        {"method":"POST", "path":"/api/v1/datasets/{name}/sync",                                 "purpose":"基于 manifest hash 集合差的 pull/push"}
+      ]
+    },
+    "schema_deltas_needed_in_frontend_types": {
+      "DatasetItem": "应扩展为 { id, name, version, size, status, modality, description, tags, license, citation, source, owner, created_at, updated_at, latest_version_count, sample_count, quality_score, lineage_id, schema_id, project_id }",
+      "DatasetVersion": "应新增: { version, parent_version, description, tags, created_at, sample_count, split_stats: {train,val,test}, quality: {clarity,balance,diversity,completeness}, status, source_url }",
+      "Sample": "应新增: { id, source_uri, hash, size, modality, width, height, duration, labels: [{class_id, class_name, confidence, geometry}], split, quality_score, annotation_ids, created_at, created_by }",
+      "ExportJob": "应新增: { id, dataset, version, format, status, progress, error, output_path, started_at, finished_at }",
+      "LabelTaxonomy": "应新增: { id, name, parent_id, color, synonyms, count }"
+    }
+  },
+
+  "recommendation_summary": {
+    "diagnosis": "Dataset.vue 是 '表格 + KPI + 假导出' 的极简骨架,与后端已就位的 'OpenMetadata + DataHub + DAM + 12 export 算子 + 10 filter 算子 + lineage + multimodal' 巨型实现存在数量级落差。前端 5 个简化片段中,有 3 个是 '后端能、前端不会调',有 2 个是 '占位/调试残留'。",
+    "fast_wins_high_impact": [
+      "W1 (≤ 1 day): 把 onExport 改为调 POST /api/v1/dataset/export/{op_id}/run,并渲染 /export/list 下拉 — 直接落地 12 种导出格式",
+      "W2 (≤ 1 day): selectDataset 改为走 api/dataset.ts 封装 + 用 list_samples + DAM preview 接 sample grid — 填补 '样本浏览' 空白(行业 #1 必备)",
+      "W3 (≤ 1 day): 删 ModalForm L160-168 重复字段;接 metadata/tags + glossaries 替代写死 statusOptions/typeOptions",
+      "W4 (≤ 2 day): 加 '创建标注任务' / '分派' / '绑项目' 3 个按钮 — 桥接 tasks / annotation_service / requirement_engine,后端无新代码"
+    ],
+    "medium_investment_strategic_features": [
+      "M1: train/val/test 拆分 + provenance (W2-D1) — 新增 2 端点 + 1 拆分算法,影响所有下游训练",
+      "M2: 标签 taxonomy + class balance 可视化 (W2-D2) — 包装 balance_filter,接 metadata/glossaries",
+      "M3: 元数据/数据卡 完整化 (W2-D3) — OpenMetadata dataset entity,补 license/citation/curation log",
+      "M4: 增量同步 (W3) — 包装 dataset_manager.diff 为 manifest-based pull/push"
+    ],
+    "long_term_differentiators": [
+      "L1: AI 嵌入可视化 (UMAP/t-SNE scatter) — 接 vector_retrieval + 新建 embeddings 管线",
+      "L2: 重复/近重复检测 — phash + 嵌入最近邻,异步 job 报告",
+      "L3: 多模态协作(评论/分享) — 桥接 sharing_routes resource_type='dataset' + review.ts"
+    ],
+    "do_not_recommend": [
+      "不要重写后端 — 12 export + 10 filter + 19 lineage + 28 metadata + 16 DAM 路由均已就位,只缺前端整合",
+      "不要新建第二套 dataset CRUD — data_browser_routes / dataset_routes / dataset_service 三处 list 接口形状不一(Page<T> vs {count,items[]}),先在 http.ts 端做 normalize 而非新增端点"
+    ],
+    "kpi_for_acceptance": [
+      "Dataset.vue 触发的不同后端端点数从当前 ≤3 提升到 ≥12",
+      "新增 '样本浏览器' + '标签分布' + '拆分' 3 个核心面板",
+      "支持 COCO + YOLO + VOC + Parquet + Alpaca + ShareGPT ≥ 6 种导出",
+      "数据集卡片包含 description / license / tags / splits / quality / lineage 6 维"
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+﻿=== i18n Coverage ===
+Files scanned:           100
+View files:              52
+Views with t() call:     10 (19.23%)
+Total t() calls:         281
+Unique t() keys:         210
+Hardcoded CN runs (excl locales): 2117
+Hardcoded CN runs (incl locales): 2117
+Locale namespaces:       18 zh / 18 en
+Locale keys total:       1969 zh / 1969 en
+Missing in locale:       0
+Unused in code:          1759
+Parity issues:           0
+
+=== Per-namespace key count (zh / en) ===
+  agentChat                 zh=   5  en=   5
+  agentManagement           zh=   9  en=   9
+  annotation                zh=  34  en=  34
+  annotationManagement      zh=   5  en=   5
+  assetManagement           zh=  13  en=  13
+  auth                      zh=  10  en=  10
+  billing                   zh=  25  en=  25
+  button                    zh= 434  en= 434
+  common                    zh= 384  en= 384
+  dashboard                 zh=  16  en=  16
+  engines                   zh=  28  en=  28
+  form                      zh= 306  en= 306
+  marketplace               zh=   6  en=   6
+  menu                      zh= 310  en= 310
+  nav                       zh=  19  en=  19
+  table                     zh= 306  en= 306
+  userManagement            zh=  34  en=  34
+  workflows                 zh=  25  en=  25
+
+Wrote report: reports\p13_b2_i18n_audit.json

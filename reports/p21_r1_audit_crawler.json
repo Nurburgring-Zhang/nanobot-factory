@@ -1,0 +1,1000 @@
+[
+  {
+    "name": "arxiv",
+    "subdir": "academic",
+    "class": "ArxivChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 7
+  },
+  {
+    "name": "googlescholar",
+    "subdir": "academic",
+    "class": "GoogleScholarChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "ieee",
+    "subdir": "academic",
+    "class": "IEEEChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "paper",
+    "subdir": "academic",
+    "class": "?",
+    "type": "?",
+    "issues": [
+      {
+        "level": "P0",
+        "kind": "no_class",
+        "msg": "no *Crawler / *Channel class in imdf.crawler.channels.academic.paper"
+      }
+    ]
+  },
+  {
+    "name": "pubmed",
+    "subdir": "academic",
+    "class": "PubMedChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5
+  },
+  {
+    "name": "semanticscholar",
+    "subdir": "academic",
+    "class": "SemanticScholarChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "baidu_images",
+    "subdir": "(root)",
+    "class": "BaiduImagesCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "bing_images",
+    "subdir": "(root)",
+    "class": "BingImagesCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "bilibilimp",
+    "subdir": "china_social",
+    "class": "BilibiliMPChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 7
+  },
+  {
+    "name": "douyinmp",
+    "subdir": "china_social",
+    "class": "DouyinMPChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "wechatmp",
+    "subdir": "china_social",
+    "class": "WechatMPChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5
+  },
+  {
+    "name": "weibomp",
+    "subdir": "china_social",
+    "class": "WeiboMPChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 7
+  },
+  {
+    "name": "xigua",
+    "subdir": "china_social",
+    "class": "XiguaChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "bitbucket",
+    "subdir": "code_oss",
+    "class": "BitbucketChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 1
+  },
+  {
+    "name": "gitee",
+    "subdir": "code_oss",
+    "class": "GiteeChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 2
+  },
+  {
+    "name": "github",
+    "subdir": "code_oss",
+    "class": "GitHubChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 2
+  },
+  {
+    "name": "gitlab",
+    "subdir": "code_oss",
+    "class": "GitLabChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 2
+  },
+  {
+    "name": "sourceforge",
+    "subdir": "code_oss",
+    "class": "SourceForgeChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 1
+  },
+  {
+    "name": "dataset",
+    "subdir": "datasets",
+    "class": "?",
+    "type": "?",
+    "issues": [
+      {
+        "level": "P0",
+        "kind": "no_class",
+        "msg": "no *Crawler / *Channel class in imdf.crawler.channels.datasets.dataset"
+      }
+    ]
+  },
+  {
+    "name": "huggingface",
+    "subdir": "datasets",
+    "class": "HuggingFaceDatasetsCrawler",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "list_datasets",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 15
+  },
+  {
+    "name": "kaggle",
+    "subdir": "datasets",
+    "class": "KaggleCrawler",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "list_datasets",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5
+  },
+  {
+    "name": "openml",
+    "subdir": "datasets",
+    "class": "OpenMLCrawler",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "list_datasets",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5
+  },
+  {
+    "name": "paperswithcode",
+    "subdir": "datasets",
+    "class": "PapersWithCodeCrawler",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "list_datasets",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "uci",
+    "subdir": "datasets",
+    "class": "UCIMLCrawler",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "list_datasets",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "duckduckgo",
+    "subdir": "(root)",
+    "class": "DuckDuckGoImagesCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "flickr",
+    "subdir": "(root)",
+    "class": "FlickrCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "crawl",
+    "mock_call_ok": true,
+    "mock_items_count": 3,
+    "injected_call_ok": true,
+    "injected_items_count": 3,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "google_images",
+    "subdir": "(root)",
+    "class": "GoogleImagesCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "crawl",
+    "mock_call_ok": true,
+    "mock_items_count": 3,
+    "injected_call_ok": true,
+    "injected_items_count": 3,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "bosszhipin",
+    "subdir": "jobs",
+    "class": "BossZhipinChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "job51",
+    "subdir": "jobs",
+    "class": "Job51Channel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5
+  },
+  {
+    "name": "lagou",
+    "subdir": "jobs",
+    "class": "LagouChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 7
+  },
+  {
+    "name": "zhilian",
+    "subdir": "jobs",
+    "class": "ZhilianChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5
+  },
+  {
+    "name": "open_images",
+    "subdir": "(root)",
+    "class": "OpenImagesCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "crawl",
+    "mock_call_ok": true,
+    "mock_items_count": 3,
+    "injected_call_ok": true,
+    "injected_items_count": 3,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "pixabay",
+    "subdir": "(root)",
+    "class": "PixabayCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "crawl",
+    "mock_call_ok": true,
+    "mock_items_count": 3,
+    "injected_call_ok": true,
+    "injected_items_count": 3,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "newsapi",
+    "subdir": "rss",
+    "class": "NewsApiChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 2
+  },
+  {
+    "name": "reddit",
+    "subdir": "rss",
+    "class": "RedditChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 1
+  },
+  {
+    "name": "rsshub",
+    "subdir": "rss",
+    "class": "RsshubChannel",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 1
+  },
+  {
+    "name": "so_images",
+    "subdir": "(root)",
+    "class": "SoImagesCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 5
+  },
+  {
+    "name": "bilibili",
+    "subdir": "social",
+    "class": "BilibiliChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 6
+  },
+  {
+    "name": "douyin",
+    "subdir": "social",
+    "class": "DouyinChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "tieba",
+    "subdir": "social",
+    "class": "TiebaChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "weibo",
+    "subdir": "social",
+    "class": "WeiboChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "xiaohongshu",
+    "subdir": "social",
+    "class": "XiaohongshuChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "zhihu",
+    "subdir": "social",
+    "class": "ZhihuChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 4
+  },
+  {
+    "name": "sogou",
+    "subdir": "(root)",
+    "class": "SogouImagesCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": -1,
+    "injected_call_ok": true,
+    "injected_items_count": -1,
+    "elapsed_ms": 3
+  },
+  {
+    "name": "alioss",
+    "subdir": "storage",
+    "class": "AliossChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5057
+  },
+  {
+    "name": "azure",
+    "subdir": "storage",
+    "class": "AzureChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5071
+  },
+  {
+    "name": "gcs",
+    "subdir": "storage",
+    "class": "GcsChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5057
+  },
+  {
+    "name": "s3",
+    "subdir": "storage",
+    "class": "S3Channel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5048
+  },
+  {
+    "name": "tencentcos",
+    "subdir": "storage",
+    "class": "TencentCosChannel",
+    "type": "async",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      },
+      {
+        "level": "P2",
+        "kind": "no_copyright",
+        "msg": "no license/copyright field"
+      }
+    ],
+    "entry": "search",
+    "mock_call_ok": true,
+    "mock_items_count": 0,
+    "elapsed_ms": 5056
+  },
+  {
+    "name": "unsplash",
+    "subdir": "(root)",
+    "class": "UnsplashCrawler",
+    "type": "sync",
+    "issues": [
+      {
+        "level": "P2",
+        "kind": "no_robots_in_source",
+        "msg": "no robots.txt mention in source"
+      }
+    ],
+    "entry": "crawl",
+    "mock_call_ok": true,
+    "mock_items_count": 3,
+    "injected_call_ok": true,
+    "injected_items_count": 3,
+    "elapsed_ms": 5
+  }
+]

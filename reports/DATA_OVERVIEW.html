@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>智影 (ZhiYing) — 数据生产 / 数据结构 / 数据管线 全景</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --line: #e9e3d6;
+    --line-soft: #f0ebe0;
+    --ink: #14171e;
+    --ink-2: #3a4256;
+    --muted: #7c7a72;
+    --primary: #2f6f5e;
+    --primary-soft: rgba(47,111,94,.08);
+    --accent: #c97b3f;
+    --accent-soft: rgba(201,123,63,.10);
+    --warn: #b06367;
+  }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Outfit', sans-serif; }
+  .serif { font-family: 'DM Serif Display', serif; font-weight: 400; letter-spacing: -0.005em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 56px 32px 80px; }
+  .hero-title { font-size: 44px; line-height: 1.15; }
+  .h2 { font-size: 30px; line-height: 1.2; }
+  .h3 { font-size: 20px; font-weight: 600; color: var(--ink); }
+  .lead { color: var(--ink-2); font-size: 17px; line-height: 1.55; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .body { color: var(--ink-2); font-size: 15px; line-height: 1.65; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+  .card-tight { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+  .chip-pri { background: var(--primary-soft); color: var(--primary); border: 1px solid rgba(47,111,94,.2); }
+  .chip-acc { background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(201,123,63,.2); }
+  .chip-warn { background: rgba(176,99,103,.08); color: var(--warn); border: 1px solid rgba(176,99,103,.2); }
+  .chip-mute { background: var(--line-soft); color: var(--muted); border: 1px solid var(--line); }
+  .k { color: var(--ink); }
+  .v { color: var(--ink-2); }
+  /* 9 阶段时间线 */
+  .pipeline { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
+  .pipe-step { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px; text-align: center; position: relative; }
+  .pipe-step .num { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--primary); }
+  .pipe-step .label { font-size: 12px; color: var(--ink-2); margin-top: 4px; font-weight: 500; }
+  .pipe-step .engine { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .pipe-step.accent .num { color: var(--accent); }
+  /* 模态网格 */
+  .modal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .modal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .modal h4 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--primary); margin-bottom: 6px; }
+  .modal .engine { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
+  .modal .row { font-size: 12px; color: var(--ink-2); margin: 4px 0; }
+  .modal .row b { color: var(--ink); font-weight: 600; }
+  /* KV */
+  .kv { display: grid; grid-template-columns: 130px 1fr; row-gap: 6px; column-gap: 14px; font-size: 13px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; color: var(--ink-2); }
+  /* Bench */
+  .bench { display: grid; grid-template-columns: 160px 1fr 100px; gap: 10px; align-items: center; padding: 5px 0; font-size: 13px; }
+  .bench-label { color: var(--ink-2); font-weight: 500; }
+  .bench-track { height: 8px; background: var(--line-soft); border-radius: 4px; overflow: hidden; }
+  .bench-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+  .bench-fill.acc { background: var(--accent); }
+  .bench-val { color: var(--muted); text-align: right; font-size: 12px; }
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tbl td { padding: 10px; border-bottom: 1px solid var(--line-soft); color: var(--ink-2); vertical-align: top; }
+  .tbl td.mono, .tbl .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink); }
+  /* 圆点 */
+  .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); margin-right: 6px; }
+  .dot.acc { background: var(--accent); }
+  .dot.warn { background: var(--warn); }
+  .section { margin-top: 56px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .diagram-bg { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  /* TOC */
+  .toc { display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 13px; color: var(--ink-2); }
+  .toc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px dashed var(--line); padding-bottom: 1px; }
+  .toc a:hover { color: var(--primary); border-color: var(--primary); }
+  /* mermaid */
+  .mermaid { background: var(--surface); }
+  @media (max-width: 900px) {
+    .modal-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .pipeline { grid-template-columns: repeat(3, 1fr); }
+    .hero-title { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <header>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="chip chip-pri">VDP-2026 平台</span>
+      <span class="chip chip-mute">v0.9.0 · 2026-06-30</span>
+      <span class="chip chip-acc">159/159 测试通过</span>
+    </div>
+    <h1 class="serif hero-title">智影 · 数据生产 / 数据结构 / 数据管线<br/><span style="color:var(--primary)">全景总览</span></h1>
+    <p class="lead mt-4" style="max-width:780px">
+      一个面向多模态大模型训练数据的<strong>工业级端到端平台</strong>。从原始素材采集 (collection) 到模型可消费的训练集 (COCO / YOLO / LLaVA / InternVL / WebDataset) 全链路打通,
+      47 个可复用能力 + 9 个核心引擎 + 14 张 ORM 表 + 2 个调度层 (APScheduler / TaskQueue) + 跨模态 RAG,跨进程持久,真上线 ready。
+    </p>
+    <nav class="toc mt-6">
+      <a href="#formats">① 数据生产格式</a>
+      <a href="#structure">② 数据结构</a>
+      <a href="#pipeline">③ 9 阶段数据管线</a>
+      <a href="#engines">④ 8 大引擎</a>
+      <a href="#capabilities">⑤ 47 个能力</a>
+      <a href="#stack">⑥ RAG / 搜索 / Provider 栈</a>
+      <a href="#storage">⑦ 持久化层</a>
+    </nav>
+  </header>
+
+  <!-- ① 数据生产格式 -->
+  <section class="section" id="formats">
+    <h2 class="serif h2">① 数据生产格式</h2>
+    <p class="body mt-2">平台原生支持 <strong>8 种业务模态</strong> + 解析层 7 种输入模态;生成侧注册 4 个 AI Provider;训练侧导出 <strong>9 种标准训练集格式</strong>。</p>
+
+    <h3 class="h3 mt-6 mb-3">8 个业务模态 (multimodal_v2.Modality)</h3>
+    <div class="modal-grid">
+      <div class="modal">
+        <h4>image</h4>
+        <div class="engine">→ video_engine (单帧提取)</div>
+        <div class="row"><b>输入:</b> jpg / png / webp / gif / bmp</div>
+        <div class="row"><b>输出:</b> image + mask</div>
+        <div class="row"><b>训练格式:</b> COCO · YOLO · LLaVA · InternVL</div>
+      </div>
+      <div class="modal">
+        <h4>video</h4>
+        <div class="engine">→ video_engine</div>
+        <div class="row"><b>输入:</b> mp4 / avi / mov / mkv / webm</div>
+        <div class="row"><b>输出:</b> video + thumbnail + audio_track</div>
+        <div class="row"><b>训练格式:</b> WebDataset (tar shard)</div>
+      </div>
+      <div class="modal">
+        <h4>text</h4>
+        <div class="engine">→ agent_router</div>
+        <div class="row"><b>输入:</b> txt / md / json / jsonl</div>
+        <div class="row"><b>输出:</b> text + token_ids</div>
+        <div class="row"><b>训练格式:</b> JSONL (SFT/DPO)</div>
+        <div class="row muted" style="margin-top:6px">requires_review=false</div>
+      </div>
+      <div class="modal">
+        <h4>audio</h4>
+        <div class="engine">→ audio_engine</div>
+        <div class="row"><b>输入:</b> mp3 / wav / flac / m4a / ogg</div>
+        <div class="row"><b>输出:</b> audio + transcript (Whisper ASR)</div>
+        <div class="row"><b>训练格式:</b> JSONL (TTS/ASR)</div>
+      </div>
+      <div class="modal">
+        <h4>multimodal</h4>
+        <div class="engine">→ multimodal_router</div>
+        <div class="row"><b>输入:</b> 任意组合</div>
+        <div class="row"><b>输出:</b> image + text + audio</div>
+        <div class="row"><b>训练格式:</b> LLaVA · InternVL</div>
+      </div>
+      <div class="modal">
+        <h4>sketch</h4>
+        <div class="engine">→ scene_exporter (3D 草图)</div>
+        <div class="row"><b>输入:</b> 草图 + 描述</div>
+        <div class="row"><b>输出:</b> sketch + metadata</div>
+        <div class="row"><b>导出:</b> GLB · glTF · OBJ</div>
+      </div>
+      <div class="modal">
+        <h4>drama</h4>
+        <div class="engine">→ drama_engine (短剧)</div>
+        <div class="row"><b>输入:</b> 剧本大纲</div>
+        <div class="row"><b>输出:</b> script + storyboard + voiceover + final_cut</div>
+        <div class="row"><b>训练格式:</b> InternVL · JSONL</div>
+      </div>
+      <div class="modal">
+        <h4>picturebook</h4>
+        <div class="engine">→ book_engine (绘本)</div>
+        <div class="row"><b>输入:</b> 文字脚本</div>
+        <div class="row"><b>输出:</b> pages + illustrations + characters</div>
+        <div class="row"><b>训练格式:</b> Parquet · JSONL</div>
+      </div>
+    </div>
+
+    <h3 class="h3 mt-8 mb-3">9 种标准训练集导出格式</h3>
+    <div class="grid-3">
+      <div class="card-tight"><b style="color:var(--primary)">COCO</b><div class="muted">目标检测/分割/关键点主流格式, JSON + 图片</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">YOLO</b><div class="muted">.txt 归一化 bbox, ultralytics 直接消费</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">LLaVA</b><div class="muted">视觉对话 SFT: image + 多轮 Q&A</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">InternVL</b><div class="muted">多模态 SFT 通用格式</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">WebDataset</b><div class="muted">tar shard 流式训练, 大规模必备</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">JSONL</b><div class="muted">行式 JSON, 通用 SFT/DPO</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">Parquet</b><div class="muted">列存, 推荐系统 / 表格数据</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">CLIP</b><div class="muted">图-文对训练 (image-caption pair)</div></div>
+      <div class="card-tight"><b style="color:var(--primary)">DiffusionDB</b><div class="muted">扩散模型 prompt+image 元数据</div></div>
+    </div>
+
+    <h3 class="h3 mt-8 mb-3">6 种标注几何 + 7 类 AnnoStation 映射</h3>
+    <div class="grid-2">
+      <div class="card-tight">
+        <div class="k" style="font-weight:600;margin-bottom:8px">标准几何类型 (workbench_engine.GEOMETRY_TYPES)</div>
+        <div class="kv">
+          <dt>rect</dt><dd>轴对齐矩形 · 字段: x, y, w, h (≥0)</dd>
+          <dt>polygon</dt><dd>多边形 · ≥3 个 [x,y] 点</dd>
+          <dt>point</dt><dd>单点</dd>
+          <dt>keypoint</dt><dd>关键点 · ≥1 点 (姿态估计)</dd>
+          <dt>obb</dt><dd>旋转框 · x, y, w, h, theta</dd>
+          <dt>mask</dt><dd>掩码 · rle / bitmap_url 二选一</dd>
+        </div>
+      </div>
+      <div class="card-tight">
+        <div class="k" style="font-weight:600;margin-bottom:8px">AnnoStation 7 类 → 6 种几何映射</div>
+        <div class="kv">
+          <dt>BOUNDING_BOX</dt><dd>→ rect</dd>
+          <dt>POLYGON</dt><dd>→ polygon</dd>
+          <dt>POLYLINE</dt><dd>→ polygon (折线)</dd>
+          <dt>CUBOID_3D</dt><dd>→ obb (3D 框)</dd>
+          <dt>KEYPOINTS</dt><dd>→ keypoint</dd>
+          <dt>MASK</dt><dd>→ mask (RLE/bitmap)</dd>
+          <dt>CLASSIFICATION</dt><dd>→ rect (退化)</dd>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-6">
+      <div class="k" style="font-weight:600;margin-bottom:6px">C2PA Provenance 链路 (engines/c2pa_engine.py)</div>
+      <p class="body" style="margin-top:0">
+        完整的 <strong>内容真实性</strong> 链路 — <span class="mono">sign_asset / verify_signature / revoke / list_manifests / get_crl / cert_pem</span>。
+        平台用 HMAC-SHA256 自签,自动 derive 证书 fingerprint,记录每个资产的来源、模型版本、操作者。
+      </p>
+    </div>
+  </section>
+
+  <!-- ② 数据结构 -->
+  <section class="section" id="structure">
+    <h2 class="serif h2">② 数据结构</h2>
+    <p class="body mt-2">14 张 SQLAlchemy ORM 表 (跨 PG / SQLite 兼容, 走 JSONB / pgvector);192 个 Pydantic Body schema 集中维护;47 个 Capability 各带 JSON-Schema draft 2020-12 签名。</p>
+
+    <h3 class="h3 mt-6 mb-3">14 张 ORM 表 (models/*)</h3>
+    <table class="tbl">
+      <thead><tr><th style="width:50px">#</th><th>Model</th><th>表名</th><th>关键字段</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1</td><td class="mono">User</td><td class="mono">users</td><td>id, username, role, email, status, skills(JSON), password_hash, created/updated</td></tr>
+        <tr><td class="mono">2</td><td class="mono">Project</td><td class="mono">projects</td><td>id, name, status, owner, members(JSON), <b>priority</b>(P0–P3), tags(JSON), start/due_date</td></tr>
+        <tr><td class="mono">3</td><td class="mono">Task</td><td class="mono">tasks</td><td>id, name, type, status(pending/running/done/error), owner, payload(JSON)</td></tr>
+        <tr><td class="mono">4</td><td class="mono">Asset</td><td class="mono">assets</td><td>id, name, type(image/video/audio/text/model3d), size, tags, path, owner</td></tr>
+        <tr><td class="mono">5</td><td class="mono">Dataset</td><td class="mono">datasets</td><td>id, name, version, files_count, status(draft/active/archived), created_by</td></tr>
+        <tr><td class="mono">6</td><td class="mono">UsageLog</td><td class="mono">usage_logs</td><td>user_id, org_id, provider, protocol, model, kind(chat/image/video/embedding), tokens, cost_usd, latency_ms</td></tr>
+        <tr><td class="mono">7</td><td class="mono">Embedding</td><td class="mono">embeddings</td><td>entity_type, entity_id(软引用), <b>vector(1024)</b> (PG→pgvector / SQLite→JSON), model, meta(JSONB), chunk_text</td></tr>
+        <tr><td class="mono">8</td><td class="mono">Workflow</td><td class="mono">workflows</td><td>id, status(draft/active/paused/archived), <b>dag_json</b>(JSONB 节点+边), steps_count, last_run_at, config</td></tr>
+        <tr><td class="mono">9</td><td class="mono">AgentTask</td><td class="mono">agent_tasks</td><td>agent_type(llm/embed/decision/tool/workflow/semantic), status, priority, <b>celery_task_id</b>, retry_count, idempotency_key, payload/result/error (JSONB)</td></tr>
+        <tr><td class="mono">10</td><td class="mono">AuditChainEntry</td><td class="mono">audit_chain_entries</td><td>seq(链序号), <b>prev_hash / entry_hash / signature</b> (HMAC-SHA256 链), method, path, user, body_hash</td></tr>
+        <tr><td class="mono">11</td><td class="mono">ProjectMember</td><td class="mono">project_members</td><td>project_id, user_id, role(owner/admin/member/viewer), joined_at, UniqueConstraint</td></tr>
+        <tr><td class="mono">12</td><td class="mono">ProjectTimelineEvent</td><td class="mono">project_timeline_events</td><td>project_id, event_type, actor, ts, payload(JSONB), message</td></tr>
+        <tr><td class="mono">13</td><td class="mono">RequirementRow</td><td class="mono">requirements</td><td>id, title, type, status, priority, project_id, pack_id, qc_status, delivery_id, owner <span class="chip chip-acc" style="font-size:10px">Depth-7 新增</span></td></tr>
+        <tr><td class="mono">14</td><td class="mono">TaskRow</td><td class="mono">requirement_tasks</td><td>id, requirement_id, title, assignee, status, estimated/actual_hours, priority <span class="chip chip-acc" style="font-size:10px">Depth-7 新增</span></td></tr>
+      </tbody>
+    </table>
+    <div class="legend">
+      <span><span class="dot"></span> 跨 DB 兼容 — <span class="mono">get_jsonb_column()</span> / <span class="mono">get_vector_column(1024)</span></span>
+      <span><span class="dot acc"></span> 深度剧 7 新增 (RequirementEngine 持久化)</span>
+    </div>
+
+    <h3 class="h3 mt-8 mb-3">业务侧 ID 前缀约定</h3>
+    <div class="grid-3">
+      <div class="card-tight"><span class="mono">user_&lt;8-hex&gt;</span> <span class="muted">/ 用户</span></div>
+      <div class="card-tight"><span class="mono">proj_&lt;8-hex&gt;</span> <span class="muted">/ 项目</span></div>
+      <div class="card-tight"><span class="mono">task_&lt;8-hex&gt;</span> <span class="muted">/ 任务</span></div>
+      <div class="card-tight"><span class="mono">asset_&lt;12-hex&gt;</span> <span class="muted">/ 资产</span></div>
+      <div class="card-tight"><span class="mono">ds_&lt;8-hex&gt;</span> <span class="muted">/ 数据集</span></div>
+      <div class="card-tight"><span class="mono">emb_&lt;16-hex&gt;</span> <span class="muted">/ 嵌入向量</span></div>
+      <div class="card-tight"><span class="mono">wf_&lt;12-hex&gt;</span> <span class="muted">/ 工作流</span></div>
+      <div class="card-tight"><span class="mono">at_&lt;16-hex&gt;</span> <span class="muted">/ Agent 任务</span></div>
+      <div class="card-tight"><span class="mono">req_&lt;8-hex&gt;</span> <span class="muted">/ 需求</span></div>
+    </div>
+
+    <h3 class="h3 mt-8 mb-3">Pydantic Body Schema 集中地</h3>
+    <div class="card">
+      <div class="kv">
+        <dt>集中位置</dt><dd><span class="mono">api/_common/body_schemas.py</span> (1403 行 · 192 个 BaseModel)</dd>
+        <dt>域覆盖</dt><dd>通用工具 / 众包 / 交付 / 质量 (IAA, Cohen Kappa, AQL) / 转移 / 搜索 (vector/fts5/hybrid) / 3D Canvas / ComfyUI / 分类 / 备份 / 调度 / 审核 / 需求 / 摄取 (CSV/Excel/JSON/RSS)</dd>
+        <dt>Capability schema</dt><dd>47 个能力各带 <span class="mono">inputs_schema</span> (JSON-Schema draft 2020-12) + <span class="mono">outputs_schema</span></dd>
+        <dt>关键约束示例</dt><dd><span class="mono">qc.aql.aql_level</span> ∈ {0.1, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5} (ISO 2859-1)<br>
+          <span class="mono">review.decide.decision</span> ∈ {approve, reject, revise}<br>
+          <span class="mono">dataset.export.format</span> ∈ {coco, yolo, llava, internvl, jsonl, parquet, webdataset}</dd>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ 9 阶段数据管线 -->
+  <section class="section" id="pipeline">
+    <h2 class="serif h2">③ 9 阶段数据管线</h2>
+    <p class="body mt-2">从项目立项到对外分享,数据流穿过 9 个核心阶段,每个阶段由一个独立引擎驱动,数据载体在 SQLAlchemy ORM + PackStore (SQLite) + 文件系统之间流转。</p>
+
+    <div class="pipeline mt-4">
+      <div class="pipe-step"><div class="num">1</div><div class="label">Project</div><div class="engine">project_engine</div></div>
+      <div class="pipe-step"><div class="num">2</div><div class="label">Requirement</div><div class="engine">requirement_engine</div></div>
+      <div class="pipe-step"><div class="num">3</div><div class="label">Dataset</div><div class="engine">dataset_manager</div></div>
+      <div class="pipe-step"><div class="num">4</div><div class="label">Pack</div><div class="engine">pack_engine</div></div>
+      <div class="pipe-step accent"><div class="num">5</div><div class="label">Annotation</div><div class="engine">workbench_engine</div></div>
+      <div class="pipe-step"><div class="num">6</div><div class="label">Review</div><div class="engine">workbench_engine</div></div>
+      <div class="pipe-step"><div class="num">7</div><div class="label">QC</div><div class="engine">internal_qc_engine</div></div>
+      <div class="pipe-step"><div class="num">8</div><div class="label">Acceptance</div><div class="engine">requester_acceptance</div></div>
+      <div class="pipe-step accent"><div class="num">9</div><div class="label">Delivery + Share</div><div class="engine">delivery + transfer</div></div>
+    </div>
+
+    <h3 class="h3 mt-6 mb-3">Mermaid 全链时序</h3>
+    <div class="diagram-bg">
+      <div class="mermaid">
+flowchart LR
+  P[Project<br/>project_engine] --> R[Requirement<br/>requirement_engine]
+  R --> D[Dataset<br/>dataset_manager]
+  D --> PA[Pack<br/>pack_engine]
+  PA --> A[Annotation<br/>workbench_engine]
+  A --> RV[Review<br/>workbench_engine]
+  RV --> Q[QC<br/>internal_qc_engine]
+  Q --> AC[Acceptance<br/>requester_acceptance]
+  AC --> DL[Delivery<br/>delivery_workflow]
+  DL --> SH[Share<br/>transfer_engine]
+  SH -.-> EXT[Consumer / 训练集群]
+
+  classDef stage fill:#ffffff,stroke:#2f6f5e,stroke-width:1.5px,color:#14171e
+  classDef ext fill:#f0ebe0,stroke:#c97b3f,stroke-width:1.5px,color:#14171e
+  class P,R,D,PA,A,RV,Q,AC,DL,SH stage
+  class EXT ext
+      </div>
+    </div>
+
+    <h3 class="h3 mt-6 mb-3">每阶段关键方法 + 数据载体</h3>
+    <table class="tbl">
+      <thead><tr><th>阶段</th><th>引擎</th><th>关键方法</th><th>数据载体</th></tr></thead>
+      <tbody>
+        <tr><td>1. Project</td><td class="mono">project_engine</td><td>create_project / add_member / transition_status / get_project_stats</td><td>ORM <span class="mono">projects</span> + <span class="mono">project_members</span> + <span class="mono">project_timeline_events</span></td></tr>
+        <tr><td>2. Requirement</td><td class="mono">requirement_engine</td><td>create_requirement / decompose_to_tasks / auto_assign / close_requirement</td><td>ORM <span class="mono">requirements</span> + <span class="mono">requirement_tasks</span> (深度剧 7 持久化)</td></tr>
+        <tr><td>3. Dataset</td><td class="mono">dataset_manager</td><td>create_version / link_pack / export (coco/yolo/llava/...)</td><td>ORM <span class="mono">datasets</span> + 文件 + OSS</td></tr>
+        <tr><td>4. Pack</td><td class="mono">pack_engine</td><td>create_data_pack / create_task_pack / transition / route_pack / link_to_dataset</td><td>PackStore (SQLite: <span class="mono">packed_assets</span> + <span class="mono">pack_assets</span>), 7 态状态机</td></tr>
+        <tr><td>5. Annotation</td><td class="mono">workbench_engine</td><td>enqueue_task / pull_next_task (5min 锁) / save_annotation / bulk_save / submit_task</td><td>内存 dict + 6 种几何 + 7 任务态 + 5 审核阶段</td></tr>
+        <tr><td>6. Review</td><td class="mono">workbench_engine (内嵌)</td><td>self_check / peer_review / final_review / history 版本</td><td><span class="mono">AnnotationRecord</span> + 5 阶段 (draft/self_check/peer_review/final_review/done)</td></tr>
+        <tr><td>7. QC</td><td class="mono">internal_qc_engine</td><td>full_check / sample_check / aql_sample (ISO 2859-1) / stratified_sample</td><td><span class="mono">QCRecord</span> + <span class="mono">QCIssue</span> (label/geometry/format/completeness 4 类)</td></tr>
+        <tr><td>8. Acceptance</td><td class="mono">requester_acceptance_engine</td><td>create / sample_for_acceptance / submit_acceptance / request_revision</td><td><span class="mono">AcceptanceRecord</span> (accept/reject/revise)</td></tr>
+        <tr><td>9. Delivery + Share</td><td class="mono">delivery_workflow + transfer_engine</td><td>finalize_and_share / compare_deliveries / create_share / access_share</td><td>状态机 7 态 + HMAC-SHA256 签名 + bcrypt + 限次限时下载</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ④ 8 大引擎 -->
+  <section class="section" id="engines">
+    <h2 class="serif h2">④ 8 大核心引擎</h2>
+    <p class="body mt-2">每个引擎维护自己的 dataclass + 旁路存储 (SQLite / ORM),对外暴露纯 Python API + FastAPI 路由。</p>
+
+    <div class="grid-2 mt-4">
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">ProjectEngine <span class="muted">(867 行)</span></div>
+        <div class="body">项目生命周期。状态机 <span class="mono">planning/active/paused/archived</span>。成员管理 + 时间线事件 + 跨子系统统计。</div>
+        <div class="kv mt-3">
+          <dt>create_project</dt><dd>建项目 (含 priority/tags/dates)</dd>
+          <dt>get_project_stats</dt><dd>真实统计 (需求 / 任务 / 数据集 / 交付) — 走 store 跨进程一致</dd>
+          <dt>_record_event</dt><dd>写 <span class="mono">project_timeline_events</span></dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">RequirementEngine <span class="muted">(1102 行)</span></div>
+        <div class="body">需求 + 任务分配。深度剧 7 升级到 <strong>write-through DB 持久化</strong>,跨重启一致。</div>
+        <div class="kv mt-3">
+          <dt>create_requirement</dt><dd>写内存 dict + DB row</dd>
+          <dt>auto_assign</dt><dd>4 策略: by_skill / by_workload / random / hybrid</dd>
+          <dt>decompose_to_tasks</dt><dd>需求拆任务</dd>
+          <dt>rehydrate</dt><dd>启动时从 DB 拉回 (Depth-7)</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">PackEngine <span class="muted">(722 行)</span></div>
+        <div class="body">数据包 + 任务包。7 态状态机,智能路由,数据集链接。</div>
+        <div class="kv mt-3">
+          <dt>create_data_pack / create_task_pack</dt><dd>两种 pack 类型</dd>
+          <dt>transition</dt><dd>7 态: created/ready/in_annotation/annotated/reviewed/qc_passed/delivered</dd>
+          <dt>route_pack</dt><dd>空→collection, 有数据→annotation</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">WorkbenchEngine <span class="muted">(734 行)</span></div>
+        <div class="body">标注工作台。6 几何 + 7 任务态 + 5 审核阶段。任务拉取带 5 分钟锁。</div>
+        <div class="kv mt-3">
+          <dt>pull_next_task</dt><dd>5min lock 防并发抢同一任务</dd>
+          <dt>save_annotation / bulk_save</dt><dd>单条 / 批量标注保存</dd>
+          <dt>_validate_geometry</dt><dd>rect ≥0, polygon ≥3 点, obb 需 theta</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">InternalQCEngine <span class="muted">(967 行)</span></div>
+        <div class="body">内部质检。4 模式 + 真实 OpenCV 注入点 + ISO 2859-1 AQL 表。</div>
+        <div class="kv mt-3">
+          <dt>full_check / sample_check</dt><dd>全量 / 比例抽样</dd>
+          <dt>aql_sample</dt><dd>ISO 2859-1 抽样表 (AQL 0.1/0.65/1.0/...)</dd>
+          <dt>stratified_sample</dt><dd>分层抽样</dd>
+          <dt>register_cv_detector</dt><dd>真实 OpenCV 检测器注入 (留扩展点)</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">RequesterAcceptanceEngine <span class="muted">(416 行)</span></div>
+        <div class="body">需求方验收。3 决定 + 抽样 + 修订请求。</div>
+        <div class="kv mt-3">
+          <dt>sample_for_acceptance</dt><dd>自动抽 N 条</dd>
+          <dt>submit_acceptance</dt><dd>accept / reject / revise</dd>
+          <dt>request_revision</dt><dd>返回 QC 引擎修订</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">DeliveryWorkflow <span class="muted">(513 行)</span></div>
+        <div class="body">交付工作流。状态机 7 态 + 自动收集 + 差分比对。</div>
+        <div class="kv mt-3">
+          <dt>finalize_and_share</dt><dd>主入口: 触发分享链接</dd>
+          <dt>compare_deliveries</dt><dd>两个交付物 diff</dd>
+          <dt>get_delivery_timeline</dt><dd>交付时间线</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:6px">TransferEngine <span class="muted">(521 行)</span></div>
+        <div class="body">分享 + 转移。单例 (HMAC-SHA256 + bcrypt)。</div>
+        <div class="kv mt-3">
+          <dt>create_share</dt><dd>生成分享链接 (限次/限时)</dd>
+          <dt>access_share</dt><dd>下载 (校验签名 + 密码)</dd>
+          <dt>revoke_share / cleanup_expired</dt><dd>撤销 + 清理</dd>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ 47 个能力 -->
+  <section class="section" id="capabilities">
+    <h2 class="serif h2">⑤ 47 个可复用能力</h2>
+    <p class="body mt-2">所有能力注册在 <span class="mono">capabilities_v2/registry</span>, 跨 17 个域;每个能力有 <span class="mono">inputs_schema</span> + <span class="mono">outputs_schema</span> (JSON-Schema draft 2020-12),可被工作流编排器复用。</p>
+
+    <div class="card-tight">
+      <div class="bench"><span class="bench-label">PROJECT</span><div class="bench-track"><div class="bench-fill" style="width:25%"></div></div><span class="bench-val">5</span></div>
+      <div class="bench"><span class="bench-label">REQUIREMENT</span><div class="bench-track"><div class="bench-fill" style="width:20%"></div></div><span class="bench-val">4</span></div>
+      <div class="bench"><span class="bench-label">DATASET</span><div class="bench-track"><div class="bench-fill" style="width:25%"></div></div><span class="bench-val">5</span></div>
+      <div class="bench"><span class="bench-label">PACK</span><div class="bench-track"><div class="bench-fill" style="width:25%"></div></div><span class="bench-val">5</span></div>
+      <div class="bench"><span class="bench-label">COLLECTION</span><div class="bench-track"><div class="bench-fill" style="width:15%"></div></div><span class="bench-val">3</span></div>
+      <div class="bench"><span class="bench-label">ANNOTATION</span><div class="bench-track"><div class="bench-fill" style="width:20%"></div></div><span class="bench-val">4</span></div>
+      <div class="bench"><span class="bench-label">REVIEW</span><div class="bench-track"><div class="bench-fill" style="width:15%"></div></div><span class="bench-val">3</span></div>
+      <div class="bench"><span class="bench-label">QC</span><div class="bench-track"><div class="bench-fill" style="width:15%"></div></div><span class="bench-val">3</span></div>
+      <div class="bench"><span class="bench-label">ACCEPTANCE</span><div class="bench-track"><div class="bench-fill" style="width:10%"></div></div><span class="bench-val">2</span></div>
+      <div class="bench"><span class="bench-label">DELIVERY</span><div class="bench-track"><div class="bench-fill" style="width:10%"></div></div><span class="bench-val">2</span></div>
+      <div class="bench"><span class="bench-label">SCORING</span><div class="bench-track"><div class="bench-fill acc" style="width:15%"></div></div><span class="bench-val">3</span></div>
+      <div class="bench"><span class="bench-label">TAGGING / CLEANING / CLASSIFICATION</span><div class="bench-track"><div class="bench-fill" style="width:15%"></div></div><span class="bench-val">3</span></div>
+      <div class="bench"><span class="bench-label">SEARCH</span><div class="bench-track"><div class="bench-fill" style="width:5%"></div></div><span class="bench-val">1</span></div>
+      <div class="bench"><span class="bench-label">EVALUATION</span><div class="bench-track"><div class="bench-fill" style="width:5%"></div></div><span class="bench-val">1</span></div>
+      <div class="bench"><span class="bench-label">EXPORT (coco/llava/internvl)</span><div class="bench-track"><div class="bench-fill" style="width:15%"></div></div><span class="bench-val">3</span></div>
+    </div>
+
+    <h3 class="h3 mt-6 mb-3">代表性能力调用流程 (9 阶段 × 47 能力)</h3>
+    <div class="card">
+      <div class="body">
+        <span class="chip chip-pri">project.create</span> →
+        <span class="chip chip-pri">requirement.create</span> →
+        <span class="chip chip-pri">dataset.create</span> →
+        <span class="chip chip-pri">pack.create_data</span> →
+        <span class="chip chip-acc">pack.route</span> →
+        <span class="chip chip-acc">annotation.pull / save / submit</span> →
+        <span class="chip chip-pri">review.start / decide</span> →
+        <span class="chip chip-pri">qc.full / qc.aql</span> →
+        <span class="chip chip-pri">acceptance.create / submit</span> →
+        <span class="chip chip-acc">delivery.finalize</span> →
+        <span class="chip chip-acc">delivery.share</span>
+      </div>
+      <p class="muted mt-3" style="font-size:12px">绿色 (project/req/...) 走真引擎直调,橙色 (annotation/delivery) 走统一调用接口。所有能力注册在 <span class="mono">capabilities_v2/registry</span>, 都有 <span class="mono">invoke(inputs)</span> 入口 + <span class="mono">emits_domain_event=True</span> 时触发数据流追踪器 <span class="mono">DataFlowTracker.record_event</span>。</p>
+    </div>
+  </section>
+
+  <!-- ⑥ RAG / 搜索 / Provider 栈 -->
+  <section class="section" id="stack">
+    <h2 class="serif h2">⑥ RAG / 搜索 / Provider 栈</h2>
+    <p class="body mt-2">3 层智能栈: 向量搜索 (TF-IDF + BM25) → 跨模态 RAG (1024-d 嵌入) → AI Provider (7 厂商 + 多模态生成)。</p>
+
+    <div class="diagram-bg">
+      <div class="mermaid">
+flowchart TB
+  subgraph AI["AI Provider 层"]
+    P1[OpenAI]
+    P2[Claude / DeepSeek / Qwen / Doubao]
+    P3[ComfyUI / Mock]
+  end
+  subgraph RAG["跨模态 RAG 层"]
+    MA[MultimodalAgent<br/>5 tools]
+    RA[MultimodalRAG<br/>VectorStore]
+    EM[MultiModalEmbedder<br/>1024-d]
+  end
+  subgraph IDX["向量索引层"]
+    SE[SemanticSearchEngine]
+    TI[TF-IDF cosine<br/>256-d]
+    BM[BM25<br/>k1=1.5 b=0.75]
+  end
+  subgraph DATA["数据层"]
+    EMB[Embedding 表<br/>1024-d pgvector]
+    SEMA[semantic_assets<br/>+ semantic_index_log]
+  end
+  AI --> RAG
+  RAG --> IDX
+  RAG --> EMB
+  IDX --> SEMA
+
+  classDef ai fill:#f0ebe0,stroke:#c97b3f,color:#14171e
+  classDef rag fill:#ffffff,stroke:#2f6f5e,color:#14171e
+  classDef idx fill:#ffffff,stroke:#2f6f5e,color:#14171e
+  classDef data fill:#f0ebe0,stroke:#7c7a72,color:#14171e
+  class P1,P2,P3 ai
+  class MA,RA,EM rag
+  class SE,TI,BM idx
+  class EMB,SEMA data
+      </div>
+    </div>
+
+    <h3 class="h3 mt-6 mb-3">AI Provider 注册表 (7 内置)</h3>
+    <div class="grid-3">
+      <div class="card-tight"><b>openai</b> <span class="muted">family=OPENAI</span></div>
+      <div class="card-tight"><b>claude</b> <span class="muted">family=CLAUDE</span></div>
+      <div class="card-tight"><b>deepseek</b> <span class="muted">family=DEEPSEEK</span></div>
+      <div class="card-tight"><b>qwen</b> <span class="muted">family=QWEN</span></div>
+      <div class="card-tight"><b>doubao</b> <span class="muted">family=DOUBAO</span></div>
+      <div class="card-tight"><b>comfyui</b> <span class="muted">family=COMFYUI</span></div>
+      <div class="card-tight"><b>mock</b> <span class="muted">family=MOCK</span></div>
+    </div>
+    <p class="muted mt-3" style="font-size:12px">每个 Provider 含: api_base · price_per_1k_input/output · quota_per_minute · latency_p50/p99_ms · trust_level (verified/official/internal)。<span class="mono">record_call</span> 自动写 <span class="mono">provider_calls</span> 表 (cost / latency / status)。</p>
+
+    <h3 class="h3 mt-6 mb-3">多模态生成 (multimodal/generation.py)</h3>
+    <div class="card">
+      <div class="kv">
+        <dt>注册 provider</dt><dd>openai_compatible · volcengine · jimeng_cli · comfyui (4 个 P2-3)</dd>
+        <dt>stub 兜底</dt><dd>任意 provider 不可用时降级到 <span class="mono">_stub_candidates</span> (image=1024×1024 PNG / video=4s MP4 / audio=10s WAV)</dd>
+        <dt>嵌入维度</dt><dd>UNIFIED_DIM=1024 (MultimodalDocument 跨模态对齐空间)</dd>
+        <dt>5 个 encoder</dt><dd>text / image (clip) / audio / video / document</dd>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑦ 持久化层 -->
+  <section class="section" id="storage">
+    <h2 class="serif h2">⑦ 持久化层 & 调度</h2>
+    <p class="body mt-2">5 层存储: ORM (14 表) · PackStore (SQLite) · SemanticAssets (SQLite) · Scheduler (SQLiteJobStore) · AgentTask (JSONB)。2 套调度: APScheduler cron + 任务队列重试。</p>
+
+    <div class="grid-2 mt-4">
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:8px">SchedulerEngine (APScheduler)</div>
+        <div class="kv">
+          <dt>底层</dt><dd>AsyncIOScheduler + SQLAlchemyJobStore + ThreadPoolExecutor(10)</dd>
+          <dt>触发器</dt><dd>CronTrigger + IntervalTrigger</dd>
+          <dt>内置 4 cron</dt><dd>data_cleanup · refresh_vector_index · update_aesthetic_ranking · health_check</dd>
+          <dt>持久</dt><dd>data/scheduler.db + data/scheduler_history.db + data/scheduler_jobs.json</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:8px">TaskQueue (动态加载 + 重试)</div>
+        <div class="kv">
+          <dt>底层</dt><dd>APScheduler AsyncIOScheduler + DateTrigger</dd>
+          <dt>动态加载</dt><dd>importlib 加载 func_path</dd>
+          <dt>重试策略</dt><dd>max_retries=3, retry_delay=60s, max_instances=3</dd>
+          <dt>Celery 预留</dt><dd>AgentTask.celery_task_id 字段 (未启用)</dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:8px">数据导出 (business/data_exporter.py)</div>
+        <div class="kv">
+          <dt>JSON</dt><dd>envelope = {schema_version: 1.0.0, exported_at, count, meta, records}, pretty-print</dd>
+          <dt>CSV</dt><dd>UTF-8 BOM + RFC4180 quoting, 字段顺序 = first seen</dd>
+          <dt>统一入口</dt><dd><span class="mono">export_data(records, fmt, meta, columns)</span></dd>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k" style="font-weight:600;margin-bottom:8px">跨 DB 适配 (db/postgres.py)</div>
+        <div class="kv">
+          <dt>URL 探测</dt><dd><span class="mono">IMDF_P2_DB_URL</span>: PG → pgvector + JSONB, SQLite → JSON</dd>
+          <dt>get_vector_column(1024)</dt><dd>PG = vector(1024), 其他 = JSON</dd>
+          <dt>get_jsonb_column()</dt><dd>PG = JSONB, 其他 = JSON</dd>
+          <dt>install_vector_extension</dt><dd>PG 启动时自动 CREATE EXTENSION IF NOT EXISTS vector</dd>
+          <dt>迁移</dt><dd>alembic/versions/0001_initial.py ~ 0005_packs.py</dd>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-6">
+      <div class="k" style="font-weight:600;margin-bottom:8px">部署 invariant (生产)</div>
+      <div class="mono" style="background:#f0ebe0;padding:12px;border-radius:8px;font-size:13px;line-height:1.7">
+        export IMDF_REQUIRE_REAL_ENGINES=1     # 阻断 mock fallback<br/>
+        export IMDF_P2_DB_URL="postgresql+psycopg2://user:pass@host:5432/imdf"<br/>
+        export AUDIT_CHAIN_SECRET="..."         # audit chain HMAC 密钥<br/>
+        export JWT_SECRET="..."                 # JWT 签名密钥<br/>
+        <span style="color:var(--muted)"># 启动</span><br/>
+        python -m uvicorn api.canvas_web:app --host 0.0.0.0 --port 8000<br/>
+        <span style="color:var(--muted)"># 迁移</span><br/>
+        alembic upgrade head
+      </div>
+    </div>
+  </section>
+
+  <footer style="margin-top:64px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center">
+    VDP-2026 智影 (ZhiYing) · 数据生产 / 数据结构 / 数据管线全景 · 2026-06-30
+  </footer>
+
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { curve: 'basis', useMaxWidth: true }, themeVariables: { fontFamily: 'Outfit, sans-serif', fontSize: '13px' } });
+</script>
+</body>
+</html>

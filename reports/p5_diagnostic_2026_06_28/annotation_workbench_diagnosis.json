@@ -1,0 +1,397 @@
+{
+  "investigation_target": "D:\\Hermes\\生产平台\\nanobot-factory — 标注工作台 (Annotation Workbench) 模块诊断",
+  "investigated_files": [
+    "frontend-v2/src/views/Annotation.vue (307 lines, 11.9KB — 简化版任务看板)",
+    "frontend-v2/src/views/AnnotationManagement.vue (162 lines, 6.8KB — 简化版 CRUD)",
+    "frontend-v2/src/api/annotation.ts (36 lines)",
+    "backend/imdf/engines/annotation_quality.py (790 lines, 核心)",
+    "backend/imdf/engines/agreement_engine.py (146 lines)",
+    "backend/imdf/engines/aesthetic_engine.py (563 lines)",
+    "backend/imdf/engines/assertion_engine.py (320 lines)",
+    "backend/services/annotation_service/{main.py, routes.py, operators/} (FastAPI 8003)",
+    "backend/annotation.py (158 lines, 旧版 AnnotationLabelStudio)",
+    "backend/annotation_system.py (851 lines, 旧版 AnnotationManager)",
+    "backend/imdf/api/annotation_routes.py (66 lines, /api/annotations/save 真实落库)",
+    "backend/imdf/api/annotation_history_routes.py + prelabel_router.py"
+  ],
+
+  "current_capabilities": {
+    "Annotation.vue_visual_surface": [
+      "顶部 NCard 头: 标题 + 副标题 + 三个 NTag (待办/算子数/刷新按钮)",
+      "4 列 KPI 瓦片 (总数/待办/算子/页码) — 全部 computed 自当前页",
+      "SearchBar (关键字 + 状态下拉过滤 pending/approved/rejected/completed/closed)",
+      "DataTable 任务表, 列: id/name/type/status/assignee/asset_ids/created_at/actions",
+      "唯一行动列: <a>点击查看 — 调用 GET /api/v1/tasks/{id}",
+      "底部双栏: 左侧 NList 算子列表 (读 /api/v1/operators 22 条 stub); 右侧 NDescriptions 任务详情",
+      "权限: 整页无 PermissionGuard, 任何登录用户可访问",
+      "国际化: 全 i18n key 化 (annotation.* 命名空间), 暗色主题 CSS 变量"
+    ],
+    "AnnotationManagement.vue_visual_surface": [
+      "PermissionGuard 控制创建按钮 (admin/annotator)",
+      "SearchBar + DataTable 列表 (列: id/asset_id/label/annotator/status/created_at/actions)",
+      "ModalForm 新建/编辑弹窗, 4 字段: asset_id / label / annotator / status (三态枚举)",
+      "Action 列: 编辑 (admin/annotator) + 删除 (admin only, 走 window.confirm)",
+      "调 listAnnotations / createAnnotation / updateAnnotation / deleteAnnotation"
+    ],
+    "frontend_api_annotation_ts": {
+      "endpoint_BASE": "/api/v1/annotations",
+      "exports": ["listAnnotations (Page)", "getAnnotation", "createAnnotation", "updateAnnotation", "deleteAnnotation"],
+      "data_model": "{ id, asset_id, label, annotator, status: 'pending'|'approved'|'rejected', created_at }",
+      "missing_from_ts": [
+        "无 task 端点 (Annotation.vue 直接 fetch /api/v1/tasks/{id})",
+        "无 operators schema 接口 (无 list_operators() 封装)",
+        "无 history 端点 (无 getAnnotationHistory)",
+        "无 review/submit/approve 状态机调用",
+        "无 IAA/Kappa 调用",
+        "无 prelabel 调用"
+      ]
+    },
+    "annotation_quality_py_implemented": {
+      "IAAEngine (类内 4 个静态方法 + 报告)": [
+        "cohen_kappa(rater1, rater2) — sklearn.cohen_kappa_score 包装",
+        "fleiss_kappa(ratings, n_categories) — 经典 np 矩阵实现",
+        "krippendorff_alpha(data, level='nominal'|'interval') — 通用一致性, 支持缺失值 (O(n²m²) 全配对, 大数据会慢)",
+        "iou_matrix(annotators) — 标注者两两 IoU 矩阵 (只支持 1D 配对数组)",
+        "agreement_report(annotations) — 顶层报告, 聚合 Cohen/Fleiss + quality 评级 (poor→excellent)"
+      ],
+      "GoldStandardValidator": [
+        "add_gold_item(item, ground_truth)",
+        "validate_annotator(annotations) → annotator_accuracy / passed (>=0.85)",
+        "_compute_accuracy: 优先 BBox IoU, 退化到 label 字符串相等"
+      ],
+      "LLMJudgeEngine": [
+        "judge_single_pe(pe_text) — 6 维度 prompt (clarity/completeness/specificity/examples_quality/format_compliance/robustness), 调 model_gateway",
+        "ab_test_pe(pe_a, pe_b, test_cases) — 当前实现有 bug: 两次都评 pe_a"
+      ],
+      "AnnotationPipeline (五阶段)": [
+        "pre_annotate / review / adjudicate / audit / feedback_loop — 全部为占位 stub, 返回硬编码值",
+        "submit_for_review → 多级流转 initial/secondary/final, 优先级 1/2/3",
+        "process_review(reviewer_id, decision ∈ approve/reject/return)",
+        "get_review_queue_stats — by_stage / by_priority / backlog_pressure",
+        "reviewer_agreement — Cohen 两两 (含 _simple_agreement fallback)",
+        "efficiency_report — reviews_per_hour / approval_rate / industry_benchmark",
+        "llm_flag_suspicious — LLM 检查 bbox/label/格式/置信度, 5 维度 prompt"
+      ],
+      "INDUSTRY_SCHEMAS (硬编码 5 个)": [
+        "medical_imaging (DICOM-SR / SNOMED CT, findings + BIRADS)",
+        "autonomous_driving (nuScenes 风格, track_id + bbox_3d + velocity + occlusion)",
+        "remote_sensing (STAC/GeoJSON, bands + crs + area_sqm)",
+        "industrial_defect (PCB/纺织/金属 缺陷分级)",
+        "document_ocr (PAGE XML / hOCR, reading_order + text_lines)"
+      ],
+      "单例工厂": "get_iaa() / get_gold() / get_pipeline()"
+    },
+    "agreement_engine_py": {
+      "AgreementEngine": [
+        "kappa(annotations) — Cohen 加权平均",
+        "iou(box1, box2) — 矩形 IoU",
+        "fleiss_kappa(ratings) — 与 quality 引擎实现交叉, 略有差异",
+        "overall_score(scores, weights) — 加权聚合"
+      ],
+      "未挂载到 routes": "engines/agreement_engine.py 没有路由层 import, 当前是孤儿模块"
+    },
+    "aesthetic_engine_py_relevance": {
+      "用途": "辅助 PE/标注的审美/图像质量评分, 不是标注工作台主路径",
+      "EnsembleAestheticEngine": [
+        "三模型 ensemble: Q-Align / LAION-Aesthetic-V2.5 / MUSIQ (Pillow 6 维兜底)",
+        "async score_image / score_batch / score_directory",
+        "Elo 排行榜: elo_register / elo_compare / elo_ranking / elo_stats"
+      ],
+      "缺失钩子": "无 /api/v1/aesthetic/* 路由接入标注工作台"
+    },
+    "assertion_engine_py_relevance": {
+      "用途": "数据质量断言 (Great-Expectations 风格), 适用于导出后批量校验",
+      "三套类": "ColumnExpectation / TableExpectation / RowExpectation + ExpectationSuite + Validator",
+      "未挂载": "无 HTTP 路由, 引擎层是孤儿"
+    },
+    "annotation_service_py_actual_routes": {
+      "GET /healthz": "liveness",
+      "GET  /api/v1/annotations": "list (task_id/limit 过滤, SQLite 落库)",
+      "POST /api/v1/annotations": "create (geometry/confidence/metadata JSON)",
+      "GET  /api/v1/annotations/{id}": "未实现 (annotation.ts 调了但 routes 没注册)",
+      "GET  /api/v1/annotations/history": "最近 N 条",
+      "GET  /api/v1/tasks": "list (status_filter, limit)",
+      "POST /api/v1/tasks": "create",
+      "GET  /api/v1/tasks/{id}": "detail",
+      "GET  /api/v1/tasks/{id}/annotations": "子查询",
+      "GET  /api/v1/operators": "22 条硬编码 stub (geometry/categorical/text/temporal/audio/3d/preference 七大类)",
+      "遗留兼容": "imdf/api/annotation_routes.py (save/history), prelabel_router, annotation_history_routes"
+    },
+    "operators_lib_implemented": {
+      "image/": ["bbox, polygon, polyline, keypoint, mask, classification, ocr, qa, ..."],
+      "text/": ["ner, sentiment, qa, ..."],
+      "three_d/": ["point cloud, cuboid, pose"],
+      "video/": ["tracking (IoU 贪婪匹配), temporal_seg (合并同标签), action_recognition"],
+      "execution": "通过 /api/v1/annotate/{op_id} POST, 走 Celery 异步 (celery_app.py)"
+    },
+    "annotation_py_legacy_AnnotationLabelStudio": [
+      "create_project(name, categories)",
+      "add_image / set_classification / add_bounding_box",
+      "export_coco (只支持分类+bbox, 缺 segmentation/keypoints 写入)",
+      "export_json"
+    ],
+    "annotation_system_py_legacy_AnnotationManager": [
+      "完整 12 种 AnnotationType 枚举 (bbox/polygon/polyline/point/keypoints/classification/text/mask/cuboid_3d/ellipse/line/arrow/highlight)",
+      "6 种 AnnotationStatus (draft/in_progress/completed/reviewed/approved/rejected)",
+      "ImageAnnotation / VideoAnnotation / FrameAnnotation 数据类",
+      "AnnotationObject 含 occluded/truncated/difficult 标志位",
+      "导出: export_coco_format (含 segmentation/keypoints) / export_voc_format (XML) / export_yolo_format (归一化)",
+      "AnnotationProject: labels/label_categories/keypoint_skeleton/keypoint_names",
+      "get_statistics: by_type/by_label 全局聚合",
+      "未被 routes 引用: 这是 lib 形态, 没有任何 FastAPI 端点包装"
+    ]
+  },
+
+  "missing_capabilities_top10": {
+    "1_no_visual_canvas": {
+      "gap": "完全没有 canvas 标注画布 — 无 rect/polygon/mask/obb/cuboid 绘制工具",
+      "world_benchmark": "Labelbox/Scale/Encord/CVAT/Label Studio 全部基于 Konva/Fabric/OpenSeadragon/Three.js 自带 2D/3D 画布",
+      "current_state": "Annotation.vue 是表格页, 详情只显示 NDescriptions 字段, 不能点开图片做标注"
+    },
+    "2_no_label_taxonomy_management": {
+      "gap": "无 Label 类/属性模板编辑器, 无 label set version 控制, 无嵌套层级标签",
+      "world_benchmark": "Labelbox 允许 ontology 版本化 + nested classification, Encord 有 LabelSchemaEditor",
+      "current_state": "label 只是字符串字段, AnnotationManagement 弹窗 NInput 文本框"
+    },
+    "3_no_smart_assist_SAM_or_prelabel": {
+      "gap": "annotation_quality 有 pre_annotate stub 但未实接, routes.py 无 prelabel 端点接入 SAM/Grounding-DINO/CLIP",
+      "world_benchmark": "Encord SAM/Segment-Anything, Roboflow Smart Polygon, Scale AI prelabel",
+      "current_state": "imdf/api/prelabel_router.py 是空引用, 客户端 Annotation.vue 无 SAM 入口"
+    },
+    "4_no_review_workflow_UI": {
+      "gap": "AnnotationPipeline 有完整状态机 (initial→secondary→final), 但前端无 review queue 页面, 无 approve/reject/changes_requested 按钮",
+      "world_benchmark": "Labelbox review queue + reviewer_assignment, Scale AI HITL 多级审核",
+      "current_state": "前端 status 只展示 pending/approved/rejected 三态颜色徽章, 没有提交审核的操作"
+    },
+    "5_no_IAA_dashboard_visualization": {
+      "gap": "IAAEngine 算出 Cohen/Fleiss/Krippendorff, 但前端没有 heatmap 矩阵视图, 没有按标注者维度的混淆矩阵图",
+      "world_benchmark": "Encord / Scale 提供 reviewer agreement heatmap + drift detection",
+      "current_state": "KPI 瓦片只显示总数和页码, 完全不暴露 IAA 指标"
+    },
+    "6_no_video_temporal_annotation": {
+      "gap": "annotation_system.VideoAnnotation 数据类齐全 (frame_annotations + interpolation 缺失), 但前端无视频播放器/帧导航/插值",
+      "world_benchmark": "CVAT 视频 timeline + track interpolation, V7 Darwin 视频流, Scale video 工具",
+      "current_state": "operators/video/tracking.py 有 IoU 匹配算法, 但无 UI 触发"
+    },
+    "7_no_3d_annotation": {
+      "gap": "无点云 viewer, 无 LiDAR 投影, 无 sensor fusion, 三个 3d 算子是 stub",
+      "world_benchmark": "Segments.ai / Scale Nucleus 3D / V7 Darwin 3D / Roboflow 3D",
+      "current_state": "three_d/operators 是占位文件"
+    },
+    "8_no_real_time_collaboration": {
+      "gap": "无 WebSocket/Yjs/Liveblocks, 无 presence 光标, 无 comment thread",
+      "world_benchmark": "Labelbox Realtime, Encord Catalyst, Roboflow multiplayer",
+      "current_state": "routes.py 无 ws endpoint, 前端无 useWebSocket 钩子"
+    },
+    "9_no_import_export_format_adapters": {
+      "gap": "annotation_system.export_coco/voc/yolo 函数齐全, 但 routes.py 没有 /export 端点, 前端无导入按钮",
+      "world_benchmark": "Labelbox JSON / CVAT XML / YOLO TXT / COCO / LabelMe / Pascal VOC / JSONL",
+      "current_state": "导入: 零; 导出: 零 (代码有, API 没有)"
+    },
+    "10_no_audit_trail_or_version_history": {
+      "gap": "无 annotation 历史 diff, 无 reviewer audit log 视图, 无 undo/redo 后端",
+      "world_benchmark": "Labelbox Activity Log, Encord Annotation Diff, Scale AI change history",
+      "current_state": "annotation_routes.py /api/annotations/history 只是按 created_at 倒序拉 50 条, 没有 diff/版本概念"
+    }
+  },
+
+  "frontend_simplified_segments": [
+    {
+      "snippet": "Annotation.vue L99-119 — 任务详情卡",
+      "issue": "NDescriptions 静态展示字段, 没有点击行展开, 没有跳到标注画布的入口, 没有打开 asset_id 对应图片的逻辑",
+      "fix_hint": "点击 task id 应该路由到 /annotation/:taskId/canvas 或打开 Drawer + canvas 组件"
+    },
+    {
+      "snippet": "Annotation.vue L38-72 — SearchBar + DataTable 区域",
+      "issue": "statusFilter 有值时根本不传 query (L242-245 只传 page/page_size/keyword), 下了拉等于没下",
+      "fix_hint": "listAnnotations 调用需把 statusFilter.value 一并传入; backend routes.py 已经有 status_filter 但前端没用"
+    },
+    {
+      "snippet": "Annotation.vue L256-265 — loadOperators 兜底",
+      "issue": "硬编码 fetch('/api/v1/operators'), 失败静默 return [], 没有走 api 封装, 没有 TS 类型守卫",
+      "fix_hint": "新建 api/operator.ts 封装 listOperators() 返回 OperatorItem[] 类型"
+    },
+    {
+      "snippet": "Annotation.vue L270-278 — selectTask 拉详情",
+      "issue": "先 set selectedTask = row 再异步覆盖, 中间会闪一帧行内数据; res.ok 之外 404/500 静默吞掉",
+      "fix_hint": "应先 detailLoading 再 await, 失败用 message.error 提示"
+    },
+    {
+      "snippet": "AnnotationManagement.vue L41-54 — ModalForm 表单",
+      "issue": "4 个 NFormItem 全部 label='common.detail' (同一个 i18n key), 用户看到的标签全是 '详情' 重复四遍",
+      "fix_hint": "应分别为 asset_idLabel/labelField/annotatorField/statusField, 国际化 key 也分开"
+    }
+  ],
+
+  "backend_endpoints_needed": {
+    "missing_http_routes": [
+      {
+        "method": "POST",
+        "path": "/api/v1/annotations/{id}/submit",
+        "purpose": "把 draft 状态提交到 review 队列 (initial stage), 触发 AnnotationPipeline.submit_for_review"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/annotations/{id}/review",
+        "purpose": "审核员 approve/reject/return — 调 process_review, 写 review_history"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/annotations/review-queue",
+        "purpose": "返回当前 reviewer 的待办队列 (by_stage, by_priority)"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/iaa/report",
+        "purpose": "聚合报告: Cohen/Fleiss/Krippendorff + quality 评级, 返回给前端 heatmap"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/iaa/heatmap",
+        "purpose": "N×N 标注者两两一致性矩阵 (调 IAAEngine.iou_matrix + cohen_kappa 两两)"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/tasks/{id}/assign",
+        "purpose": "任务分配/转交, 支持 assignee 字段更新 + audit 记录"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/tasks/{id}/lock",
+        "purpose": "Pessimistic/optimistic lock — 返回 lock holder, TTL 120s"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/tasks/{id}/lock/release",
+        "purpose": "释放锁 (annotation save 后自动释放)"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/prelabel/sam",
+        "purpose": "调 SAM 引擎对 asset_id 做 prelabel, 返回 polygons/masks + confidence"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/prelabel/grounding-dino",
+        "purpose": "文本 prompt → bbox 自动标注"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/labels/ontology",
+        "purpose": "返回 taxonomy tree (层级标签 + attributes + color)"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/labels/ontology",
+        "purpose": "新建 label set, 写入 version 号 (label set version control)"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/assets/{id}/tile/{z}/{x}/{y}",
+        "purpose": "DZI/IIIF 瓦片, 支持超大图 (CVAT/Roboflow/OpenSeadragon 模式)"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/import/coco",
+        "purpose": "COCO JSON 导入到 task"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/import/yolo",
+        "purpose": "YOLO txt 批量导入"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/export/{task_id}/coco",
+        "purpose": "导出 COCO JSON, 调 annotation_system.export_coco_format"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/export/{task_id}/voc",
+        "purpose": "Pascal VOC XML 批量导出 (zip)"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/export/{task_id}/yolo",
+        "purpose": "YOLO 归一化坐标 + classes.txt"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/audit/{task_id}",
+        "purpose": "审计 trail: who changed what when, 调 AnnotationPipeline._review_history"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/annotators/{id}/stats",
+        "purpose": "per-annotator 速度/质量/吞吐量, 调 efficiency_report"
+      },
+      {
+        "method": "WS",
+        "path": "/api/v1/ws/tasks/{id}",
+        "purpose": "WebSocket 协同: 广播 annotation create/update/delete, presence 列表"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/schemas/industry",
+        "purpose": "暴露 INDUSTRY_SCHEMAS 给前端 schema builder (medical/auto/RS/defect/ocr)"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/annotation/{id}/diff/{version}",
+        "purpose": "历史版本对比, 前端做并排 diff viewer"
+      }
+    ],
+    "missing_engines_integration": [
+      "IAAEngine / GoldStandardValidator / AnnotationPipeline 没有 router 注册, 是 engine-lib 形态",
+      "annotation_system.AnnotationManager 完整实现 (851 行) 完全没被 routes.py 引用, 数据落库走的是新写的简易 SQLite",
+      "annotation.py AnnotationLabelStudio (158 行) 旧版 export_coco, 跟 annotation_system.export_coco_format 实现重复且功能更弱"
+    ],
+    "missing_data_model_fields": {
+      "tasks 表": "缺 priority/due_date/created_by/reviewer_id/label_set_version/locked_by/locked_at/quality_score",
+      "annotations 表": "缺 geometry_type 枚举 (rect/polygon/mask/obb/cuboid/keypoint), 缺 occluded/truncated/difficult, 缺 review_stage, 缺 parent_annotation_id (层级/嵌套)"
+    }
+  },
+
+  "recommendation_summary": {
+    "diagnosis": "当前标注工作台是 '骨架期' 状态: 后端 engines (annotation_quality/agreement/assertion/aesthetic) 写得很深, 实现了 Cohen/Fleiss/Krippendorff、五级审核、LLM 审核、PE 评分、5 套行业 schema 等 '商用级' 能力; annotation_system.py 也写出了 12 种标注类型 + COCO/VOC/YOLO 导出 + 视频/帧标注数据结构。然而 routes.py 是一份 335 行的 '最小可用' SQLite CRUD, 把 engines 和 lib 完全旁路, 暴露给前端的仅 8 个端点; 前端 Annotation.vue/AnnotationManagement.vue 都是 Naive UI 表格 + Modal, 没有任何 canvas 画布、prelabel、review queue、IAA 视图、视频帧导航、瓦片、协同。两端严重错位: 'engine 满血, surface 残血'。",
+    "P0_must_fix_for_world_class": [
+      "挂载 annotation_system.AnnotationManager 到 routes: 12 种标注类型 + 完整 COCO/VOC/YOLO 导出 + occluded/truncated/difficult 元数据全部丢失, 是最大浪费",
+      "新增 canvas 标注组件 (Konva 或 OpenSeadragon + 自绘 polygon/mask/obb), 替代 NDescriptions 详情卡",
+      "把 IAAEngine / AnnotationPipeline 暴露为 HTTP 端点, 并在 Annotation.vue 顶部加 IAA 卡片 (Cohen/Fleiss/quality 评级)",
+      "实现 review queue 页面: 调用 /api/v1/annotations/review-queue, 展示 initial/secondary/final 三级, 接 approve/reject/return 操作",
+      "挂载 SAM / Grounding-DINO / LLM prelabel: 调 imdf/api/prelabel_router.py + 新建前端按钮, 解决 90% 标注效率问题"
+    ],
+    "P1_competitive_features": [
+      "WebSocket 协同 + Yjs CRDT (annotation 实时多人编辑)",
+      "DZI/IIIF 瓦片流 (前端用 OpenSeadragon, 后端 /api/v1/assets/{id}/tile/{z}/{x}/{y})",
+      "label ontology 版本化 + 嵌套 taxonomy (label set version, parent_label_id)",
+      "audit trail 时间线 (who/when/what 改了哪个 annotation 的哪个字段)",
+      "per-annotator 效率 dashboard: reviews_per_hour / approval_rate / quality_score"
+    ],
+    "P2_specialized_modalities": [
+      "视频帧标注: annotation_system.VideoAnnotation 已经写好, 需前端 video player + 帧步进 + 插值算法",
+      "3D 点云: three_d/operators 需实接, 引入 potree 或 three.js 点云 viewer",
+      "Elo 排行榜集成: aesthetic_engine 已经有 elo_compare, 暴露给 'preference/ranking' 任务类型"
+    ],
+    "frontend_quick_wins": [
+      "修 statusFilter 失效 (L242-245 加 status 参数)",
+      "修 4 个 NFormItem 全是 'common.detail' 的 i18n bug",
+      "selectTask 失败时弹 message.error 而不是静默",
+      "把 fetch('/api/v1/operators') 包成 api/operator.ts 类型化方法",
+      "Task detail 卡片加 '打开标注' 按钮路由到 /annotation/:taskId/canvas"
+    ],
+    "data_model_migration": [
+      "废弃 backend/annotation.py 的 AnnotationLabelStudio (158 行, 功能被子集覆盖)",
+      "把 annotation_system.AnnotationManager 接到 routes.py, 替代当前 SQLite 直接 query 模式",
+      "tasks / annotations 表 schema 升级: 加 priority/lock/quality_score/geometry_type/review_stage 字段",
+      "INDUSTRY_SCHEMAS 通过 /api/v1/schemas/industry 暴露, 让前端 schema builder 复用"
+    ],
+    "competitive_position": "若 P0 五项一个月内落地 + canvas 组件, 可对标 Labelbox 60%/Encord 50% 的核心体验; 当前 0 画布 + 0 视频 + 0 3D + 0 协同的状态, 与 CVAT/Label Studio 至少有 18 个月差距。引擎层 (annotation_quality.py) 已是 Top 1% 工程水平, 缺的是把引擎能力 surface 化的最后一公里。",
+    "estimated_effort": {
+      "P0_5_items": "约 6-8 周 (1 个全栈 + 1 个 CV/canvas 工程师)",
+      "P1_5_items": "约 8-10 周",
+      "P2_3_items": "约 6-8 周 (需要视频/3D 专项)",
+      "总计 world-class 对齐": "20-26 周 / 5-6 人"
+    }
+  }
+}

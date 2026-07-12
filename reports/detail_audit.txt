@@ -1,0 +1,40 @@
+﻿=== STORAGE channels ===
+  alioss                    class=AliossChannel            
+    entry=search, instantiated=-
+    async_call_ok=-, items=-
+    P2 no_robots_in_source           : no robots.txt mention in source
+    P2 no_copyright                  : no license/copyright field
+
+  azure                     class=AzureChannel             
+    entry=search, instantiated=-
+    async_call_ok=-, items=-
+    P2 no_robots_in_source           : no robots.txt mention in source
+    P2 no_copyright                  : no license/copyright field
+
+  gcs                       class=GcsChannel               
+    entry=search, instantiated=-
+    async_call_ok=-, items=-
+    P2 no_robots_in_source           : no robots.txt mention in source
+    P2 no_copyright                  : no license/copyright field
+
+  s3                        class=S3Channel                
+    entry=search, instantiated=-
+    async_call_ok=-, items=-
+    P2 no_robots_in_source           : no robots.txt mention in source
+    P2 no_copyright                  : no license/copyright field
+
+  tencentcos                class=TencentCosChannel        
+    entry=search, instantiated=-
+    async_call_ok=-, items=-
+    P2 no_robots_in_source           : no robots.txt mention in source
+    P2 no_copyright                  : no license/copyright field
+
+=== REAL P0 issues (all) ===
+
+=== REAL P1 issues summary ===
+
+=== REAL P2 issues summary ===
+  no_robots_in_source            43
+  no_copyright                   29
+
+=== Detailed P1 issues by channel ===

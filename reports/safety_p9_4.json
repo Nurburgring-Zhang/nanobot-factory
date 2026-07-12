@@ -1,0 +1,90 @@
+{
+    "report_meta": {
+        "scan_target": "files",
+        "scanned": [
+            "requirements.txt"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "api_key": false,
+        "local_database_path": null,
+        "safety_version": "2.3.5",
+        "timestamp": "2026-06-26 07:21:50",
+        "packages_found": 9,
+        "vulnerabilities_found": 0,
+        "vulnerabilities_ignored": 0,
+        "remediations_recommended": 0,
+        "telemetry": {
+            "os_type": "Windows",
+            "os_release": "10",
+            "os_description": "Windows-10-10.0.26200-SP0",
+            "python_version": "3.11.6",
+            "safety_command": "check",
+            "safety_options": {
+                "files": {
+                    "-r": 1
+                },
+                "save_json": {
+                    "--save-json": 1
+                },
+                "json": {
+                    "--json": 1
+                }
+            },
+            "safety_version": "2.3.5",
+            "safety_source": "cli"
+        },
+        "git": {
+            "branch": "main",
+            "tag": "",
+            "commit": "3320199594ded43da08fc33b55066a736fbb2d5e",
+            "dirty": true,
+            "origin": "https://github.com/Nurburgring-Zhang/nanobot-factory.git"
+        },
+        "project": null,
+        "json_version": 1
+    },
+    "scanned_packages": {
+        "celery": {
+            "name": "celery",
+            "version": "5.3.6"
+        },
+        "redis": {
+            "name": "redis",
+            "version": "5.0.1"
+        },
+        "safety": {
+            "name": "safety",
+            "version": "2.3.5"
+        },
+        "prometheus-client": {
+            "name": "prometheus-client",
+            "version": "0.19.0"
+        },
+        "opentelemetry-api": {
+            "name": "opentelemetry-api",
+            "version": "1.21.0"
+        },
+        "opentelemetry-sdk": {
+            "name": "opentelemetry-sdk",
+            "version": "1.21.0"
+        },
+        "opentelemetry-exporter-otlp": {
+            "name": "opentelemetry-exporter-otlp",
+            "version": "1.21.0"
+        },
+        "opentelemetry-instrumentation-fastapi": {
+            "name": "opentelemetry-instrumentation-fastapi",
+            "version": "0.42b0"
+        },
+        "opentelemetry-instrumentation-sqlalchemy": {
+            "name": "opentelemetry-instrumentation-sqlalchemy",
+            "version": "0.42b0"
+        }
+    },
+    "affected_packages": {},
+    "announcements": [],
+    "vulnerabilities": [],
+    "ignored_vulnerabilities": [],
+    "remediations": {}
+}

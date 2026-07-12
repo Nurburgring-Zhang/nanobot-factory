@@ -1,0 +1,242 @@
+groups:
+- name: p19_e3_slo_burn_rate
+  interval: 30s
+  rules:
+  - alert: api_availability_99_9_FastBurn
+    expr: "(\n  (sum(rate(http_requests_total{status!=\"ok\"}[5m])) / clamp_min(sum(rate(http_requests_total{service=~\"\
+      .+\"}[5m])), 0.001))\n  / (1 - 0.999)\n) > 14.4\nand\n(\n  (sum(rate(http_requests_total{status!=\"\
+      ok\"}[1h])) / clamp_min(sum(rate(http_requests_total{service=~\".+\"}[1h])),\
+      \ 0.001))\n  / (1 - 0.999)\n) > 6.0"
+    for: 2m
+    labels:
+      severity: critical
+      slo: api_availability_99_9
+      service: api
+      tier: edge
+    annotations:
+      summary: 'api_availability_99_9: critical FastBurn — 14.4× burn over 5m AND
+        6.0× burn over 1h'
+      description: 'SLO api_availability_99_9 (target=0.9990) is burning budget at
+        14.4× short window / 6.0× long window. Page on-call: investigate api availability.'
+      slo_target: '0.999'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/api_availability_99_9
+  - alert: api_availability_99_9_SlowBurn
+    expr: "(\n  (sum(rate(http_requests_total{status!=\"ok\"}[30m])) / clamp_min(sum(rate(http_requests_total{service=~\"\
+      .+\"}[30m])), 0.001))\n  / (1 - 0.999)\n) > 6.0\nand\n(\n  (sum(rate(http_requests_total{status!=\"\
+      ok\"}[6h])) / clamp_min(sum(rate(http_requests_total{service=~\".+\"}[6h])),\
+      \ 0.001))\n  / (1 - 0.999)\n) > 3.0"
+    for: 5m
+    labels:
+      severity: warning
+      slo: api_availability_99_9
+      service: api
+      tier: edge
+    annotations:
+      summary: 'api_availability_99_9: warning SlowBurn — 6.0× burn over 30m AND 3.0×
+        burn over 6h'
+      description: 'SLO api_availability_99_9 (target=0.9990) is burning budget at
+        6.0× short window / 3.0× long window. Page on-call: investigate api availability.'
+      slo_target: '0.999'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/api_availability_99_9
+  - alert: api_availability_99_9_VerySlowBurn
+    expr: "(\n  (sum(rate(http_requests_total{status!=\"ok\"}[2h])) / clamp_min(sum(rate(http_requests_total{service=~\"\
+      .+\"}[2h])), 0.001))\n  / (1 - 0.999)\n) > 3.0\nand\n(\n  (sum(rate(http_requests_total{status!=\"\
+      ok\"}[24h])) / clamp_min(sum(rate(http_requests_total{service=~\".+\"}[24h])),\
+      \ 0.001))\n  / (1 - 0.999)\n) > 1.0"
+    for: 30m
+    labels:
+      severity: info
+      slo: api_availability_99_9
+      service: api
+      tier: edge
+    annotations:
+      summary: 'api_availability_99_9: info VerySlowBurn — 3.0× burn over 2h AND 1.0×
+        burn over 24h'
+      description: 'SLO api_availability_99_9 (target=0.9990) is burning budget at
+        3.0× short window / 1.0× long window. Page on-call: investigate api availability.'
+      slo_target: '0.999'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/api_availability_99_9
+  - alert: backend_p99_latency_300ms_FastBurn
+    expr: "(\n  (\n    1\n    -\n    sum(rate(http_request_duration_seconds_bucket{le=\"\
+      0.3\"}[5m]))\n    / clamp_min(sum(rate(http_request_duration_seconds_count{}[5m])),\
+      \ 0.001)\n  )\n  / (1 - 0.99)\n) > 14.4\nand\n(\n  (\n    1\n    -\n    sum(rate(http_request_duration_seconds_bucket{le=\"\
+      0.3\"}[1h]))\n    / clamp_min(sum(rate(http_request_duration_seconds_count{}[1h])),\
+      \ 0.001)\n  )\n  / (1 - 0.99)\n) > 6.0"
+    for: 2m
+    labels:
+      severity: critical
+      slo: backend_p99_latency_300ms
+      service: backend
+      tier: compute
+    annotations:
+      summary: 'backend_p99_latency_300ms: critical FastBurn — 14.4× burn over 5m
+        AND 6.0× burn over 1h'
+      description: 'SLO backend_p99_latency_300ms (target=0.9900) is burning budget
+        at 14.4× short window / 6.0× long window. Page on-call: investigate backend
+        availability.'
+      slo_target: '0.99'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/backend_p99_latency_300ms
+  - alert: backend_p99_latency_300ms_SlowBurn
+    expr: "(\n  (\n    1\n    -\n    sum(rate(http_request_duration_seconds_bucket{le=\"\
+      0.3\"}[30m]))\n    / clamp_min(sum(rate(http_request_duration_seconds_count{}[30m])),\
+      \ 0.001)\n  )\n  / (1 - 0.99)\n) > 6.0\nand\n(\n  (\n    1\n    -\n    sum(rate(http_request_duration_seconds_bucket{le=\"\
+      0.3\"}[6h]))\n    / clamp_min(sum(rate(http_request_duration_seconds_count{}[6h])),\
+      \ 0.001)\n  )\n  / (1 - 0.99)\n) > 3.0"
+    for: 5m
+    labels:
+      severity: warning
+      slo: backend_p99_latency_300ms
+      service: backend
+      tier: compute
+    annotations:
+      summary: 'backend_p99_latency_300ms: warning SlowBurn — 6.0× burn over 30m AND
+        3.0× burn over 6h'
+      description: 'SLO backend_p99_latency_300ms (target=0.9900) is burning budget
+        at 6.0× short window / 3.0× long window. Page on-call: investigate backend
+        availability.'
+      slo_target: '0.99'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/backend_p99_latency_300ms
+  - alert: backend_p99_latency_300ms_VerySlowBurn
+    expr: "(\n  (\n    1\n    -\n    sum(rate(http_request_duration_seconds_bucket{le=\"\
+      0.3\"}[2h]))\n    / clamp_min(sum(rate(http_request_duration_seconds_count{}[2h])),\
+      \ 0.001)\n  )\n  / (1 - 0.99)\n) > 3.0\nand\n(\n  (\n    1\n    -\n    sum(rate(http_request_duration_seconds_bucket{le=\"\
+      0.3\"}[24h]))\n    / clamp_min(sum(rate(http_request_duration_seconds_count{}[24h])),\
+      \ 0.001)\n  )\n  / (1 - 0.99)\n) > 1.0"
+    for: 30m
+    labels:
+      severity: info
+      slo: backend_p99_latency_300ms
+      service: backend
+      tier: compute
+    annotations:
+      summary: 'backend_p99_latency_300ms: info VerySlowBurn — 3.0× burn over 2h AND
+        1.0× burn over 24h'
+      description: 'SLO backend_p99_latency_300ms (target=0.9900) is burning budget
+        at 3.0× short window / 1.0× long window. Page on-call: investigate backend
+        availability.'
+      slo_target: '0.99'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/backend_p99_latency_300ms
+  - alert: gdpr_erasure_success_99_5_FastBurn
+    expr: "(\n  (sum(rate(gdpr_erasure_total{outcome!=\"success\"}[5m])) / clamp_min(sum(rate(gdpr_erasure_total{outcome=~\"\
+      success|failure\"}[5m])), 0.001))\n  / (1 - 0.995)\n) > 14.4\nand\n(\n  (sum(rate(gdpr_erasure_total{outcome!=\"\
+      success\"}[1h])) / clamp_min(sum(rate(gdpr_erasure_total{outcome=~\"success|failure\"\
+      }[1h])), 0.001))\n  / (1 - 0.995)\n) > 6.0"
+    for: 2m
+    labels:
+      severity: critical
+      slo: gdpr_erasure_success_99_5
+      service: compliance
+      tier: compliance
+    annotations:
+      summary: 'gdpr_erasure_success_99_5: critical FastBurn — 14.4× burn over 5m
+        AND 6.0× burn over 1h'
+      description: 'SLO gdpr_erasure_success_99_5 (target=0.9950) is burning budget
+        at 14.4× short window / 6.0× long window. Page on-call: investigate compliance
+        availability.'
+      slo_target: '0.995'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/gdpr_erasure_success_99_5
+  - alert: gdpr_erasure_success_99_5_SlowBurn
+    expr: "(\n  (sum(rate(gdpr_erasure_total{outcome!=\"success\"}[30m])) / clamp_min(sum(rate(gdpr_erasure_total{outcome=~\"\
+      success|failure\"}[30m])), 0.001))\n  / (1 - 0.995)\n) > 6.0\nand\n(\n  (sum(rate(gdpr_erasure_total{outcome!=\"\
+      success\"}[6h])) / clamp_min(sum(rate(gdpr_erasure_total{outcome=~\"success|failure\"\
+      }[6h])), 0.001))\n  / (1 - 0.995)\n) > 3.0"
+    for: 5m
+    labels:
+      severity: warning
+      slo: gdpr_erasure_success_99_5
+      service: compliance
+      tier: compliance
+    annotations:
+      summary: 'gdpr_erasure_success_99_5: warning SlowBurn — 6.0× burn over 30m AND
+        3.0× burn over 6h'
+      description: 'SLO gdpr_erasure_success_99_5 (target=0.9950) is burning budget
+        at 6.0× short window / 3.0× long window. Page on-call: investigate compliance
+        availability.'
+      slo_target: '0.995'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/gdpr_erasure_success_99_5
+  - alert: gdpr_erasure_success_99_5_VerySlowBurn
+    expr: "(\n  (sum(rate(gdpr_erasure_total{outcome!=\"success\"}[2h])) / clamp_min(sum(rate(gdpr_erasure_total{outcome=~\"\
+      success|failure\"}[2h])), 0.001))\n  / (1 - 0.995)\n) > 3.0\nand\n(\n  (sum(rate(gdpr_erasure_total{outcome!=\"\
+      success\"}[24h])) / clamp_min(sum(rate(gdpr_erasure_total{outcome=~\"success|failure\"\
+      }[24h])), 0.001))\n  / (1 - 0.995)\n) > 1.0"
+    for: 30m
+    labels:
+      severity: info
+      slo: gdpr_erasure_success_99_5
+      service: compliance
+      tier: compliance
+    annotations:
+      summary: 'gdpr_erasure_success_99_5: info VerySlowBurn — 3.0× burn over 2h AND
+        1.0× burn over 24h'
+      description: 'SLO gdpr_erasure_success_99_5 (target=0.9950) is burning budget
+        at 3.0× short window / 1.0× long window. Page on-call: investigate compliance
+        availability.'
+      slo_target: '0.995'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/gdpr_erasure_success_99_5
+  - alert: agent_dispatch_success_99_5_FastBurn
+    expr: "(\n  (sum(rate(agent_dispatch_total{status!=\"ok\"}[5m])) / clamp_min(sum(rate(agent_dispatch_total{service=~\"\
+      .+\"}[5m])), 0.001))\n  / (1 - 0.995)\n) > 14.4\nand\n(\n  (sum(rate(agent_dispatch_total{status!=\"\
+      ok\"}[1h])) / clamp_min(sum(rate(agent_dispatch_total{service=~\".+\"}[1h])),\
+      \ 0.001))\n  / (1 - 0.995)\n) > 6.0"
+    for: 2m
+    labels:
+      severity: critical
+      slo: agent_dispatch_success_99_5
+      service: agent
+      tier: compute
+    annotations:
+      summary: 'agent_dispatch_success_99_5: critical FastBurn — 14.4× burn over 5m
+        AND 6.0× burn over 1h'
+      description: 'SLO agent_dispatch_success_99_5 (target=0.9950) is burning budget
+        at 14.4× short window / 6.0× long window. Page on-call: investigate agent
+        availability.'
+      slo_target: '0.995'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/agent_dispatch_success_99_5
+  - alert: agent_dispatch_success_99_5_SlowBurn
+    expr: "(\n  (sum(rate(agent_dispatch_total{status!=\"ok\"}[30m])) / clamp_min(sum(rate(agent_dispatch_total{service=~\"\
+      .+\"}[30m])), 0.001))\n  / (1 - 0.995)\n) > 6.0\nand\n(\n  (sum(rate(agent_dispatch_total{status!=\"\
+      ok\"}[6h])) / clamp_min(sum(rate(agent_dispatch_total{service=~\".+\"}[6h])),\
+      \ 0.001))\n  / (1 - 0.995)\n) > 3.0"
+    for: 5m
+    labels:
+      severity: warning
+      slo: agent_dispatch_success_99_5
+      service: agent
+      tier: compute
+    annotations:
+      summary: 'agent_dispatch_success_99_5: warning SlowBurn — 6.0× burn over 30m
+        AND 3.0× burn over 6h'
+      description: 'SLO agent_dispatch_success_99_5 (target=0.9950) is burning budget
+        at 6.0× short window / 3.0× long window. Page on-call: investigate agent availability.'
+      slo_target: '0.995'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/agent_dispatch_success_99_5
+  - alert: agent_dispatch_success_99_5_VerySlowBurn
+    expr: "(\n  (sum(rate(agent_dispatch_total{status!=\"ok\"}[2h])) / clamp_min(sum(rate(agent_dispatch_total{service=~\"\
+      .+\"}[2h])), 0.001))\n  / (1 - 0.995)\n) > 3.0\nand\n(\n  (sum(rate(agent_dispatch_total{status!=\"\
+      ok\"}[24h])) / clamp_min(sum(rate(agent_dispatch_total{service=~\".+\"}[24h])),\
+      \ 0.001))\n  / (1 - 0.995)\n) > 1.0"
+    for: 30m
+    labels:
+      severity: info
+      slo: agent_dispatch_success_99_5
+      service: agent
+      tier: compute
+    annotations:
+      summary: 'agent_dispatch_success_99_5: info VerySlowBurn — 3.0× burn over 2h
+        AND 1.0× burn over 24h'
+      description: 'SLO agent_dispatch_success_99_5 (target=0.9950) is burning budget
+        at 3.0× short window / 1.0× long window. Page on-call: investigate agent availability.'
+      slo_target: '0.995'
+      window_seconds: '2592000'
+      runbook_url: https://wiki.imdf.example.com/runbook/slo/agent_dispatch_success_99_5

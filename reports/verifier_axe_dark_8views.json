@@ -1,0 +1,66 @@
+[
+  {
+    "view": "Dashboard",
+    "path": "/dashboard",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  },
+  {
+    "view": "Tasks",
+    "path": "/tasks",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  },
+  {
+    "view": "Datasets",
+    "path": "/datasets",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  },
+  {
+    "view": "Engines",
+    "path": "/engines",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  },
+  {
+    "view": "Login",
+    "path": "/login",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  },
+  {
+    "view": "Annotation",
+    "path": "/annotation",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  },
+  {
+    "view": "Billing",
+    "path": "/billing",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  },
+  {
+    "view": "Workflows",
+    "path": "/workflows",
+    "data_theme": "dark",
+    "body_bg": "rgb(24, 24, 28)",
+    "violationCount": 0,
+    "violations": []
+  }
+]

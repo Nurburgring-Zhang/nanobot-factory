@@ -1,0 +1,42 @@
+[
+  {
+    "view": "Login",
+    "path": "/login",
+    "forced_colors_active": true,
+    "body_bg": "rgb(255, 255, 255)",
+    "body_color": "rgb(0, 0, 0)",
+    "has_forced_colors_css_rule": false
+  },
+  {
+    "view": "Dashboard",
+    "path": "/dashboard",
+    "forced_colors_active": true,
+    "body_bg": "rgb(255, 255, 255)",
+    "body_color": "rgb(0, 0, 0)",
+    "has_forced_colors_css_rule": false
+  },
+  {
+    "view": "Tasks",
+    "path": "/tasks",
+    "forced_colors_active": true,
+    "body_bg": "rgb(255, 255, 255)",
+    "body_color": "rgb(0, 0, 0)",
+    "has_forced_colors_css_rule": false
+  },
+  {
+    "view": "Billing",
+    "path": "/billing",
+    "forced_colors_active": true,
+    "body_bg": "rgb(255, 255, 255)",
+    "body_color": "rgb(0, 0, 0)",
+    "has_forced_colors_css_rule": false
+  },
+  {
+    "view": "Orchestrator",
+    "path": "/skills/orchestrator",
+    "forced_colors_active": true,
+    "body_bg": "rgb(255, 255, 255)",
+    "body_color": "rgb(0, 0, 0)",
+    "has_forced_colors_css_rule": false
+  }
+]

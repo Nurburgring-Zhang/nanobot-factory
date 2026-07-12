@@ -1,0 +1,104 @@
+{
+  "steps": [
+    {
+      "step": "create_order",
+      "ok": true,
+      "detail": "order_id=ord_312bde2192654492 amount=$100"
+    },
+    {
+      "step": "provider create_payment",
+      "ok": true,
+      "detail": "payment_id=pi_test_de2dad651dcb426d status=pending"
+    },
+    {
+      "step": "idempotency 24h TTL",
+      "ok": true,
+      "detail": "replay hit=True reserved=False"
+    },
+    {
+      "step": "webhook dedup 24h TTL",
+      "ok": true,
+      "detail": "2nd register is_duplicate=True"
+    },
+    {
+      "step": "order mark_paid",
+      "ok": true,
+      "detail": "status=fulfilled (paid→fulfilled)"
+    },
+    {
+      "step": "partial refund 1 ($30)",
+      "ok": true,
+      "detail": "refunded=3000 status=fulfilled"
+    },
+    {
+      "step": "partial refund 2 ($40 cum)",
+      "ok": true,
+      "detail": "refunded=7000"
+    },
+    {
+      "step": "final refund → REFUNDED",
+      "ok": true,
+      "detail": "refunded=10000 status=refunded"
+    },
+    {
+      "step": "refund history tracked",
+      "ok": true,
+      "detail": "history count=3"
+    },
+    {
+      "step": "over-refund guard",
+      "ok": true,
+      "detail": "correctly raised: refund amount 5000 cents exceeds remaining 0 cents (order=10000, already_refunded=10000)"
+    },
+    {
+      "step": "generate invoice",
+      "ok": true,
+      "detail": "invoice_no=INV-20260625-0001 amount=100.0 tax_dict={'net': 94.34, 'tax': 5.66, 'gross': 100.0, 'rate': 0.06}"
+    },
+    {
+      "step": "redletter original → voided",
+      "ok": true,
+      "detail": "status=voided red_no=INV-20260625-0001-R1"
+    },
+    {
+      "step": "redletter reverse → negative amount",
+      "ok": true,
+      "detail": "reverse.amount=-100.00"
+    },
+    {
+      "step": "is_redlettered recorded",
+      "ok": true,
+      "detail": "is_redlettered=True"
+    },
+    {
+      "step": "double-redletter guard",
+      "ok": true,
+      "detail": "correctly raised: invoice 'INV-20260625-0001' is already redlettered (reverse invoice: INV-20260625-0001-R1)"
+    },
+    {
+      "step": "SLA breach detected (P0 past)",
+      "ok": true,
+      "detail": "breached=1 at_risk=0"
+    },
+    {
+      "step": "SLA at-risk detected (P0 20min ahead)",
+      "ok": true,
+      "detail": "at_risk=1"
+    },
+    {
+      "step": "SLA dispatch_alerts side-effect",
+      "ok": true,
+      "detail": "counters={'p0_breach_alerts': 1, 'p1_breach_alerts': 0, 'p2_breach_alerts': 0, 'p3_breach_alerts': 0, 'at_risk_warnings': 0} total=1"
+    },
+    {
+      "step": "cross-service 4-layer integration",
+      "ok": true,
+      "detail": "billing(refunded) + invoices(voided) + tickets(breach) all green"
+    }
+  ],
+  "summary": {
+    "total": 19,
+    "passed": 19,
+    "failed": 0
+  }
+}

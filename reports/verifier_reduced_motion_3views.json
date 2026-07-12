@@ -1,0 +1,23 @@
+[
+  {
+    "view": "Login",
+    "prefers_reduced_motion_active": true,
+    "has_reduced_motion_css_rule": true,
+    "body_transition": "background-color 1e-06s, color 1e-06s",
+    "body_transition_duration": "1e-06s"
+  },
+  {
+    "view": "Dashboard",
+    "prefers_reduced_motion_active": true,
+    "has_reduced_motion_css_rule": true,
+    "body_transition": "background-color 1e-06s, color 1e-06s",
+    "body_transition_duration": "1e-06s"
+  },
+  {
+    "view": "Tasks",
+    "prefers_reduced_motion_active": true,
+    "has_reduced_motion_css_rule": true,
+    "body_transition": "background-color 1e-06s, color 1e-06s",
+    "body_transition_duration": "1e-06s"
+  }
+]

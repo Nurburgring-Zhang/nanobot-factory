@@ -1,0 +1,615 @@
+{
+  "report_title": "数据流转链路诊断 — 从需求→任务→采集→清洗→筛选→标注→审核→评估→交付 全链路 9 节点状态盘点",
+  "investigation_date": "2026-06-28",
+  "module": "anobot-factory / Data Flow Linkage (端到端数据生产+审核+评测+交付链路)",
+  "investigated_files": [
+    "frontend-v2/src/views/Tasks.vue (337 lines — 标注/Agent/Workflow 3 源任务统一视图, 4 tab + 4 KPI)",
+    "frontend-v2/src/views/Dataset.vue (14KB — 数据集 CRUD + 版本 + 元数据 — 详见 dataset_diagnostic.json)",
+    "frontend-v2/src/views/Annotation.vue (307 lines — 任务看板, 详见 annotation_workbench_diagnosis.json)",
+    "frontend-v2/src/views/Review.vue (308 lines — 审核中心, 详见 review_center_diagnosis.json)",
+    "frontend-v2/src/views/Scoring.vue (311 lines — 评分算子面板: 选 op → 输入 JSON → 调 /api/v1/score/run)",
+    "frontend-v2/src/api/tasks.ts (111 lines — 3 源任务统一客户端)",
+    "backend/imdf/engines/requirement_engine.py (673 lines, 25KB — 需求/任务/分配/策略)",
+    "backend/imdf/engines/scheduler_engine.py (788 lines, 28KB — APScheduler cron + 重试 + 历史 + 失败通知)",
+    "backend/imdf/engines/task_queue.py (187 lines, 6KB — 简单 async 任务队列 APScheduler DateTrigger)",
+    "backend/imdf/engines/data_pipeline.py (826 lines, 32KB — 增强产线: Aug/Split/Format + 缓存中间结果)",
+    "backend/imdf/engines/data_collection_engine.py (498 lines, 16KB — 爬虫/RSS/API/备份/导入 + JSON 持久化 + SQLite 历史)",
+    "backend/imdf/engines/data_delivery.py (158 lines, 6KB — 交付审核流: draft→submitted→in_review→approved + 多审核链 + 版本对比)",
+    "backend/imdf/engines/delivery_inc.py (60 lines, 2KB — 增量交付: snapshot MD5 + diff + tar.gz patch)",
+    "backend/imdf/engines/transfer_engine.py (523 lines, 18KB — HMAC 签名分享 URL + 密码保护 + 限次 + 过期清理)",
+    "backend/services/* (10+ 微服务: dataset_service / annotation_service / scoring_service / agent_service / workflow_service / collection_service / cleaning_service / search_service / notification_service / asset_service / user_service)"
+  ],
+  "current_capabilities": {
+    "frontend_visible_unified_view": {
+      "page": "Tasks.vue (/tasks 路由 — 3 源任务统一看板)",
+      "header": [
+        "标题 '任务队列' + 副标题 '标注任务 · Agent 任务 · 工作流运行 — 统一视图'",
+        "NTag 徽章: 进行中 (totalActive) + 失败 (totalFailed)",
+        "刷新按钮"
+      ],
+      "kpi_tiles": [
+        "合并任务数 (mergedRows.length)",
+        "进行中 (pending + running)",
+        "失败 (failed)",
+        "Agent 任务统计 (Object.values(stats).sum + count)"
+      ],
+      "tabs_4": [
+        "全部 (mergedRows = annotation + agent + workflow sort by created_at desc)",
+        "标注任务 (annotationRows via /api/v1/tasks)",
+        "Agent 任务 (agentRows via /api/v1/agent_tasks)",
+        "工作流运行 (workflowRows via /api/v1/workflows/runs)"
+      ],
+      "table_columns": [
+        "来源 (NTag: annotation=info / agent=success / workflow=warning)",
+        "ID (200px)",
+        "名称 / 类型",
+        "状态 (NTag: completed/succeeded→success / failed/error→error / pending/open→warning / running/in_progress→info)",
+        "负责人",
+        "创建时间 + 结束时间",
+        "操作: agent 任务支持 取消/重试, workflow 任务支持 取消, annotation 任务 —"
+      ],
+      "actions_wired": [
+        "load() → Promise.allSettled([loadAnnotation, loadAgent, loadWorkflow, loadStats])",
+        "onCancelAgent(row) → POST /api/v1/agent_tasks/{id}/cancel → 刷新",
+        "onRetryAgent(row) → POST /api/v1/agent_tasks/{id}/retry → 刷新",
+        "onCancelWorkflow(row) → POST /api/v1/workflows/runs/{id}/cancel → 刷新"
+      ],
+      "data_model": "UnifiedTask { source, id, name, type, status, owner, created_at, finished_at, raw }",
+      "status_normalization": "normalizeStatus(s): completed/succeeded/done/success → 'completed'; failed/error → 'failed'; cancelled/canceled → 'cancelled'; running/in_progress/processing → 'running'; else 'pending'"
+    },
+    "frontend_unused_or_unwired": [
+      "Annotation 任务的操作列: '唯一行动列: 点击查看' (Annotation.vue L124) — Tasks.vue 合并时也没有给 annotation 加 cancel/retry 按钮, 只有 agent 和 workflow",
+      "筛选 (按 source/status/owner): 只有 tabs 切 source, 没有 status NSelect, 没有 owner NSelect, 没有时间范围 DatePicker",
+      "调度: 没有任何 '创建定时任务' 入口 (scheduler_engine 完整实装, 前端零入口)",
+      "需求管理: 没有任何 /requirement 页面或 Tasks tab 入口 (requirement_engine Requirement/Task/AllocationStrategy 5 策略全未暴露)",
+      "交付审核: 没有 /delivery 页面, DataDelivery 类完整 5 状态 + 多审核链未暴露 UI",
+      "数据流水线编排: data_pipeline.py 完整 Aug/Split/Format, 没有 UI 入口",
+      "增量交付 / patch 管理: delivery_inc snapshot/diff/patch 完整, 无 UI",
+      "传输分享: transfer_engine HMAC 分享 URL, 无 UI"
+    ],
+
+    "backend_implemented_pipeline": {
+      "requirement_engine_673_lines": {
+        "file": "backend/imdf/engines/requirement_engine.py",
+        "enums": [
+          "RequirementStatus: draft/open/in_progress/review/done/closed",
+          "TaskStatus: pending/assigned/in_progress/submitted/approved/rejected/blocked",
+          "Priority: P0/P1/P2/P3",
+          "RequirementType: data_collection/data_annotation/data_cleaning/model_evaluation/data_augmentation/quality_review (6 类)"
+        ],
+        "data_classes": [
+          "Requirement { id/title/type/status/priority/created_by/description/acceptance_criteria/tags/created_at/updated_at/closed_at }",
+          "Task { id/requirement_id/title/assignee/status/acceptance_criteria/estimated_hours/actual_hours/priority/created_at/completed_at/notes }",
+          "UserSkill { user_id/skills/workload/efficiency }"
+        ],
+        "allocation_strategies_5": [
+          "AllocationStrategy.by_skill — Jaccard 相似度",
+          "AllocationStrategy.by_workload — 负载最低优先",
+          "AllocationStrategy.random (推测 — 类内存在)",
+          "(+ 2 个未命名策略, 实际是 hard-coded _assign_to_user 类内私有方法)",
+          "由 get_requirement_manager() 单例包装"
+        ],
+        "weakness": [
+          "没有路由层包装 — /api/v1/requirements/* 端点不存在",
+          "没有持久化 — 全部 in-memory (req_store / task_store Dict)",
+          "没有 UI 入口 — 前端 Tasks.vue / 其他页面都不引用 requirement_engine"
+        ]
+      },
+
+      "scheduler_engine_788_lines": {
+        "file": "backend/imdf/engines/scheduler_engine.py",
+        "stack": "APScheduler AsyncIOScheduler + SQLAlchemyJobStore (SQLite) + CronTrigger / IntervalTrigger / DateTrigger + ThreadPoolExecutor",
+        "data_models": [
+          "JobDefinition { id/name/func_path/trigger_type/trigger_config/args/kwargs/enabled/max_retries/retry_delay/notify_on_failure/created_at/last_run/last_status }",
+          "JobHistory { id/job_id/job_name/run_at/status/result/error/retry_count/duration_ms }"
+        ],
+        "execution_flow": [
+          "_run_scheduled_job(job_id) — 模块级 picklable callable",
+          "解析 func_path → importlib.import_module → getattr 拿真实函数 → 调 (await if coroutine)",
+          "重试: max_retries + retry_delay (asyncio.sleep)",
+          "失败时遍历 _FAILURE_CALLBACKS 触发通知 (best-effort)",
+          "每次执行都写 JobHistory 到 SQLite"
+        ],
+        "scheduled_jobs_presets": [
+          "数据清理 (default daily)",
+          "向量刷新 (default hourly)",
+          "审美更新 (default weekly)",
+          "健康自检 (default every 5 min)"
+        ],
+        "weakness": [
+          "路由层是 imdf/api/scheduler_routes.py, 通过 services/workflow_service/main.py HAS_LEGACY 挂载 (失败就 silent skip)",
+          "前端零入口 — 看不到 /cron /schedule 页面",
+          "func_path 字符串引用 — 改名/移动函数会让已注册 job 静默失效"
+        ]
+      },
+
+      "task_queue_187_lines": {
+        "file": "backend/imdf/engines/task_queue.py",
+        "stack": "APScheduler AsyncIOScheduler + SQLAlchemyJobStore + DateTrigger + ThreadPoolExecutor(10)",
+        "interface": "TaskQueue.enqueue(name, func_path, args, kwargs, delay=0) → uuid; .get_status / .list_jobs / .cancel / .start / .stop",
+        "execution": "_execute_task(job_id) 模块级函数 — importlib + retry 3 次 + 60s 间隔",
+        "weakness": [
+          "和 scheduler_engine 是重复实现 — 几乎一样的 APScheduler + SQLAlchemyJobStore + 重试逻辑",
+          "只支持 DateTrigger (一次性延迟), 不支持 cron/interval",
+          "没有持久化任务结果 (只有 APScheduler 内部 job 表, 无 result store)",
+          "没有路由层 — /api/v1/task_queue/* 端点不存在"
+        ]
+      },
+
+      "data_pipeline_826_lines": {
+        "file": "backend/imdf/engines/data_pipeline.py",
+        "enums": [
+          "AugmentationType: 16 种 (flip_h/flip_v/rotate/crop_random/scale/brightness/contrast/saturation/hue/grayscale/gaussian_noise/salt_pepper/poisson_noise/mixup/cutmix/mosaic)",
+          "SplitStrategy: random/stratified/ratio (3)",
+          "OutputFormat: coco_json/yolo_txt/voc_xml/createml_json/csv (5)"
+        ],
+        "data_models": [
+          "DatasetItem { id/path/label/bbox/metadata/source }",
+          "AugmentationConfig { enable/types/prob/params }",
+          "SplitConfig { ratios [0.7,0.15,0.15]/strategy/shuffle/seed }",
+          "FormatConfig { output_format/include_images/class_names/output_dir }",
+          "PipelineConfig { name/augment/split/format/input_dir/output_dir }",
+          "PipelineResult { pipeline_id/config/input_count/augmented_count/output_count/splits/format_outputs/errors/duration_seconds/created_at }"
+        ],
+        "augmentation_strategies_4_groups": [
+          "geometric: flip/horizontal, flip/vertical, rotate, crop_random, scale",
+          "color: brightness, contrast, saturation, hue, grayscale",
+          "noise: gaussian, salt_pepper, poisson",
+          "blend: mixup, cutmix, mosaic (4-image)"
+        ],
+        "split_3": "stratified 按类别分层 / random 纯随机 / ratio 自定义 70/15/15",
+        "format_5": "coco_json / yolo_txt / voc_xml / createml_json / csv (flat)",
+        "weakness": [
+          "Augmentation 实际是 stub — 没有真实图像读写 (没 import cv2 / PIL 的 execute 路径, 只声明了策略签名)",
+          "没有 GPU 加速, 没有 albumentations 库接入",
+          "没有路由 — /api/v1/pipeline/* 端点不存在",
+          "PipelineConfig.input_dir / output_dir 在 dataclass 中, 但 PipelineResult.splits 永远是空的 (执行链未实接)"
+        ]
+      },
+
+      "data_collection_engine_498_lines": {
+        "file": "backend/imdf/engines/data_collection_engine.py",
+        "persistence": "data/collection_state.json (crawler_jobs/rss_feeds/api_configs/history 4 字段) + imdf.db collection_history 表",
+        "operations_4": [
+          "Crawler: create_crawler_job (URL+selectors+max_pages+delay+output_format+user_agent, uuid 8 字符 job_id) / list / get",
+          "RSS: add_rss_feed (URL) / list / refresh (随机 5-50 条模拟采集)",
+          "API config: 类似 RSS 风格, 增删查",
+          "Backup/Import: 数据备份与导入 (从浏览器前端 data-collection.js 暴露)"
+        ],
+        "history_logging": "_log_history(entry) — 同步写 JSON + SQLite, 只保留最近 500 条",
+        "weakness": [
+          "整个采集是模拟 (refresh_rss_feed 内部 random.randint(5, 50) 没有真 HTTP 请求)",
+          "没有 WebSocket 实时进度 (前端刷新看不到 partial 进度)",
+          "与 services/collection_service 是两套并行的实现 (frontend 走 services/collection_service 真实 HTTP, imdf 走 data_collection_engine JSON 持久化)"
+        ]
+      },
+
+      "data_delivery_158_lines": {
+        "file": "backend/imdf/engines/data_delivery.py",
+        "data_classes": [
+          "Delivery { id/dataset_version/requester/status(draft/submitted/in_review/approved/rejected)/reviewer/reviews/content_hash/version_history }",
+          "DeliveryReview { delivery_id/reviewer/verdict(approved/rejected/needs_revision)/comments/metrics/timestamp }"
+        ],
+        "lifecycle": [
+          "create_delivery / submit_for_review (含 SHA-256 content_hash)",
+          "set_review_chain(delivery_id, [R1, R2, R3]) — 多审核人顺序",
+          "review_delivery (检查 current_reviewer 必须等于 self.reviewer)",
+          "approve / reject / request_revision 三个便捷方法",
+          "compare_versions(delivery_id_a, delivery_id_b) — 双侧 status/hash/review_count + version_match + hash_match + both_approved"
+        ],
+        "weakness": [
+          "没有路由层 — /api/v1/deliveries/* 端点不存在",
+          "没有 UI 入口 — 前端零暴露",
+          "全是 in-memory Dict, 进程崩溃即丢"
+        ]
+      },
+
+      "delivery_inc_60_lines": {
+        "file": "backend/imdf/engines/delivery_inc.py",
+        "data_dir": "data/deliveries/ (snap_id.json) + data/patches/ (patch_xxx.tar.gz)",
+        "interface_3": [
+          "IncrementalDelivery.snapshot(dataset_id, files) → snap_id (md5 of first 8KB)",
+          "IncrementalDelivery.diff(old_snap_id, new_files) → { added, modified, deleted, total_changes }",
+          "IncrementalDelivery.create_patch(old_snap_id, new_files, output_dir) → tar.gz with diff.json metadata"
+        ],
+        "weakness": [
+          "snapshot MD5 只读前 8KB (8192 bytes) — 大文件 / 中段修改检测不到, false negative 严重",
+          "create_patch 用 tarfile 拼 added + modified, 不压缩 deleted (删除信息只在 diff.json metadata)",
+          "没有路由 — /api/v1/delivery/inc/* 端点不存在"
+        ]
+      },
+
+      "transfer_engine_523_lines": {
+        "file": "backend/imdf/engines/transfer_engine.py",
+        "data_classes": [
+          "ShareLink { token/resource_path/resource_type(file/directory/dataset)/created_at/expires_at/password_hash/max_downloads/downloads_used/signature/is_active/note/creator }",
+          "ShareAccessResult { granted/error/share/file_info/downloads_remaining/requires_password }"
+        ],
+        "persistence": "data/sharing/shares.json + _cache 内存 + Singleton (TransferEngine._instance)",
+        "interface": [
+          "generate_signature (HMAC-SHA256 取前 16 字符)",
+          "verify_signature (hmac.compare_digest 常数时间比较)",
+          "hash_password (SHA-256) / verify_password",
+          "create_share / get_share / use_share (downloads_used++) / list_shares / cleanup_expired",
+          "权限: 限次 (max_downloads, 0=无限) / 密码 / 过期 (expires_at unix timestamp)"
+        ],
+        "weakness": [
+          "密钥从环境变量 IMDF_SHARING_SECRET 读取, 默认 'imdf-sharing-secret-key-2024' (硬编码 fallback, 生产风险)",
+          "没有路由 — /api/v1/transfer/* 端点不存在 (注释里说 'P1.16 受控传输共享引擎', 但找不到对应 routes)",
+          "前端零入口 — 用户看不到 /share 页面"
+        ]
+      },
+
+      "services_microservice_topology": {
+        "annotation_service": "FastAPI 8003 — /api/v1/annotations /tasks /operators (SQLite 落库, 22 条算子 stub)",
+        "agent_service": "FastAPI (port 范围) — /api/v1/agent_tasks (in-memory store, 取消/重试/统计)",
+        "asset_service": "FastAPI — /api/v1/assets (DAM 真实数据库)",
+        "cleaning_service": "FastAPI — /api/v1/cleaning (含 dedup / nsfw / 11+ 算子)",
+        "collection_service": "FastAPI — /api/v1/collection (真实 HTTP, 与 data_collection_engine 并行)",
+        "dataset_service": "FastAPI 8006 — /api/v1/datasets (12 端点 + exporters + filters + metadata + lineage)",
+        "evaluation_service": "FastAPI — /api/v1/eval (实装度待查, 与 eval_quality 重复实现?)",
+        "notification_service": "FastAPI — /api/v1/notifications",
+        "scoring_service": "FastAPI — /api/v1/score (operators + run + batch, 与 eval_engine 重复实现?)",
+        "search_service": "FastAPI — /api/v1/search (基础 + advanced + semantic + LLM)",
+        "user_service": "FastAPI — /api/v1/users (RBAC + 多租户)",
+        "workflow_service": "FastAPI 8009 — /api/v1/workflows /templates /editor /workflow/dag /workflow/operators /workflow/director"
+      }
+    }
+  },
+
+  "missing_capabilities_top10": [
+    {
+      "rank": 1,
+      "name": "端到端可视化 DAG (需求→任务→执行→监控→关闭)",
+      "importance": "critical",
+      "feasibility": "high (requirement_engine 6 个状态 + scheduler_engine APScheduler 都有, 仅缺串联)",
+      "industry_ref": "Apache Airflow DAG view / Dagster asset lineage / Prefect Cloud / Temporal Web UI",
+      "current_state": "Tasks.vue 只是 3 源任务列表, 没有 dag pipeline 视图; scheduler_engine + requirement_engine + data_pipeline + data_delivery 4 个引擎零串联; 一个需求的生命周期只能在 code 里追踪, UI 完全不可见",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/requirements/{id}/timeline (Requirement + Task + Scheduler + Pipeline + Delivery 全节点)",
+        "POST /api/v1/pipelines/run { requirement_id, pipeline_config, trigger }",
+        "GET  /api/v1/pipelines/{id}/status (含 augment/split/format 各阶段进度)",
+        "GET  /api/v1/pipelines/{id}/dag (DAG 节点 + 边 + 状态)"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "需求 / 任务 / 调度的持久化与审计",
+      "importance": "critical",
+      "feasibility": "high (3 张 SQLite 表 + audit_log 即可)",
+      "industry_ref": "Jira / Linear / Asana / Monday 任务生命周期 + 审计",
+      "current_state": "requirement_engine 全部 in-memory; scheduler_engine 用 SQLAlchemyJobStore 但 result 不入库; task_queue 只用 APScheduler DateTrigger; 任何进程重启都丢任务, 没有任何 audit log",
+      "missing_apis_to_expose": [
+        "POST /api/v1/requirements (Create + auto-decompose into Tasks)",
+        "POST /api/v1/tasks/{id}/assign (走 AllocationStrategy 5 种)",
+        "GET  /api/v1/audit?actor=&entity=&from=&to="
+      ]
+    },
+    {
+      "rank": 3,
+      "name": "Pipeline 编排 UI (Aug → Split → Format 可视化)",
+      "importance": "critical",
+      "feasibility": "high (data_pipeline.py 826 行已实装 16 aug + 3 split + 5 format)",
+      "industry_ref": "Roboflow Workflows / Encord Index pipeline / Landing.AI data curation / FiftyOne",
+      "current_state": "PipelineConfig / PipelineResult dataclass 完整, 但没有任何 /api/v1/pipeline/* 路由, 也没有前端 Pipeline Designer 页面",
+      "missing_apis_to_expose": [
+        "POST /api/v1/pipeline/augment (multipart upload + config)",
+        "POST /api/v1/pipeline/split (ratios + strategy + seed)",
+        "POST /api/v1/pipeline/format (output_format + class_names)",
+        "POST /api/v1/pipeline/full (chain: augment → split → format, 返回 PipelineResult)"
+      ]
+    },
+    {
+      "rank": 4,
+      "name": "Cron 定时任务管理 UI",
+      "importance": "high",
+      "feasibility": "high (scheduler_engine 788 行实装 APScheduler + 重试 + 历史 + 通知)",
+      "industry_ref": "Apache Airflow DAGs / Temporal Schedules / GitHub Actions cron / K8s CronJob",
+      "current_state": "scheduler_engine 完整实装, 4 个 preset job (数据清理/向量刷新/审美更新/健康自检), 但前端 0 入口, imdf/api/scheduler_routes.py 通过 HAS_LEGACY 静默挂载",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/scheduler/jobs (含 last_run/last_status/retry_count)",
+        "POST /api/v1/scheduler/jobs (Create JobDefinition with cron/interval/date)",
+        "PUT  /api/v1/scheduler/jobs/{id} (update trigger / args / kwargs / enabled)",
+        "DELETE /api/v1/scheduler/jobs/{id}",
+        "GET  /api/v1/scheduler/jobs/{id}/history (JobHistory 表)"
+      ]
+    },
+    {
+      "rank": 5,
+      "name": "采集实时进度 + 真实 HTTP 拉取",
+      "importance": "high",
+      "feasibility": "medium (data_collection_engine 模拟采集, 需替换为 aiohttp/httpx + 真实 selectolax/beautifulsoup)",
+      "industry_ref": "Apify / ScrapingBee / Bright Data / Octoparse",
+      "current_state": "refresh_rss_feed 内部 random.randint(5, 50) 模拟采集, 没有任何 HTTP 请求, 没有 partial 进度, 没有失败重试, 没有 proxy / user_agent 池",
+      "missing_apis_to_expose": [
+        "POST /api/v1/collection/crawl/async (返回 job_id, 后台 httpx 拉取)",
+        "GET  /api/v1/collection/crawl/{id}/progress (WebSocket or SSE)",
+        "POST /api/v1/collection/import (从 URL 列表批量导入)"
+      ]
+    },
+    {
+      "rank": 6,
+      "name": "交付 / 增量分发 UI (Delivery + Patch + Share)",
+      "importance": "high",
+      "feasibility": "high (DataDelivery 5 状态 + 多审核链 + IncrementalDelivery snapshot/diff/patch + TransferEngine HMAC 分享 URL 全部就绪)",
+      "industry_ref": "Git LFS / DVC / Hugging Face Hub / Roboflow Export / Weights & Biases Artifacts",
+      "current_state": "data_delivery 完整 5 状态 + 多审核人 + 版本对比, delivery_inc 60 行完整 snapshot/diff/patch, transfer_engine 523 行 HMAC + 密码 + 限次 + 过期 — 三件套全都没路由, 没 UI",
+      "missing_apis_to_expose": [
+        "POST /api/v1/deliveries (Create + submit_for_review)",
+        "POST /api/v1/deliveries/{id}/review { reviewer, verdict, comments }",
+        "GET  /api/v1/deliveries/{id_a}/compare/{id_b}",
+        "POST /api/v1/deliveries/{id}/snapshot (IncrementalDelivery.snapshot)",
+        "POST /api/v1/deliveries/{id}/patch { old_snap_id, new_files } → tar.gz URL",
+        "POST /api/v1/shares (TransferEngine.create_share 暴露)",
+        "GET  /api/v1/shares/{token}?password=xxx (TransferEngine.use_share 暴露)"
+      ]
+    },
+    {
+      "rank": 7,
+      "name": "统一任务队列 (merge scheduler + task_queue + feedback_loop)",
+      "importance": "high",
+      "feasibility": "medium (3 套 APScheduler 重复实装, 需统一 facade)",
+      "industry_ref": "Celery + Flower / BullMQ / Sidekiq / RQ Dashboard",
+      "current_state": "scheduler_engine (cron) + task_queue (delay) + FeedbackLoop (eval 反馈) + APScheduler job 表 + Celery (annotation operators) 至少 4 套并行队列, 没有统一 facade, 没有 dashboard, 没有 worker 健康",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/queue/stats (每套队列的 waiting/active/failed 计数)",
+        "GET  /api/v1/queue/jobs?queue=scheduler|task_queue|celery|feedback (统一列表)",
+        "POST /api/v1/queue/jobs/{id}/retry (跨队列统一重试)",
+        "GET  /api/v1/queue/workers (活跃 worker + 负载)"
+      ]
+    },
+    {
+      "rank": 8,
+      "name": "跨服务事件总线 (需求创建触发 pipeline, eval 反馈触发补采任务)",
+      "importance": "high",
+      "feasibility": "medium (需要 Redis/RabbitMQ 或 in-process EventBus)",
+      "industry_ref": "Kafka / RabbitMQ / AWS EventBridge / Temporal Signals / Prefect Automations",
+      "current_state": "FeedbackLoop._trigger_iteration 只 logger.info; 没有任何 MQ / Redis Streams; scheduler_engine._FAILURE_CALLBACKS 只是 best-effort 列表; 跨服务全靠前端轮询",
+      "missing_apis_to_expose": [
+        "POST /api/v1/events/publish { topic, payload }",
+        "GET  /api/v1/events/subscribe?topic=xxx (SSE/WS)",
+        "GET  /api/v1/events/history?topic=&from=&to="
+      ]
+    },
+    {
+      "rank": 9,
+      "name": "数据血缘 + 影响分析 (跨 dataset / annotation / pipeline / delivery)",
+      "importance": "medium",
+      "feasibility": "high (services/dataset_service/lineage 19 端点 + imdf/api/dam_routes lineage 端点 已有)",
+      "industry_ref": "DataHub / OpenMetadata / Amundsen / Unity Catalog / Apache Atlas",
+      "current_state": "dataset_service/lineage 模块 3 表 + 19 端点 (collect / graph / impact / visualize), 但 Tasks.vue / Requirement 页 / Pipeline 页 / Delivery 页 都未引用 lineage; 只有 dataset 单独视图能看到",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/lineage/cross-service?from=dataset:xxx&depth=3 (跨 dataset/annotation/pipeline/delivery 拉一条线)",
+        "GET  /api/v1/lineage/impact/{entity}?change=delete (影响面: 哪些任务/审核/评测会受影响)"
+      ]
+    },
+    {
+      "rank": 10,
+      "name": "数据全链路 SLA 监控 + 通知",
+      "importance": "medium",
+      "feasibility": "medium (需要 P50/P95/P99 时延聚合 + WebSocket 告警)",
+      "industry_ref": "Datadog APM / New Relic / Grafana + Alertmanager / PagerDuty",
+      "current_state": "scheduler_engine 写 JobHistory.duration_ms 但无聚合; data_pipeline.PipelineResult.duration_seconds 有但无 dashboard; feedback_loop 失败只在 logger; notification_service 端点存在但没串",
+      "missing_apis_to_expose": [
+        "GET  /api/v1/sla/pipelines?window=1h (P50/P95 时延 + 失败率)",
+        "GET  /api/v1/sla/queues?window=1h (各队列吞吐)",
+        "POST /api/v1/notifications/sla-breach (订阅阈值告警)"
+      ]
+    }
+  ],
+
+  "frontend_simplified_segments": [
+    {
+      "snippet": "Tasks.vue L141-144 — mergedRows 三源合并 + sort by created_at desc",
+      "lines": "L141-144",
+      "issue": "三源数据 (annotation/agent/workflow) 只是简单 concat + sort, 没有任何 '同一需求下的任务' 关联, 也没有 dependency / parent_id 字段透出"
+    },
+    {
+      "snippet": "Tasks.vue L186-204 — columns 缺 SLA 倒计时 + 来源细粒度 (annotation/agent/workflow 之外还有 scheduler/collection/pipeline/delivery 等)",
+      "lines": "L186-204",
+      "issue": "前端只 merge 3 源, scheduler (cron) / collection (crawler) / pipeline (augment/split/format) / delivery (审核) / transfer (share) 一概没并入"
+    },
+    {
+      "snippet": "Tasks.vue L206-230 — actionsFor: annotation 任务零操作",
+      "lines": "L206-230",
+      "issue": "annotation source 的行操作列是 '—' (NText depth 3), 没有 cancel/retry/查看进度; 用户要管标注文任务必须切到 Annotation.vue"
+    },
+    {
+      "snippet": "Tasks.vue L139-144 — activeTab 切 source 切不齐",
+      "lines": "L139-144",
+      "issue": "tab 切 'annotation' 时直接看 annotationRows, 但用户期望: 'annotation tab 应该看到分配给我的 + 我创建的'; 当前没有 self/owner 过滤"
+    },
+    {
+      "snippet": "Scoring.vue L74-108 — 执行评分表单 (textarea 输 JSON 字符串)",
+      "lines": "L74-108",
+      "issue": "用户必须手写 JSON 字符串作为 input, 没有 file upload (数据集/图片) 也没有 template (预填 example); 数据流上: Scoring 评分结果没回写到 dataset 也没推到 eval 流程"
+    }
+  ],
+
+  "backend_endpoints_needed": {
+    "tier_0_p0_unified_dag": [
+      "POST /api/v1/requirements (Create + auto-decompose into Tasks)",
+      "GET  /api/v1/requirements/{id}/timeline (Requirement + Task + Scheduler + Pipeline + Delivery 全节点时间线)",
+      "POST /api/v1/pipelines/run { requirement_id, pipeline_config, trigger }",
+      "GET  /api/v1/pipelines/{id}/status (含 augment/split/format 各阶段进度)",
+      "GET  /api/v1/pipelines/{id}/dag (DAG 节点 + 边 + 状态)"
+    ],
+    "tier_0_p0_persistence_audit": [
+      "POST /api/v1/tasks/{id}/assign (走 AllocationStrategy by_skill / by_workload / random)",
+      "GET  /api/v1/audit?actor=&entity=&from=&to= (全平台 audit log)"
+    ],
+    "tier_1_p1_pipeline_ui": [
+      "POST /api/v1/pipeline/augment (multipart upload + AugmentationConfig)",
+      "POST /api/v1/pipeline/split (ratios + SplitStrategy + seed)",
+      "POST /api/v1/pipeline/format (output_format + class_names + output_dir)",
+      "POST /api/v1/pipeline/full (chain: augment → split → format, 返回 PipelineResult 含 splits / format_outputs)",
+      "GET  /api/v1/pipeline/templates (预置: 图像分类 / 目标检测 / 视频帧 / 多模态 4 套)"
+    ],
+    "tier_1_p1_cron_ui": [
+      "GET  /api/v1/scheduler/jobs (含 last_run / last_status / retry_count / max_retries)",
+      "POST /api/v1/scheduler/jobs (Create JobDefinition with cron/interval/date)",
+      "PUT  /api/v1/scheduler/jobs/{id} (update trigger / args / kwargs / enabled)",
+      "DELETE /api/v1/scheduler/jobs/{id}",
+      "GET  /api/v1/scheduler/jobs/{id}/history (JobHistory 表分页)",
+      "POST /api/v1/scheduler/jobs/{id}/run-now (手动触发)",
+      "POST /api/v1/scheduler/jobs/{id}/pause (暂停)"
+    ],
+    "tier_1_p1_collection_real": [
+      "POST /api/v1/collection/crawl/async (返回 job_id, 后台 httpx 拉取, 替换 random.randint 模拟)",
+      "GET  /api/v1/collection/crawl/{id}/progress (WebSocket or SSE)",
+      "POST /api/v1/collection/import (从 URL 列表批量导入)"
+    ],
+    "tier_1_p1_delivery_share": [
+      "POST /api/v1/deliveries (Create + submit_for_review)",
+      "POST /api/v1/deliveries/{id}/review { reviewer, verdict, comments }",
+      "GET  /api/v1/deliveries/{id_a}/compare/{id_b}",
+      "POST /api/v1/deliveries/{id}/snapshot (IncrementalDelivery.snapshot)",
+      "POST /api/v1/deliveries/{id}/patch { old_snap_id, new_files } → tar.gz URL",
+      "POST /api/v1/shares (TransferEngine.create_share 暴露)",
+      "GET  /api/v1/shares/{token}?password=xxx (TransferEngine.use_share 暴露)",
+      "GET  /api/v1/shares/{id}/audit (下载审计)"
+    ],
+    "tier_2_p2_unified_queue": [
+      "GET  /api/v1/queue/stats (scheduler / task_queue / celery / feedback_loop 4 套队列 waiting/active/failed)",
+      "GET  /api/v1/queue/jobs?queue=xxx (统一列表)",
+      "POST /api/v1/queue/jobs/{id}/retry (跨队列统一重试)",
+      "GET  /api/v1/queue/workers (活跃 worker + 负载)"
+    ],
+    "tier_2_p2_event_bus": [
+      "POST /api/v1/events/publish { topic, payload }",
+      "GET  /api/v1/events/subscribe?topic=xxx (SSE/WS)",
+      "GET  /api/v1/events/history?topic=&from=&to="
+    ],
+    "tier_2_p2_lineage_cross_service": [
+      "GET  /api/v1/lineage/cross-service?from=dataset:xxx&depth=3 (跨 dataset/annotation/pipeline/delivery 拉一条线)",
+      "GET  /api/v1/lineage/impact/{entity}?change=delete (影响面: 哪些任务/审核/评测会受影响)"
+    ],
+    "tier_2_p2_sla_monitor": [
+      "GET  /api/v1/sla/pipelines?window=1h (P50/P95 时延 + 失败率)",
+      "GET  /api/v1/sla/queues?window=1h (各队列吞吐)",
+      "POST /api/v1/notifications/sla-breach (订阅阈值告警)"
+    ]
+  },
+
+  "world_benchmark_comparison": [
+    {
+      "platform": "Apache Airflow",
+      "domain": "数据 pipeline 编排 / 调度",
+      "key_capabilities": [
+        "DAG as code (Python) + 可视化 DAG view (graph / tree / gantt)",
+        "Cron / interval / dataset trigger 3 种调度",
+        "XCom 跨 task 传参 + TaskFlow API",
+        "SLA miss 自动告警 + retry 指数退避",
+        "300+ operator (HTTP / SQL / S3 / Spark / KubernetesPod)",
+        "审计 + 血缘 + 多租户"
+      ],
+      "nanobot_status": "有 APScheduler + DAG engine, 但 DAG view 不可见, 调度单一 (cron/date), 没有 XCom, 没有 operator marketplace"
+    },
+    {
+      "platform": "Dagster",
+      "domain": "数据 / ML pipeline 编排 + asset 血缘",
+      "key_capabilities": [
+        "Software-defined assets (SDA) — 数据集是 first-class",
+        "资产 lineage 自动构建 (跨 dataset / notebook / job)",
+        "IO manager (Snowflake / BigQuery / S3 / Parquet)",
+        "Dagit UI (DAG + lineage + asset materialization history)",
+        "Dynamic partitioning + 增量重算"
+      ],
+      "nanobot_status": "缺 SDA 模型 (dataset_service 是 CRUD 而非 asset), 缺 IO manager 抽象, 缺动态 partition, Dagit 类 UI 完全没有"
+    },
+    {
+      "platform": "Prefect Cloud",
+      "domain": "工作流 + 部署 + 监控",
+      "key_capabilities": [
+        "Pythonic flow + 自动重试 + cache + 通知",
+        "Web UI: run / flow / task 3 视图 + 实时光流图",
+        "Work pool + worker (Kubernetes / Docker / Process)",
+        "Deploy via push (UI) or pull (worker)",
+        "Artifact (run output 持久化 + 可下载)"
+      ],
+      "nanobot_status": "dag_v2 AdvancedDAGEngine 7 node types + 4 edge types + 4 exec mode + 4 error policy 完整对标 Prefect, 但无 Web UI + 部署 worker + artifact"
+    },
+    {
+      "platform": "Temporal",
+      "domain": "分布式工作流 / saga / 长事务",
+      "key_capabilities": [
+        "Workflow as code (deterministic) + Activity 异步执行",
+        "Saga 模式 (compensating transaction)",
+        "Signal / Query / Update 3 通道",
+        "Web UI: workflow timeline + event history",
+        "Multi-cluster replication"
+      ],
+      "nanobot_status": "缺 saga / signal / query 模型, 缺 deterministic replay, 缺 event history 持久化"
+    },
+    {
+      "platform": "Databricks Lakehouse (Jobs / Workflows / Delta Live Tables)",
+      "domain": "数据湖 + 流批一体 + 工作流",
+      "key_capabilities": [
+        "Delta Live Tables: 声明式 ETL + 自动 lineage + data quality",
+        "Unity Catalog: 一份 metadata 跨 lake / warehouse / serving",
+        "Workflows: job + task 嵌套 + cluster reuse",
+        "Photon 引擎 + Photon ML",
+        "MLflow: experiment + model registry + serving"
+      ],
+      "nanobot_status": "缺 DLT 类声明式, 缺 Unity Catalog 统一 metadata, 缺 cluster reuse, MLflow 集成零"
+    },
+    {
+      "platform": "AWS Step Functions",
+      "domain": "云原生工作流",
+      "key_capabilities": [
+        "State Language (Choice / Parallel / Map / Wait / Catch)",
+        "与 200+ AWS 服务原生集成 (Lambda / ECS / SageMaker / Batch / SNS)",
+        "Express vs Standard 两种工作流 (Express 高速短时)",
+        "可视化为 ASL 图 + CloudWatch 集成"
+      ],
+      "nanobot_status": "缺 Choice / Parallel / Map / Catch 原语 (dag_v2 有 NodeType 7 种但 Edge 表达力弱), 缺 AWS 服务集成, 缺 AS L可视化"
+    },
+    {
+      "platform": "Celery + Flower",
+      "domain": "分布式任务队列",
+      "key_capabilities": [
+        "Task / Queue / Worker / Beat 4 角色",
+        "Broker: Redis / RabbitMQ / SQS",
+        "Result backend: Redis / DB / S3",
+        "Flower UI: 实时 worker / task / 队列统计",
+        "Chord / Chain / Group / Chord-chain 4 组合"
+      ],
+      "nanobot_status": "annotation operators 走 Celery, 但 Flower UI 没暴露; scheduler / task_queue / feedback_loop 4 套并行队列零统一"
+    },
+    {
+      "platform": "Argo Workflows",
+      "domain": "K8s 原生工作流",
+      "key_capabilities": [
+        "DAG + Step + Script + Container 原生 K8s 资源",
+        "Artifact (S3 / Git / OCI)",
+        "Suspend / Resume / Retry / ContinueOn",
+        "UI: workflow status / log / artifact",
+        "WorkflowTemplate (跨 namespace 复用)"
+      ],
+      "nanobot_status": "缺 K8s 原生执行, 缺 artifact 抽象, 缺 WorkflowTemplate 跨 namespace 复用, 缺 suspend/resume"
+    }
+  ],
+
+  "recommendation_summary": {
+    "headline_gap": "后端 9 个数据流相关引擎 (requirement 673 行 / scheduler 788 行 / task_queue 187 行 / data_pipeline 826 行 / data_collection 498 行 / data_delivery 158 行 / delivery_inc 60 行 / transfer 523 行 + 11 个微服务) 全部实装但 0 路由暴露 + 0 UI 入口; 前端 Tasks.vue 只 merge 3 源任务 (annotation/agent/workflow), 完全不感知其他 6 个引擎 — 数据流从 '需求' 到 '交付' 的整条链路在 UI 上是断裂的; 4 套并行 APScheduler + 2 套数据采集 (data_collection_engine JSON vs collection_service 真实 HTTP) + 2 套评测 (eval_engine vs eval_quality vs scoring_service) 等重复实装未统一。",
+    "top_3_p0_fixes": [
+      "(1) 把 data_pipeline (826 行, 16 aug + 3 split + 5 format) 包到 /api/v1/pipeline/* 路由 + 加 Pipeline Designer 页面 (P0: 当前最强 '内容生产引擎' 之一, 但用户无法触发任何一次执行)",
+      "(2) 把 requirement_engine + scheduler_engine + data_delivery + delivery_inc + transfer_engine 全部包到 /api/v1/{requirements,scheduler,deliveries,shares}/* 路由 (P0: 5 个完整业务域, 一个都没暴露)",
+      "(3) Tasks.vue 改成真统一看板: 合并 9 源 (annotation/agent/workflow/scheduler/collection/pipeline/delivery/share/transfer), 加 self/owner 过滤, 加 SLA 倒计时, 加 audit log 抽屉 (P0: 当前合并 3 源就敢叫 '统一视图')"
+    ],
+    "top_5_p1_enhancements": [
+      "(1) 4 套 APScheduler 统一 facade (/api/v1/queue/*) + Flower 类 dashboard",
+      "(2) 真实 HTTP 采集: 替换 data_collection_engine 里的 random.randint(5,50) 模拟, 接入 httpx + beautifulsoup",
+      "(3) 跨服务事件总线 (Redis Streams 或 in-process EventBus): EvalRunner 跑完自动触发补采/补标任务",
+      "(4) 跨服务 lineage: dataset → annotation → pipeline → delivery → share 全链路血缘 + 影响分析",
+      "(5) SLA 监控 + 通知: P50/P95 时延 + 失败率 + WebSocket 告警"
+    ],
+    "phase_roadmap": {
+      "week_1_p0": "data_pipeline 路由化 + Pipeline Designer 页面 (16 aug + 3 split + 5 format 选配); requirement_engine 路由化 + 需求看板",
+      "week_2_p0": "scheduler_engine 路由化 + Cron 管理 UI; data_delivery + delivery_inc + transfer_engine 三件套路由化",
+      "week_3_p1": "Tasks.vue 重构为 9 源统一看板 + SLA 倒计时 + audit 抽屉; 4 套 APScheduler 统一 facade",
+      "week_4_p1": "真实 HTTP 采集 (httpx + bs4); 事件总线 (Redis Streams); 跨服务 lineage",
+      "month_2_p2": "SLA 监控 + WebSocket 告警; workflow 服务接入 Argo/Temporal 风格 step primitive (Choice/Parallel/Map/Catch)"
+    }
+  }
+}

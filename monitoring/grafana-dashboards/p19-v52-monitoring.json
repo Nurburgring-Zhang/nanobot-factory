@@ -1,0 +1,46 @@
+{
+  "title": "P19 v5.2-A Monitoring — Layers 6-12",
+  "uid": "imdf-p19-v52-monitoring",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-6h", "to": "now"},
+  "tags": ["imdf", "p19-v52", "monitoring"],
+  "templating": {"list": []},
+  "panels": [
+    {"id": 1, "type": "row", "title": "Layer 6 — Sentry", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}, "collapsed": false, "panels": [
+      {"id": 11, "type": "stat", "title": "Errors (5m)", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1}, "targets": [{"expr": "increase(imdf_sentry_events_total[5m])", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}, {"color": "red", "value": 50}]}}}},
+      {"id": 12, "type": "stat", "title": "SDK enabled", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1}, "targets": [{"expr": "imdf_sentry_sdk_enabled", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "none"}}},
+      {"id": 13, "type": "stat", "title": "DSN configured", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1}, "targets": [{"expr": "imdf_sentry_dsn_configured", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "none"}}},
+      {"id": 14, "type": "table", "title": "Errors by service", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 6, "w": 12, "x": 12, "y": 1}, "targets": [{"expr": "sum by (service) (increase(imdf_sentry_events_total[1h]))", "refId": "A", "format": "table", "instant": true}]}
+    ]},
+    {"id": 2, "type": "row", "title": "Layer 7 — Health (20 services)", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 8}, "collapsed": false, "panels": [
+      {"id": 21, "type": "stat", "title": "Healthy", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 4, "x": 0, "y": 9}, "targets": [{"expr": "imdf_health_deep_healthy", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 18}]}}}},
+      {"id": 22, "type": "stat", "title": "Unhealthy", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 4, "x": 4, "y": 9}, "targets": [{"expr": "imdf_health_deep_unhealthy", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}}},
+      {"id": 23, "type": "timeseries", "title": "Per-service latency (ms)", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 8, "w": 16, "x": 8, "y": 9}, "targets": [{"expr": "imdf_health_latency_ms", "refId": "A", "legendFormat": "{{service}}"}]}
+    ]},
+    {"id": 3, "type": "row", "title": "Layer 8 — Agent tracking", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 18}, "collapsed": false, "panels": [
+      {"id": 31, "type": "timeseries", "title": "Invocations / sec", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 6, "w": 12, "x": 0, "y": 19}, "targets": [{"expr": "sum(rate(imdf_agent_invocations_total[1m]))", "refId": "A"}]},
+      {"id": 32, "type": "timeseries", "title": "Error rate (%)", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 6, "w": 12, "x": 12, "y": 19}, "targets": [{"expr": "sum(rate(imdf_agent_errors_total[5m])) / sum(rate(imdf_agent_invocations_total[5m]))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percentunit"}}}
+    ]},
+    {"id": 4, "type": "row", "title": "Layer 9 — Cost tracking", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 26}, "collapsed": false, "panels": [
+      {"id": 41, "type": "stat", "title": "Spend (24h, $)", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 6, "x": 0, "y": 27}, "targets": [{"expr": "increase(imdf_cost_usd_total[24h])", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "currencyUSD"}}},
+      {"id": 42, "type": "piechart", "title": "Spend by model", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 8, "w": 9, "x": 6, "y": 27}, "targets": [{"expr": "sum by (model) (increase(imdf_cost_usd_total[24h]))", "refId": "A"}]},
+      {"id": 43, "type": "bargauge", "title": "Top 10 users by spend", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 8, "w": 9, "x": 15, "y": 27}, "targets": [{"expr": "topk(10, sum by (user_id) (increase(imdf_cost_usd_total[24h])))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "currencyUSD"}}}
+    ]},
+    {"id": 5, "type": "row", "title": "Layer 10 — Quality", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 36}, "collapsed": false, "panels": [
+      {"id": 51, "type": "stat", "title": "Drift detected", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 4, "x": 0, "y": 37}, "targets": [{"expr": "imdf_quality_drift_detected", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}}},
+      {"id": 52, "type": "stat", "title": "Avg Cohen's κ", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 4, "x": 4, "y": 37}, "targets": [{"expr": "imdf_quality_kappa", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "none"}}},
+      {"id": 53, "type": "timeseries", "title": "Score drift", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 8, "w": 16, "x": 8, "y": 37}, "targets": [{"expr": "imdf_quality_recent_avg_score", "refId": "A"}, {"expr": "imdf_quality_baseline_avg_score", "refId": "B"}]}
+    ]},
+    {"id": 6, "type": "row", "title": "Layer 11 — Compliance", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 46}, "collapsed": false, "panels": [
+      {"id": 61, "type": "stat", "title": "GDPR reports (24h)", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 6, "x": 0, "y": 47}, "targets": [{"expr": "increase(imdf_gdpr_reports_total[24h])", "refId": "A"}]},
+      {"id": 62, "type": "stat", "title": "EU AI Act controls", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 4, "w": 6, "x": 6, "y": 47}, "targets": [{"expr": "imdf_eu_ai_act_controls_implemented", "refId": "A"}]},
+      {"id": 63, "type": "table", "title": "GDPR report audit log", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 47}, "targets": [{"expr": "sum by (report_type) (increase(imdf_gdpr_reports_total[24h]))", "refId": "A", "format": "table", "instant": true}]}
+    ]},
+    {"id": 7, "type": "row", "title": "Layer 12 — User behavior", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 56}, "collapsed": false, "panels": [
+      {"id": 71, "type": "timeseries", "title": "Funnel conversion", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 57}, "targets": [{"expr": "imdf_funnel_users_at_stage", "refId": "A", "legendFormat": "{{stage}}"}]},
+      {"id": 72, "type": "heatmap", "title": "Heatmap (click density)", "datasource": {"type": "prometheus", "uid": "Prometheus"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 57}, "targets": [{"expr": "imdf_heatmap_events_total", "refId": "A"}]}
+    ]}
+  ]
+}

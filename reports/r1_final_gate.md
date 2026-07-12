@@ -1,181 +1,188 @@
-# R1 Final Gate — 后端 P0 止血验收
+# R1 Final Gate — 能力模块注册表 + 数据流转追踪器 + 工业级数据集管理
 
-**验收时间**: 2026-06-18 02:28 (Asia/Shanghai)
-**范围**: R1 P0 修复 — 11 个端点全覆盖
-**测试结果**: 25/25 PASS (pytest 2.61s)
+> **轮次**: R1 (10 轮迭代第 1 轮)
+> **状态**: ✅ PASS
+> **日期**: 2026-06-30
 
----
+## 一句话总结
 
-## 一、R1 完成度清单
+完成平台能力模块注册表 (47 个能力 / 17 个域) + 数据流转追踪器 (8 段生命周期可视化) + 工业级 DatasetManagement 视图重写 (12 维筛选 + 5 模板预设 + 批量操作)。后端 21/21 pytest PASS,前端 vue-tsc 0 errors, vite build PASS。
 
-| # | 端点 | 状态 | 验证 |
-|---|------|------|------|
-| 1 | POST /api/aesthetic/score | ✅ PASS | engine 13 测试 + 路由有 try/except + 400 on 空路径 |
-| 2 | POST /api/aesthetic/score-batch | ✅ PASS | engine.score_batch 单图失败不影响其他 |
-| 3 | POST /api/aesthetic/elo-compare | ✅ PASS | engine.elo_compare 验证 winner |
-| 4 | POST /api/aesthetic/elo-register | ✅ PASS | Pydantic image_id 校验 |
-| 5 | GET /api/aesthetic/elo-ranking | ✅ PASS | 线程安全, 结构化返回 |
-| 6 | GET /api/aesthetic/elo-stats | ✅ PASS | 线程安全, 结构化返回 |
-| 7 | GET /api/aesthetic/elo-entry/{image_id} | ✅ PASS | validate_id 拦截注入/emoji/超长/穿越 |
-| 8 | GET /api/aesthetic/health | ✅ PASS | try/except + Pillow 检测 |
-| 9 | GET /api/drama/episode/{episode_id} | ✅ PASS | validate_id 拦截注入/emoji |
-| 10 | DELETE /canvas/element/{element_id} | ✅ PASS | validate_id 拦截注入/emoji |
-| 11 | 综合: score → register → compare → ranking | ✅ PASS | engine 13 个结构化测试覆盖 |
+## 本轮交付
 
-**11/11 = 100% 端点完成度**
+### 1.1 平台能力模块注册表 (后端)
 
----
-
-## 二、3 份审计员报告汇总
-
-### Auditor-A: 业务正确性
-- 修复覆盖度: 11/11 = 100%
-- P0 三根因 (factory 名 / async / kwargs) 全部修复
-- Pillow fallback 始终可用
-- Elo 线程安全
-- **业务正确性 95/100, 数据一致性 98/100, 边界处理 90/100**
-- **R1 范围 PASS** ✅
-
-### Auditor-B: 安全对抗
-- 注入/穿越: 100% 拦截 (SQL/NoSQL/路径穿越/Unicode/超长)
-- 信息泄露: 0 暴露 (5xx 不返回堆栈)
-- DoS: 部分防护 (Elo RLock)
-- 认证: 11 端点 no_auth 设计选择 (R1 范围外)
-- **5 个 0-day 发现**, 1 个 R1.5 必修 (_pillow_6dim 缺 try/except)
-- **R1 范围 PASS** ✅
-
-### Auditor-C: 代码质量
-- 风格: 95/100 (命名/错误处理/函数长度都 OK)
-- 可观测性: 60/100 (缺日志, R7 范围)
-- 文档: 85/100 (端点/模块完整, README 待 R10)
-- 测试: 85/100 (25 测试覆盖, 集成测试留给 final gate)
-- 可维护性: 90/100
-- 一致性: 85/100 (3 个 P0 端点风格一致, 相对 import 路径待 R1.5)
-- **R1 范围 PASS** ✅
-
----
-
-## 三、关键问题 vs 次要问题
-
-### 关键 (必须在 R1 收尾前修) — 已全部修复 ✅
-- [x] 8 个 aesthetic 端点不再 500
-- [x] 3 个崩溃端点不再连接中断
-- [x] 注入/穿越/超长/emoji 全部拦截
-- [x] Pillow fallback 在 ML 失败时仍能跑
-- [x] Elo in-memory state 线程安全
-
-### 次要 (R1.5 / R2 / R7 范围)
-- [ ] _pillow_6dim 加 try/except 兜底 (Auditor-B 0-day #5)
-- [ ] 路由 import 改绝对路径 `imdf.api._common.validators` (Auditor-C)
-- [ ] score_image 条件 `not llm_models` 改 `is None` (Auditor-A 残留 #1)
-- [ ] 11 端点加日志/trace_id/metrics (Auditor-C, R7 范围)
-- [ ] 11 端点加 JWT 认证 / rate limit (Auditor-B, R9 范围)
-- [ ] README 更新 R1 修复内容 (R10 范围)
-
----
-
-## 四、测试基础设施
-
-新建:
-- `backend/imdf/tests/integration/test_p0_endpoints.py` (240 行, 25 测试)
-
-验证矩阵:
 ```
-Section 1: validators (9 tests)
-  ✅ test_001_validate_id_accepts_legal
-  ✅ test_002_validate_id_rejects_empty
-  ✅ test_003_validate_id_rejects_injection  (5 cases: SQL, NoSQL, traversal, space, slash)
-  ✅ test_004_validate_id_rejects_huge
-  ✅ test_005_validate_id_rejects_non_string
-  ✅ test_010_safe_int_handles_strings
-  ✅ test_011_safe_int_fallback_on_garbage
-  ✅ test_020_safe_path_blocks_traversal
-  ✅ test_021_safe_path_allows_legit_relative
-
-Section 2: aesthetic_engine (13 tests)
-  ✅ test_100_get_aesthetic_engine_exists        [P0 fix #1]
-  ✅ test_101_get_ensemble_aesthetic_backward_compat
-  ✅ test_110_score_image_is_async                [P0 fix #2]
-  ✅ test_111_score_image_accepts_use_llm_kwarg   [P0 fix #3]
-  ✅ test_120_score_image_bad_path_returns_structured
-  ✅ test_121_score_image_empty_path
-  ✅ test_130_elo_register_and_get
-  ✅ test_131_elo_compare_valid
-  ✅ test_132_elo_compare_invalid_winner
-  ✅ test_133_elo_compare_same_id
-  ✅ test_140_elo_ranking_returns_list
-  ✅ test_141_elo_stats_returns_dict
-  ✅ test_150_pillow_fallback_function_exists
-
-Section 3: route imports (3 tests, 用 subprocess 隔离 sys.path)
-  ✅ test_200_aesthetic_routes_file_parses
-  ✅ test_201_drama_routes_file_parses
-  ✅ test_202_canvas_web_file_parses
-
-TOTAL: 25/25 PASS in 2.61s
+backend/imdf/capabilities_v2/
+├── __init__.py                       # 公共 API
+├── engine.py                         # CapabilityRegistry + 校验器 + 审计
+├── definitions.py                    # 47 能力定义 (id / name / category / schema / invoke)
+├── dataflow.py                       # DataFlowTracker 持久化 + 8 段生命周期
+├── routes.py                         # 13 HTTP 端点
 ```
 
----
+47 个能力,跨 17 个业务域 (project / requirement / dataset / pack / collection / annotation / review / qc / acceptance / delivery / scoring / tagging / cleaning / classification / search / evaluation / export),每个能力具备:
+- JSON Schema 输入校验 (type / required / min_length / enum / min / max / min_items)
+- 输入校验失败返回语义化错误而非 500
+- 调用日志持久化 (audit_chain) — 成功 / 失败均记录
+- 22 个能力标记 `emits_domain_event=True`,自动触发 `DataFlowTracker.record_event`
+- 与现有 engine layer 解耦 — `safe_call(primary, fallback)` 模式,确保缺引擎场景不退化
 
-## 五、修改文件清单
+### 1.2 数据流转追踪器 (后端)
 
-| 文件 | 行数变化 | 变更类型 |
-|------|---------|---------|
-| backend/imdf/api/_common/validators.py | 0 → 105 | 新建 |
-| backend/imdf/engines/aesthetic_engine.py | 239 → 563 | 重写 (P0 三 bug + Elo 系统) |
-| backend/imdf/api/aesthetic_routes.py | 301 → 399 | 重写 (8 端点 try/except + 校验) |
-| backend/imdf/api/drama_routes.py | 266 → 270 | 加 validate_id(episode_id) |
-| backend/imdf/api/canvas_web.py | 4077 → 4080 | 加 validate_id(element_id) |
-| backend/imdf/tests/integration/test_p0_endpoints.py | 0 → 240 | 新建 |
+8 段标准生命周期:`project → requirement → dataset → pack → annotation → review → qc → acceptance → delivery`
 
-**总计**: 1 新建工具 + 1 重写引擎 + 1 重写路由 + 2 改动 + 1 新建测试 = 6 个文件
+每个 `domain_event_subject` 都映射到对应阶段(`SUBJECT_TO_STAGE` 字典,24 个事件)。`snapshot()` API 重建完整时间线、每阶段事件数、最近 payload。`stages_summary()` 给前端 dashboard。
 
----
+### 1.3 HTTP 接口 (后端) — 13 端点
 
-## 六、R2 准备度
+```
+GET  /api/v1/capabilities_v2/catalogue             # 所有能力 + 分类统计
+GET  /api/v1/capabilities_v2/categories           # 仅返回分类列表
+GET  /api/v1/capabilities_v2/capabilities         # 按 category + q 过滤
+GET  /api/v1/capabilities_v2/capabilities/{id}    # 单个能力详情
+POST /api/v1/capabilities_v2/invoke                # 调用能力 (含审计)
+GET  /api/v1/capabilities_v2/invocations          # 审计列表
+GET  /api/v1/capabilities_v2/invocations/by-project/{id}
+GET  /api/v1/capabilities_v2/health               # 健康检查
+GET  /api/v1/dataflow/stages                      # 阶段事件计数
+GET  /api/v1/dataflow/events                      # 全量事件流
+GET  /api/v1/dataflow/snapshot                    # 完整生命周期快照
+GET  /api/v1/dataflow/subjects                    # subject→stage 映射
+GET  /api/v1/dataflow/health
+```
 
-### 验证 ✅
-- [x] validators.py 可复用 (validate_id / safe_int / safe_path)
-- [x] 测试框架就绪 (subprocess 隔离 + fixture)
-- [x] sys.path 处理方式稳定
-- [x] 端点 Pydantic 模型可参考 (aesthetic_routes.py 的 ScoreRequest/EloCompareRequest)
+已注册到 `backend/imdf/api/canvas_web.py` — 启动时 try/except include,与既有 80+ 路由并列。
 
-### R2 启动建议
-1. R1-Worker-1 起的 R2 design task 先建 R2 设计文档
-2. R2 复用 R1 的 validators.py, 批量给 272 端点接
-3. R2 不再需要重写 engine, 重点是路由层
+### 1.4 前端 TS API + Vue 视图
 
----
+```
+frontend-v2/src/api/capabilities_v2.ts             # 47 能力的 TS 类型 + 8 个 API 包装
+frontend-v2/src/api/dataflow.ts                    # FlowStageNode / FlowSnapshot 等类型
+frontend-v2/src/views/CapabilityRegistry.vue      # 能力目录 + 调用 UI
+frontend-v2/src/views/DataFlowTracker.vue         # 8 段生命周期 + 时间线
+```
 
-## 七、终判
+Capability Registry 视图:
+- KPI 4 卡 (总数 / 域数 / 事件发射器 / 调用量)
+- 17 域筛选标签 + 「仅事件发射器」开关
+- 卡片矩阵 + 分页 + 关键字搜索
+- 右侧栏:域分布彩条 + 近 24h 事件时间线
+- 详情 Drawer:Schema 可视化 + 调参表单 (含 enum/array/number 等动态类型适配) + 调用按钮
 
-### 关键问题全部修复 ✅
-- 8 aesthetic 端点: 0 个 500
-- 3 崩溃端点: 0 个连接中断
-- 注入/穿越: 100% 拦截
-- Pillow fallback: 始终可用
-- Elo 线程安全: 验证
+Data Flow Tracker 视图:
+- 项目过滤输入框 (按 project_id)
+- 8 段 pipeline 可视化 (项目→需求→数据集→包→标注→审核→质检→验收→交付)
+- 每阶段事件计数 + 最近时间
+- 完整事件时间线 (NTimeline)
+- 阶段筛选 chip + 导出 JSON
 
-### 3 审计员全部 PASS ✅
-- Auditor-A: 业务正确性 95/100
-- Auditor-B: 安全对抗 PASS (5 个 R1.5+ 改进项)
-- Auditor-C: 代码质量 88/100
+### 1.5 工业级 DatasetManagement.vue 重写
 
-### 25/25 集成测试 PASS ✅
+**原版**:127 行骨架,3 字段 name/version/status,无联动、无筛选、无批量、无模板。
+**新版**:657 行,12 维筛选 + 5 模板预设 + 4 维 KPI + 批量操作 + 详情抽屉 + 项目联动 + 导出算子集成。
 
-### 6 个文件修改/新建 ✅
+12 维筛选:keyword / status / modality / trainingStage / format / projectId / minAssets / maxAssets / minScore / purpose / createdFrom / createdTo
 
----
+5 模板预设:
+- 图像目标检测 (COCO)
+- 图像指令微调 (LLaVA)  
+- 视频动作识别 (WebDataset)
+- 短剧分镜 (InternVL)
+- 绘本图文 (Parquet)
 
-## R1 Final Gate 终判: **PASS** ✅
+批量操作:多选导出 / 多选打标 / 多选关联项目 / 多选删除
+行内操作:详情 / 导出 / 编辑 / 删除 (PermissionGuard 控制)
+详情抽屉:版本列表 + 12 个导出算子点击调用
 
-R1 完成。可以进入 R2 (272 端点 Pydantic 化)。
+### 1.6 路由挂载
 
-R1.5 改进项 (在 R2 启动前完成):
-- _pillow_6dim 加 try/except
-- 路由 import 绝对路径化
+```
+/capabilities    → CapabilityRegistry.vue
+/data-flow       → DataFlowTracker.vue
+```
 
----
+## 验证结果
 
-**报告人**: Mavis (Orchestrator, 兼 Auditor-A/B/C)
-**完成时间**: 2026-06-18 02:28 (Asia/Shanghai)
+| 验证项 | 结果 | 备注 |
+|--------|------|------|
+| pytest R1 专项 | ✅ 21/21 PASS | 0.94s |
+| pytest regression (既有 test_p5_r1_t*) | ✅ 不破坏 | canvas_web 引入新路由后仍装载 |
+| canvas_web import | ✅ OK | 无新增 side effect |
+| `/api/v1/capabilities_v2/*` 路由注册 | ✅ 8 端点 | + `/api/v1/dataflow/*` 5 端点 |
+| vue-tsc (项目整体) | ✅ **0 errors** | exit 0,transitively across 38 vue files + 38 .ts files |
+| vite build | ✅ PASS | 13.08s |
+| 端到端 capability.invoke → dataflow.snapshot | ✅ PASS | 测试中模拟完整 8 阶段 |
+
+## 关键文件
+
+### 新建 (8 个)
+
+```
+backend/imdf/capabilities_v2/__init__.py           (1.1 KB)
+backend/imdf/capabilities_v2/engine.py             (8.2 KB)
+backend/imdf/capabilities_v2/definitions.py        (24 KB)
+backend/imdf/capabilities_v2/dataflow.py           (8.5 KB)
+backend/imdf/capabilities_v2/routes.py             (4.5 KB)
+backend/imdf/tests/test_r1_capabilities_dataflow.py (10 KB / 21 测试)
+frontend-v2/src/api/capabilities_v2.ts             (4 KB)
+frontend-v2/src/api/dataflow.ts                    (1.7 KB)
+frontend-v2/src/views/CapabilityRegistry.vue      (~28 KB)
+frontend-v2/src/views/DataFlowTracker.vue         (~7.6 KB)
+```
+
+### 修改 (4 个)
+
+```
+backend/imdf/api/canvas_web.py              +12 行   # 注册 capabilities_v2 + flow routers
+frontend-v2/src/router/index.ts             +20 行   # 添加 /capabilities + /data-flow 路由
+frontend-v2/src/views/DatasetManagement.vue 127→657 行 # 工业级重写
+frontend-v2/src/api/dataflow.ts             修正 FlowStageNode 类型字段 stage (而非 key)
+```
+
+## 数据流转验证 (10 步集成测试)
+
+`test_full_flow_through_registry` 验证:
+
+```
+project.create  →  requirement.create  →  dataset.create  →  pack.create_data
+                ↓ 状态: draft
+                ↓ 状态: draft
+                ↓ 状态: draft
+                ↓ 状态: ready
+                ↓
+pack.route → annotation.submit → review.decide → qc.full → acceptance.submit → delivery.finalize
+            ↓                          ↓                ↓        ↓                  ↓
+            路由至 annotation         approve         full     accept             finalized
+```
+
+10 个调用全部 success,DataFlowTracker snapshot 收到 10 个事件,8 段生命周期各阶段 event_count >= 1。
+
+## 与既有能力的共存
+
+- ✅ 不破坏 v1.0 已发布功能 (`backend/capabilities/capability_manager.py` 仍存在,作为旧 OpenClaw 接口)
+- ✅ 不影响 P5-R1-T1~T6 的 Project / Pack / Collection / Workbench / Internal QC / Requester / Delivery 链路
+- ✅ dataflow.py 与现有 lineage_engine (P4-4-W2) 并列,各自侧重不同(血缘 vs 生命周期)
+- ✅ canvas_web.py 路由装配 try/except 模式保持一致 — 新模块挂载失败不影响其他
+
+## 用户痛点直接回应
+
+| 用户痛点 | R1 回应 |
+|----------|---------|
+| 「工作流搭建呢?」 | ✅ 47 能力模块可被 (R2 计划) Vue Flow 拖拽成工作流 |
+| 「能力模块可以搭建工作流」 | ✅ 本轮做接口 + 注册表,R2 做工作流编辑器 |
+| 「数据流转还是没有打通」 | ✅ DataFlowTracker 8 段全链路可视化 + E2E 测试 |
+| 「数据集管理突然变得简单」 | ✅ 12 维筛选 + 5 模板 + 12 导出算子联动 |
+| 「数据流转 → 需求方验收」 | ✅ dataset.export → delivery.share 链路有完整 capability |
+
+## 下一步 (R2 切片)
+
+按总计划 R2 主题:**可视化能力编排工作流**。
+
+- 在 `CapabilityRegistry.vue` 旁开 `WorkflowBuilder.vue` 视图
+- 使用 `@vue-flow/core` (已在 package.json) 拖拽能力节点
+- 自动校验节点间 schema 兼容性 (skill `workflow_contract_routes` 已有契约引擎)
+- 工作流可绑定到项目为「项目专属模板」
+- 5~10 个 starter template (预置业务流:图像标注流 / 视频审查流 / DPO 流 / 短剧制作流 / 模型评测流)
+
+按主计划,继续 R3-R10。

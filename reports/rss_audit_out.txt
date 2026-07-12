@@ -1,0 +1,10 @@
+﻿Corrupt state file recovery: success items: 2
+GUIDs:
+ - 'https://x.com/only-title'
+ - 'https://x.com/only-link'
+ - 'title:e7e4c423f2e0883b1b9cbed14e7c821a'
+ - 'title:579c647695d8cafa31a3585dfd50c2f0'
+max_items=20 with 50 entries: 50
+First crawl items: 2
+Second crawl (incremental) items: 0
+Third crawl (full_history) items: 0

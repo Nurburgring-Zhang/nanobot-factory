@@ -1,0 +1,135 @@
+﻿Total entries: 50
+
+Real channels: 48
+
+--- P0 channels ---
+
+--- ALL CHANNELS status ---
+  academic        / arxiv                     class=ArxivChannel                   P0=0 P1=0 P2=2 entry=search
+  academic        / googlescholar             class=GoogleScholarChannel           P0=0 P1=0 P2=2 entry=search
+  academic        / ieee                      class=IEEEChannel                    P0=0 P1=0 P2=2 entry=search
+  academic        / pubmed                    class=PubMedChannel                  P0=0 P1=0 P2=2 entry=search
+  academic        / semanticscholar           class=SemanticScholarChannel         P0=0 P1=0 P2=2 entry=search
+  (root)          / baidu_images              class=BaiduImagesCrawler             P0=0 P1=0 P2=1 entry=search
+  (root)          / bing_images               class=BingImagesCrawler              P0=0 P1=0 P2=1 entry=search
+  china_social    / bilibilimp                class=BilibiliMPChannel              P0=0 P1=0 P2=2 entry=search
+  china_social    / douyinmp                  class=DouyinMPChannel                P0=0 P1=0 P2=2 entry=search
+  china_social    / wechatmp                  class=WechatMPChannel                P0=0 P1=0 P2=1 entry=search
+  china_social    / weibomp                   class=WeiboMPChannel                 P0=0 P1=0 P2=2 entry=search
+  china_social    / xigua                     class=XiguaChannel                   P0=0 P1=0 P2=2 entry=search
+  code_oss        / bitbucket                 class=BitbucketChannel               P0=0 P1=0 P2=2 entry=search
+  code_oss        / gitee                     class=GiteeChannel                   P0=0 P1=0 P2=1 entry=search
+  code_oss        / github                    class=GitHubChannel                  P0=0 P1=0 P2=1 entry=search
+  code_oss        / gitlab                    class=GitLabChannel                  P0=0 P1=0 P2=1 entry=search
+  code_oss        / sourceforge               class=SourceForgeChannel             P0=0 P1=0 P2=1 entry=search
+  datasets        / huggingface               class=HuggingFaceDatasetsCrawler     P0=0 P1=0 P2=1 entry=list_datasets
+  datasets        / kaggle                    class=KaggleCrawler                  P0=0 P1=0 P2=1 entry=list_datasets
+  datasets        / openml                    class=OpenMLCrawler                  P0=0 P1=0 P2=1 entry=list_datasets
+  datasets        / paperswithcode            class=PapersWithCodeCrawler          P0=0 P1=0 P2=1 entry=list_datasets
+  datasets        / uci                       class=UCIMLCrawler                   P0=0 P1=0 P2=1 entry=list_datasets
+  (root)          / duckduckgo                class=DuckDuckGoImagesCrawler        P0=0 P1=0 P2=1 entry=search
+  (root)          / flickr                    class=FlickrCrawler                  P0=0 P1=0 P2=1 entry=crawl
+  (root)          / google_images             class=GoogleImagesCrawler            P0=0 P1=0 P2=1 entry=crawl
+  jobs            / bosszhipin                class=BossZhipinChannel              P0=0 P1=0 P2=1 entry=search
+  jobs            / job51                     class=Job51Channel                   P0=0 P1=0 P2=1 entry=search
+  jobs            / lagou                     class=LagouChannel                   P0=0 P1=0 P2=1 entry=search
+  jobs            / zhilian                   class=ZhilianChannel                 P0=0 P1=0 P2=1 entry=search
+  (root)          / open_images               class=OpenImagesCrawler              P0=0 P1=0 P2=1 entry=crawl
+  (root)          / pixabay                   class=PixabayCrawler                 P0=0 P1=0 P2=1 entry=crawl
+  rss             / newsapi                   class=NewsApiChannel                 P0=0 P1=0 P2=2 entry=search
+  rss             / reddit                    class=RedditChannel                  P0=0 P1=0 P2=2 entry=search
+  rss             / rsshub                    class=RsshubChannel                  P0=0 P1=0 P2=2 entry=search
+  (root)          / so_images                 class=SoImagesCrawler                P0=0 P1=0 P2=1 entry=search
+  social          / bilibili                  class=BilibiliChannel                P0=0 P1=0 P2=2 entry=search
+  social          / douyin                    class=DouyinChannel                  P0=0 P1=0 P2=2 entry=search
+  social          / tieba                     class=TiebaChannel                   P0=0 P1=0 P2=2 entry=search
+  social          / weibo                     class=WeiboChannel                   P0=0 P1=0 P2=2 entry=search
+  social          / xiaohongshu               class=XiaohongshuChannel             P0=0 P1=0 P2=2 entry=search
+  social          / zhihu                     class=ZhihuChannel                   P0=0 P1=0 P2=2 entry=search
+  (root)          / sogou                     class=SogouImagesCrawler             P0=0 P1=0 P2=1 entry=search
+  storage         / alioss                    class=AliossChannel                  P0=0 P1=0 P2=2 entry=search
+  storage         / azure                     class=AzureChannel                   P0=0 P1=0 P2=2 entry=search
+  storage         / gcs                       class=GcsChannel                     P0=0 P1=0 P2=2 entry=search
+  storage         / s3                        class=S3Channel                      P0=0 P1=0 P2=2 entry=search
+  storage         / tencentcos                class=TencentCosChannel              P0=0 P1=0 P2=2 entry=search
+  (root)          / unsplash                  class=UnsplashCrawler                P0=0 P1=0 P2=1 entry=crawl
+
+--- P2 kinds ---
+  no_robots_in_source            43
+  no_copyright                   29
+
+--- Sources WITHOUT robots mention (channels with no robots at all) ---
+  academic        / arxiv                    
+  academic        / googlescholar            
+  academic        / ieee                     
+  academic        / pubmed                   
+  academic        / semanticscholar          
+  (root)          / baidu_images             
+  (root)          / bing_images              
+  china_social    / bilibilimp               
+  china_social    / douyinmp                 
+  china_social    / weibomp                  
+  china_social    / xigua                    
+  code_oss        / bitbucket                
+  code_oss        / gitee                    
+  code_oss        / github                   
+  code_oss        / gitlab                   
+  code_oss        / sourceforge              
+  datasets        / huggingface              
+  datasets        / kaggle                   
+  datasets        / openml                   
+  datasets        / paperswithcode           
+  datasets        / uci                      
+  (root)          / duckduckgo               
+  (root)          / flickr                   
+  (root)          / google_images            
+  (root)          / open_images              
+  (root)          / pixabay                  
+  rss             / newsapi                  
+  rss             / reddit                   
+  rss             / rsshub                   
+  (root)          / so_images                
+  social          / bilibili                 
+  social          / douyin                   
+  social          / tieba                    
+  social          / weibo                    
+  social          / xiaohongshu              
+  social          / zhihu                    
+  (root)          / sogou                    
+  storage         / alioss                   
+  storage         / azure                    
+  storage         / gcs                      
+  storage         / s3                       
+  storage         / tencentcos               
+  (root)          / unsplash                 
+
+--- Sources WITHOUT copyright mention ---
+  academic        / arxiv                    
+  academic        / googlescholar            
+  academic        / ieee                     
+  academic        / pubmed                   
+  academic        / semanticscholar          
+  china_social    / bilibilimp               
+  china_social    / douyinmp                 
+  china_social    / wechatmp                 
+  china_social    / weibomp                  
+  china_social    / xigua                    
+  code_oss        / bitbucket                
+  jobs            / bosszhipin               
+  jobs            / job51                    
+  jobs            / lagou                    
+  jobs            / zhilian                  
+  rss             / newsapi                  
+  rss             / reddit                   
+  rss             / rsshub                   
+  social          / bilibili                 
+  social          / douyin                   
+  social          / tieba                    
+  social          / weibo                    
+  social          / xiaohongshu              
+  social          / zhihu                    
+  storage         / alioss                   
+  storage         / azure                    
+  storage         / gcs                      
+  storage         / s3                       
+  storage         / tencentcos               

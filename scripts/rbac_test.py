@@ -2,8 +2,16 @@
 """
 RBAC Full Permission Test - 11 preset accounts
 Tests each account's permitted and forbidden endpoints.
+
+P12-B1: 密码从环境变量解析,不再硬编码。
+        每个账号的密码从对应的 ENV var 读,缺失时 fail-fast。
+        推荐运行方式:
+          set ADMIN_INITIAL_PASSWORD=... (在 .env 里)
+          set PROD_LEAD_PASSWORD=... PROD_USER1_PASSWORD=... etc.
+          python scripts/rbac_test.py
 """
 import json
+import secrets
 import urllib.request
 import urllib.error
 import sys
@@ -11,20 +19,46 @@ import os
 
 BASE = "http://localhost:8900"
 
-# 11 preset accounts
+# P12-B1: 11 个预设账号的密码从 env 解析,严禁硬编码。
+# ENV 占位符格式: "ENV:<VARNAME>" 表示密码来自 os.environ[VARNAME]。
+# admin 的密码统一从 ADMIN_INITIAL_PASSWORD 读 (与 unified_auth.py 一致)。
 ACCOUNTS = [
-    ("admin",       "Admin@2026!",   "admin",      "system"),
-    ("prod_lead",   "Prod@2026!",    "team_lead",  "production"),
-    ("qc_lead",     "QC@20261!",     "reviewer",   "production"),
-    ("prod_user1",  "Prod1@2026!",   "annotator",  "production"),
-    ("prod_user2",  "Prod2@2026!",   "annotator",  "production"),
-    ("prod_user3",  "Prod3@2026!",   "annotator",  "production"),
-    ("crowd_lead",  "Crowd@2026!",   "team_lead",  "crowdsource"),
-    ("crowd_mgr",   "CrowdM@2026!",  "reviewer",   "crowdsource"),
-    ("crowd_qc",    "CrowdQ@2026!",  "reviewer",   "crowdsource"),
-    ("crowd_user1", "Crowd1@2026!",  "annotator",  "crowdsource"),
-    ("client1",     "Client@2026!",  "viewer",     "client"),
+    ("admin",       "ENV:ADMIN_INITIAL_PASSWORD",  "admin",      "system"),
+    ("prod_lead",   "ENV:PROD_LEAD_PASSWORD",     "team_lead",  "production"),
+    ("qc_lead",     "ENV:QC_LEAD_PASSWORD",       "reviewer",   "production"),
+    ("prod_user1",  "ENV:PROD_USER1_PASSWORD",    "annotator",  "production"),
+    ("prod_user2",  "ENV:PROD_USER2_PASSWORD",    "annotator",  "production"),
+    ("prod_user3",  "ENV:PROD_USER3_PASSWORD",    "annotator",  "production"),
+    ("crowd_lead",  "ENV:CROWD_LEAD_PASSWORD",    "team_lead",  "crowdsource"),
+    ("crowd_mgr",   "ENV:CROWD_MGR_PASSWORD",     "reviewer",   "crowdsource"),
+    ("crowd_qc",    "ENV:CROWD_QC_PASSWORD",      "reviewer",   "crowdsource"),
+    ("crowd_user1", "ENV:CROWD_USER1_PASSWORD",   "annotator",  "crowdsource"),
+    ("client1",     "ENV:CLIENT1_PASSWORD",       "viewer",     "client"),
 ]
+
+
+def _resolve_account_password(password: str, username: str) -> str:
+    """P12-B1: 把 ENV:<VARNAME> 占位符解析为真实密码。
+
+    - 普通模式: 缺 env var → 报错并打印生成命令
+    - IMDF_TEST_MODE=1: 自动生成 ephemeral random 密码 (与 unified_auth 一致)
+    """
+    if not password.startswith("ENV:"):
+        return password  # 兼容非占位符的写法
+    env_name = password[4:]
+    pw = os.environ.get(env_name, "").strip()
+    if pw:
+        return pw
+    if os.environ.get("IMDF_TEST_MODE", "").strip() == "1":
+        ephemeral = secrets.token_urlsafe(16)
+        print(f"[IMDF_TEST_MODE] {username}: ephemeral password = {ephemeral}", file=sys.stderr)
+        return ephemeral
+    raise RuntimeError(
+        f"{env_name} env var is required to bootstrap {username} "
+        f"for RBAC testing. Set it in .env or run with IMDF_TEST_MODE=1 "
+        f"to use ephemeral passwords. The legacy hardcoded default has "
+        f"been removed for security reasons (P12-B1)."
+    )
 
 # API endpoints to test with expected access by role
 # Format: (method, path, body, description, "allowed_roles")
@@ -126,11 +160,20 @@ def main():
     
     accounts_ready = []
     for username, password, role, team in ACCOUNTS:
-        ok, msg = register_account(username, password, role)
+        # P12-B1: 解析 ENV:<VARNAME> 占位符
+        try:
+            resolved_pw = _resolve_account_password(password, username)
+        except RuntimeError as e:
+            print(f"  [FAIL] {username}: {e}")
+            print(f"\n  Aborting RBAC test. Set the required env vars in .env or use IMDF_TEST_MODE=1.")
+            sys.exit(2)
+        ok, msg = register_account(username, resolved_pw, role)
         status_icon = "✓" if ok else "✗"
-        print(f"{status_icon} {username:<14} {role:<12} {password:<20} {msg:<15}")
+        # 打印时隐藏密码 (安全)
+        display_pw = "<from-env>" if password.startswith("ENV:") else resolved_pw
+        print(f"{status_icon} {username:<14} {role:<12} {display_pw:<20} {msg:<15}")
         if ok:
-            accounts_ready.append((username, password, role, team))
+            accounts_ready.append((username, resolved_pw, role, team))
     
     print(f"\nAccounts ready: {len(accounts_ready)}/11")
     
