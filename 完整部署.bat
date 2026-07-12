@@ -80,6 +80,8 @@ echo     IMDF:    http://localhost:8899/imdf
 echo     智影:    http://localhost:8899/zhiying
 echo     API文档: http://localhost:8899/docs
 echo.
-echo   预设账号: admin / Admin@2026! (超级管理员)
+echo   预设账号: admin / <从 .env 读 ADMIN_INITIAL_PASSWORD> (超级管理员)
+echo   其他账号: 从 .env 读 PROD_LEAD_PASSWORD / QC_LEAD_PASSWORD / 等
+echo   部署前必须先在 .env 设置这些变量 (详见 .env.example)
 echo ==========================================
 pause

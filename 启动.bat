@@ -26,6 +26,7 @@ echo ==========================================
 echo   平台已启动!
 echo   http://localhost:8899
 echo.
-echo   预设账号: admin / Admin@2026!
+echo   预设账号: admin / <从 .env 读 ADMIN_INITIAL_PASSWORD>
+echo   其他账号: 从 .env 读 PROD_LEAD_PASSWORD / QC_LEAD_PASSWORD / 等
 echo ==========================================
 pause
