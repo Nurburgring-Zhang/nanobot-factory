@@ -8,8 +8,11 @@
 fastapi>=0.100.0
 uvicorn[standard]>=0.20.0
 
-# Pydantic — used by FastAPI
-pydantic>=2.0.0
+# Pydantic — used by FastAPI.
+# OWASP A06 fix (P22-P2-cleanup): pin >=2.7.4 to close CVE-2024-5206
+# (DoS via int converter, fixed in 2.7.4). The previous pin >=2.0.0
+# allowed 2.6.4 which is vulnerable.
+pydantic>=2.7.4
 
 # Settings
 python-dotenv>=1.0.0

@@ -89,6 +89,14 @@ backend/.env
 .env.production
 .env.template
 frontend-v2/.env.production
+# P22-P2-cleanup: also block any *.env at repo root, deploy/*/configs/,
+# and frontend-v2 root — these were missed in the P21 P4 P2 pass.
+# Templates still commit as `*.env.example` (see existing rules above).
+*.env
+!*.env.example
+!deploy/bare_metal/configs/*.env.example
+deploy/bare_metal/configs/*.env
+!deploy/bare_metal/configs/minio.env.example
 
 # Database
 *.db
