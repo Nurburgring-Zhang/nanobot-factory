@@ -190,7 +190,7 @@ class Data3DEngine:
     def _parse_stl(self, p: Path) -> Object3D:
         obj = Object3D(name=p.stem, format="stl", source_path=str(p))
         with p.open("rb") as f:
-            header = f.read(80)
+            head = f.read(80)
             try:
                 n_tri = struct.unpack("<I", f.read(4))[0]
             except Exception:
@@ -200,17 +200,7 @@ class Data3DEngine:
             if 80 + 4 + n_tri * 50 > f_size + 1024:
                 # ASCII STL fallback
                 return self._parse_stl_ascii(p)
-            for _ in range(min(n_tri, 1_000_000)):
-                try:
-                    data = f.read(50)
-                except Exception:
-                    break
-                if len(data) < 50:
-                    break
-                nx, ny, nz, v = struct.unpack("<3f", data[:12]), struct.unpack("<3f", data[12:24])
-                v1, v2, v3 = struct.unpack("<3f", data[24:36]), struct.unpack("<3f", data[36:48]), struct.unpack("<3f", data[48:60])
-                # We didn't read enough above; fix
-            # Re-parse properly
+        # Re-parse properly
         obj2 = Object3D(name=p.stem, format="stl", source_path=str(p))
         with p.open("rb") as f:
             f.read(80)

@@ -170,7 +170,7 @@ class ImageEngine:
             img = Image.open(io.BytesIO(image_bytes))
             stat = ImageStat.Stat(img)
             return {
-                "size": img.size,
+                "size": [img.width, img.height],
                 "mode": img.mode,
                 "mean": stat.mean,
                 "stddev": stat.stddev,

@@ -18,7 +18,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps  # type: ignore
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +171,6 @@ class DataEditEngine:
         if op.op == "saturation":
             return ImageEnhance.Color(img).enhance(float(p.get("factor", 1.5)))
         if op.op == "hue":
-            from PIL import Image
             hsv = img.convert("HSV")
             pixels = hsv.load()
             shift = int(p.get("shift", 30))
@@ -191,7 +190,6 @@ class DataEditEngine:
             new.paste(img, (padding, padding))
             return new
         if op.op == "watermark":
-            from PIL import ImageDraw, ImageFont
             text = str(p.get("text", "©"))
             try:
                 font = ImageFont.truetype("arial.ttf", int(p.get("size", 24)))
