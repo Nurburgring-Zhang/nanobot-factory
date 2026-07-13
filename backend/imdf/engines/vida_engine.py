@@ -35,6 +35,7 @@ import re
 import threading
 import uuid
 from collections import Counter
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -333,4 +334,59 @@ class VidaEngine:
             logger.debug("Vida bus event %s failed: %s", topic, exc)
 
 
-__all__ = ["VidaEngine", "CONFIDENCE_THRESHOLD", "INTENT_TO_ACTION"]
+__all__ = ["VidaEngine", "VidaEngineState", "CONFIDENCE_THRESHOLD", "INTENT_TO_ACTION"]
+
+
+@dataclass
+class VidaEngineState:
+    """State snapshot of a ``VidaEngine`` instance.
+
+    P22-P2-real-fix-3-Engines: previously the ``engine_router`` imported
+    ``VidaEngineState`` (forward-compatible export) but the class did
+    not exist on the module, breaking the import. This dataclass
+    captures the structured state that callers (engine_router,
+    monitoring, tests) can read.
+
+    Fields:
+      * ``perceive_runs`` / ``actions_executed`` / ``actions_skipped_low_confidence``
+        / ``reports_generated`` — counters from VidaEngine._stats
+      * ``confidence_threshold`` — current threshold
+      * ``components`` — names of the 6 injected components
+    """
+
+    perceive_runs: int = 0
+    actions_executed: int = 0
+    actions_skipped_low_confidence: int = 0
+    reports_generated: int = 0
+    confidence_threshold: float = CONFIDENCE_THRESHOLD
+    components: Dict[str, str] = field(default_factory=dict)
+
+    @classmethod
+    def from_engine(cls, engine: "VidaEngine") -> "VidaEngineState":
+        """Snapshot the state of a live ``VidaEngine``."""
+        with engine._lock:
+            return cls(
+                perceive_runs=engine._stats["perceive_runs"],
+                actions_executed=engine._stats["actions_executed"],
+                actions_skipped_low_confidence=engine._stats["actions_skipped_low_confidence"],
+                reports_generated=engine._stats["reports_generated"],
+                confidence_threshold=engine.confidence_threshold,
+                components={
+                    "screen_capture": type(engine.screen_capture).__name__,
+                    "context_analyzer": type(engine.context_analyzer).__name__,
+                    "intent_predictor": type(engine.intent_predictor).__name__,
+                    "action_executor": type(engine.action_executor).__name__,
+                    "memory_store": type(engine.memory_store).__name__,
+                    "bus": type(engine.bus).__name__,
+                },
+            )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "perceive_runs": self.perceive_runs,
+            "actions_executed": self.actions_executed,
+            "actions_skipped_low_confidence": self.actions_skipped_low_confidence,
+            "reports_generated": self.reports_generated,
+            "confidence_threshold": self.confidence_threshold,
+            "components": dict(self.components),
+        }
