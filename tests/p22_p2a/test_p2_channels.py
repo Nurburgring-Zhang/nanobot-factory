@@ -201,7 +201,8 @@ def test_total_channels_count():
 async def test_all_p2a_channels_fast():
     """12 P22-P2a channels: 6 still mock (instant), 6 with real-API
     integration (HackerNews, Reddit, Vimeo, Medium, Substack, plus 6
-    new P22-P2-real reach). Allow up to 10s total for the batch."""
+    new P22-P2-real reach). Allow up to 30s total for the batch
+    (real HTTP calls to public APIs can be slow; 10s was too tight)."""
     t0 = time.perf_counter()
     for channel_id, class_name in P22_P2A_12:
         mod = __import__(f"intelligence.agent_reach.channels.{channel_id}", fromlist=["*"])
@@ -209,4 +210,4 @@ async def test_all_p2a_channels_fast():
         api = cls()
         await api.fetch("perf test")
     elapsed = time.perf_counter() - t0
-    assert elapsed < 10, f"12 channels took {elapsed:.2f}s (expected < 10s)"
+    assert elapsed < 30, f"12 channels took {elapsed:.2f}s (expected < 30s)"

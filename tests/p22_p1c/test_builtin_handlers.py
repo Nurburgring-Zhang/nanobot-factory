@@ -277,15 +277,23 @@ async def test_agency_crud(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_translate_passthrough():
+    """skill_translate now uses a 3-tier cascade: TRANSLATE_API_URL →
+    LibreTranslate public → MyMemory public → passthrough. We accept
+    ANY valid source string ('passthrough' / 'libretranslate-public'
+    / 'mymemory-public' / 'auto') — the test just verifies success
+    and that the target field is set."""
     sm = SkillManager()
     out = await sm.execute_skill(
         "skill_translate",
-        SkillInput(params={"text": "hello", "target": "zh"}),
+        SkillInput(params={"text": "hello world", "target": "zh"}),
     )
-    assert out.success
-    # Without API configured, source='passthrough' and text returned unchanged
-    assert out.result["source"] == "passthrough"
-    assert out.result["translated"] == "hello"
+    assert out.success, f"translate failed: {out.error}"
+    assert out.result["target"] == "zh"
+    # Source field reflects which backend answered (real or fallback)
+    assert out.result["source"] in ("passthrough", "auto", "en", "translate_api", "libretranslate-public", "mymemory-public")
+    # Translated text exists
+    assert "translated" in out.result
+    assert out.result["translated"]
 
 
 @pytest.mark.asyncio

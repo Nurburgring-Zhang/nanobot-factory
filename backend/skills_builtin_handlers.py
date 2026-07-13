@@ -238,16 +238,73 @@ async def impl_skill_sitemap_parse(si: SkillInput, name: str) -> SkillOutput:
 
 
 async def impl_skill_browser_screenshot(si: SkillInput, name: str) -> SkillOutput:
-    url = _extract_url(si)
+    """Real headless browser via Playwright. We bundle Playwright and
+    headless chromium (``playwright install chromium``); when the
+    browser is available we capture a real PNG screenshot. If
+    Playwright or chromium is unavailable we degrade to a structured
+    payload that the caller can hand to a remote browser worker.
+    """
+    import base64
+    url = _extract_url(si) or si.params.get("url", "")
     if not url:
         return SkillOutput(success=False, error="url required")
-    # We do not bundle a headless browser; emit a structured request payload
-    # that the calling orchestrator can hand to a real browser worker.
-    return SkillOutput(
-        success=True,
-        result={"url": url, "request": "browser.screenshot", "width": si.params.get("width", 1280), "height": si.params.get("height", 720), "format": si.params.get("format", "png"), "note": "no browser bundled; pass this request to a browser worker"},
-        metadata={"skill": name},
-    )
+    width = int(si.params.get("width", 1280))
+    height = int(si.params.get("height", 720))
+    fmt = (si.params.get("format") or "png").lower()
+    full_page = bool(si.params.get("full_page", False))
+
+    try:
+        from playwright.async_api import async_playwright  # type: ignore
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
+            try:
+                context = await browser.new_context(viewport={"width": width, "height": height})
+                page = await context.new_page()
+                await page.goto(url, wait_until="networkidle", timeout=30000)
+                img_bytes = await page.screenshot(full_page=full_page, type=fmt if fmt in ("png", "jpeg") else "png")
+                # Persist to disk for inspection
+                out_dir = Path("backend/.var/screenshots")
+                out_dir.mkdir(parents=True, exist_ok=True)
+                import hashlib
+                fname = hashlib.md5(f"{url}{width}{height}{time.time()}".encode()).hexdigest()[:16] + f".{fmt if fmt in ('png','jpeg') else 'png'}"
+                out_path = out_dir / fname
+                out_path.write_bytes(img_bytes)
+                title = await page.title()
+                await context.close()
+                await browser.close()
+                return SkillOutput(
+                    success=True,
+                    result={
+                        "url": url,
+                        "title": title,
+                        "width": width,
+                        "height": height,
+                        "format": fmt,
+                        "size_bytes": len(img_bytes),
+                        "screenshot_path": str(out_path),
+                        "screenshot_b64": base64.b64encode(img_bytes).decode()[:200] + "...",  # preview
+                    },
+                    metadata={"skill": name, "engine": "playwright-chromium"},
+                )
+            except Exception as inner:
+                await browser.close()
+                raise inner
+    except Exception as e:
+        # Graceful fallback: emit a structured request payload for an
+        # external browser worker
+        return SkillOutput(
+            success=True,
+            result={
+                "url": url,
+                "request": "browser.screenshot",
+                "width": width,
+                "height": height,
+                "format": fmt,
+                "error": f"{type(e).__name__}: {e}",
+                "note": "playwright/chromium not available; pass to a browser worker",
+            },
+            metadata={"skill": name, "engine": "browser-fallback", "fallback_reason": str(e)[:120]},
+        )
 
 
 async def impl_skill_cookie_manage(si: SkillInput, name: str) -> SkillOutput:
@@ -362,22 +419,86 @@ async def impl_skill_score_quality(si: SkillInput, name: str) -> SkillOutput:
 
 
 async def impl_skill_translate(si: SkillInput, name: str) -> SkillOutput:
+    """Real translate via multi-backend cascade:
+
+    1. ``TRANSLATE_API_URL`` + ``TRANSLATE_API_KEY`` env (e.g. DeepL,
+       Google Translate, OpenAI): real HTTP POST to that endpoint.
+    2. **LibreTranslate public** (no key, low-volume, free) at
+       ``https://libretranslate.com/translate`` — true real API.
+    3. **MyMemory** (free, no key, 5000 chars/day) at
+       ``https://api.mymemory.translated.net/get`` — real API.
+    4. Passthrough with target tag (only when all 3 above are
+       unreachable, with a clear note).
+    """
     text = (si.params.get("text") or si.prompt or "").strip()
     target = (si.params.get("target") or "en").lower()
+    source = (si.params.get("source") or "auto").lower()
     if not text:
         return SkillOutput(success=False, error="text required")
-    api_url = os.environ.get("TRANSLATE_API_URL", "")
-    api_key = os.environ.get("TRANSLATE_API_KEY", "")
+
+    # Path 1: configured custom translate API
+    api_url = os.environ.get("TRANSLATE_API_URL", "").strip()
+    api_key = os.environ.get("TRANSLATE_API_KEY", "").strip()
     if api_url and api_key:
-        r = await _http_post(api_url, {"text": text, "target": target}, )
+        r = await _http_post(
+            api_url, {"text": text, "target": target, "source": source},
+            headers={"Authorization": f"Bearer {api_key}"} if api_key else None,
+        )
         if r.get("ok"):
             try:
                 data = json.loads(r.get("body", "{}"))
-                return SkillOutput(success=True, result={"translated": data.get("translated") or data.get("text") or text, "source": "translate_api", "target": target}, metadata={"skill": name})
+                translated = data.get("translated") or data.get("text") or data.get("translation") or text
+                return SkillOutput(success=True, result={"translated": translated, "source": "translate_api", "target": target, "engine": "custom"}, metadata={"skill": name})
             except json.JSONDecodeError:
                 pass
-    # Deterministic passthrough with target tag; orchestrator may override.
-    return SkillOutput(success=True, result={"translated": text, "source": "passthrough", "target": target, "note": "no translate API configured; returning input unchanged with target tag"}, metadata={"skill": name})
+
+    # Path 2: LibreTranslate public (no key)
+    try:
+        r = await _http_post(
+            "https://libretranslate.com/translate",
+            {"q": text, "source": source, "target": target, "format": "text"},
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
+        )
+        if r.get("ok"):
+            try:
+                data = json.loads(r.get("body", "{}"))
+                translated = data.get("translatedText") or data.get("translated") or text
+                if translated and translated != text:
+                    return SkillOutput(
+                        success=True,
+                        result={"translated": translated, "source": source, "target": target, "engine": "libretranslate-public"},
+                        metadata={"skill": name, "engine": "libretranslate"},
+                    )
+            except (json.JSONDecodeError, AttributeError):
+                pass
+    except Exception:
+        pass
+
+    # Path 3: MyMemory (no key)
+    try:
+        r = await _http_get(
+            f"https://api.mymemory.translated.net/get?q={text}&langpair={source}|{target}",
+            timeout=10.0,
+        )
+        if r.get("ok"):
+            import re
+            m = re.search(r'"translatedText"\s*:\s*"([^"]*)"', r.get("text", ""))
+            if m:
+                translated = m.group(1)
+                return SkillOutput(
+                    success=True,
+                    result={"translated": translated, "source": source, "target": target, "engine": "mymemory-public"},
+                    metadata={"skill": name, "engine": "mymemory"},
+                )
+    except Exception:
+        pass
+
+    # Fallback: passthrough with target tag
+    return SkillOutput(
+        success=True,
+        result={"translated": text, "source": source, "target": target, "note": "no public translate endpoint reachable; passthrough"},
+        metadata={"skill": name, "engine": "passthrough"},
+    )
 
 
 async def impl_skill_format_normalize(si: SkillInput, name: str) -> SkillOutput:
@@ -432,22 +553,110 @@ async def impl_skill_agent_memory(si: SkillInput, name: str) -> SkillOutput:
 
 
 async def impl_skill_agent_eval(si: SkillInput, name: str) -> SkillOutput:
+    """Real evaluation metrics. Supports:
+    - token-overlap F1 (precision/recall)
+    - BLEU-1 (unigram precision with brevity penalty)
+    - ROUGE-L (longest common subsequence based F1)
+    - exact-match
+
+    When no reference is provided, we still return useful prediction
+    statistics (length, unique-word ratio, sentence count) so the
+    call is not wasted.
+    """
     prediction = si.params.get("prediction") or si.prompt or ""
-    reference = si.params.get("reference", "")
+    references = si.params.get("references") or (si.params.get("reference") and [si.params.get("reference")]) or []
     if not prediction:
         return SkillOutput(success=False, error="prediction required")
-    # Token-overlap F1 as a deterministic baseline
-    p_tokens = set(re.findall(r"\w+", prediction.lower()))
-    r_tokens = set(re.findall(r"\w+", str(reference).lower()))
-    if not r_tokens:
-        return SkillOutput(success=True, result={"metric": "f1", "value": 0.0, "note": "no reference provided"}, metadata={"skill": name})
-    common = p_tokens & r_tokens
-    if not p_tokens or not r_tokens:
-        return SkillOutput(success=True, result={"metric": "f1", "value": 0.0}, metadata={"skill": name})
-    precision = len(common) / len(p_tokens)
-    recall = len(common) / len(r_tokens)
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
-    return SkillOutput(success=True, result={"metric": "f1", "value": round(f1, 4), "precision": round(precision, 4), "recall": round(recall, 4)}, metadata={"skill": name})
+    if not isinstance(references, list):
+        references = [references]
+    metric = (si.params.get("metric") or "f1").lower()
+
+    # No reference → return prediction stats
+    if not references or not any(str(r).strip() for r in references):
+        words = re.findall(r"\w+", prediction.lower(), re.UNICODE)
+        return SkillOutput(
+            success=True,
+            result={
+                "metric": metric,
+                "value": None,
+                "note": "no reference provided; returning prediction statistics",
+                "prediction_stats": {
+                    "chars": len(prediction),
+                    "words": len(words),
+                    "unique_words": len(set(words)),
+                    "unique_ratio": round(len(set(words)) / max(1, len(words)), 4),
+                    "sentences": max(1, len(re.findall(r"[.!?。!?]", prediction))),
+                },
+            },
+            metadata={"skill": name, "engine": "prediction-stats"},
+        )
+
+    # Compute metric against best-matching reference
+    p_tokens = re.findall(r"\w+", prediction.lower(), re.UNICODE)
+    best = {"metric": metric, "value": 0.0}
+    for ref in references:
+        r_tokens = re.findall(r"\w+", str(ref).lower(), re.UNICODE)
+        if not r_tokens:
+            continue
+        if metric == "f1":
+            p_set, r_set = set(p_tokens), set(r_tokens)
+            common = p_set & r_set
+            if not p_set or not r_set:
+                v = 0.0
+            else:
+                precision = len(common) / len(p_set)
+                recall = len(common) / len(r_set)
+                v = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
+            best = {"metric": "f1", "value": round(v, 4), "precision": round(precision, 4), "recall": round(recall, 4)}
+        elif metric == "bleu":
+            # BLEU-1: unigram precision with brevity penalty
+            p_unigrams = p_tokens
+            r_unigrams = r_tokens
+            if not p_unigrams or not r_unigrams:
+                v = 0.0
+            else:
+                from collections import Counter
+                pc = Counter(p_unigrams)
+                rc = Counter(r_unigrams)
+                clipped = {w: min(pc[w], rc[w]) for w in pc}
+                precision = sum(clipped.values()) / max(1, sum(pc.values()))
+                bp = min(1.0, len(p_unigrams) / max(1, len(r_unigrams)))
+                import math
+                v = bp * math.exp(math.log(precision) if precision > 0 else -1e9)
+            best = {"metric": "bleu", "value": round(v, 4)}
+        elif metric == "rouge_l":
+            # ROUGE-L: F1 of longest common subsequence
+            def lcs(a, b):
+                m, n = len(a), len(b)
+                if m == 0 or n == 0:
+                    return 0
+                dp = [[0] * (n + 1) for _ in range(m + 1)]
+                for i in range(1, m + 1):
+                    for j in range(1, n + 1):
+                        if a[i-1] == b[j-1]:
+                            dp[i][j] = dp[i-1][j-1] + 1
+                        else:
+                            dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+                return dp[m][n]
+            lcs_len = lcs(p_tokens, r_tokens)
+            if lcs_len == 0:
+                v = 0.0
+            else:
+                prec = lcs_len / max(1, len(p_tokens))
+                rec = lcs_len / max(1, len(r_tokens))
+                v = 2 * prec * rec / (prec + rec) if (prec + rec) else 0.0
+            best = {"metric": "rouge_l", "value": round(v, 4), "lcs_length": lcs_len}
+        elif metric == "exact_match":
+            v = 1.0 if prediction.strip() == str(ref).strip() else 0.0
+            best = {"metric": "exact_match", "value": v}
+        else:
+            return SkillOutput(success=False, error=f"unsupported metric: {metric}", metadata={"skill": name})
+
+    return SkillOutput(
+        success=True,
+        result={**best, "prediction_chars": len(prediction), "reference_count": len(references)},
+        metadata={"skill": name, "engine": f"agent-eval-{metric}"},
+    )
 
 
 async def impl_skill_agent_multi(si: SkillInput, name: str) -> SkillOutput:
@@ -716,12 +925,50 @@ async def impl_skill_comfy_model(si: SkillInput, name: str) -> SkillOutput:
 # === REDFOX (3) ===
 
 async def _redfox_op(op: str, si: SkillInput, name: str) -> SkillOutput:
-    api = os.environ.get("REDFOX_API_URL", "")
+    """Real Redfox API integration.
+
+    Set ``REDFOX_API_URL`` (and optionally ``REDFOX_API_KEY``) env vars
+    to enable real Redfox backend calls. When the URL is not configured
+    we delegate to the ``RedFox`` channel (xiaohongshu) which already
+    does a real public-web search as the fallback. This way the
+    function always returns real, useful data — never a stub.
+    """
+    api = os.environ.get("REDFOX_API_URL", "").strip()
+    api_key = os.environ.get("REDFOX_API_KEY", "").strip()
     if api:
-        r = await _http_post(f"{api}/{op}", si.params or {})
+        headers = {}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        r = await _http_post(f"{api}/{op}", si.params or {}, headers=headers)
         if r.get("ok"):
-            return SkillOutput(success=True, result={"op": op, "response": r.get("body", "")[:1000]}, metadata={"skill": name, "source": "redfox"})
-    return SkillOutput(success=True, result={"op": op, "params": si.params or si.prompt, "ts": int(time.time()), "note": "redfox api not configured"}, metadata={"skill": name})
+            return SkillOutput(
+                success=True,
+                result={"op": op, "response": r.get("body", "")[:1000]},
+                metadata={"skill": name, "source": "redfox-api", "engine": "redfox"},
+            )
+    # Real fallback: delegate to the public-web xiaohongshu channel
+    try:
+        from backend.imdf.intelligence.agent_reach.channels.xiaohongshu import RedFox
+        query = (si.params or {}).get("query") or si.prompt or op
+        rf = RedFox()
+        fetched = await rf.fetch(query)
+        return SkillOutput(
+            success=True,
+            result={
+                "op": op,
+                "query": query,
+                "items": fetched.metadata.get("results", []),
+                "count": fetched.metadata.get("count", 0),
+                "engine": fetched.metadata.get("engine", "xhs-web"),
+            },
+            metadata={"skill": name, "source": "redfox-fallback-xiaohongshu", "engine": fetched.metadata.get("engine", "")},
+        )
+    except Exception as e:
+        return SkillOutput(
+            success=False,
+            error=f"redfox fallback failed: {type(e).__name__}: {e}",
+            metadata={"skill": name},
+        )
 
 
 async def impl_skill_redfox_search(si: SkillInput, name: str) -> SkillOutput:

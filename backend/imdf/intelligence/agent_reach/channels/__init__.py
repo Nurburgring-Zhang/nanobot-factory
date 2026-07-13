@@ -34,6 +34,10 @@ from imdf.intelligence.agent_reach.channels.instapaper import InstapaperAPI
 from imdf.intelligence.agent_reach.channels.medium import MediumAPI
 from imdf.intelligence.agent_reach.channels.substack import SubstackAPI
 from imdf.intelligence.agent_reach.channels.hackernews import HackernewsAPI
+# P22-P2-real: additional reach channels with real public-API integration
+from imdf.intelligence.agent_reach.channels.reach import (
+    ReachWebAPI, ReachTwitterAPI, ReachGithubAPI, ReachArxivAPI,
+)
 
 __all__ = [
     # P19-B3 首批 14
@@ -64,4 +68,9 @@ __all__ = [
     "MediumAPI",
     "SubstackAPI",
     "HackernewsAPI",
+    # P22-P2-real real-API reach channels
+    "ReachWebAPI",
+    "ReachTwitterAPI",
+    "ReachGithubAPI",
+    "ReachArxivAPI",
 ]
